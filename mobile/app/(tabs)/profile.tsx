@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, Pressable } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Pressable, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -21,8 +21,13 @@ interface PathStep {
   current: boolean;
 }
 
+type AccountRow =
+  | { kind: 'link'; label: string; route: '/settings' | '/notifications' | '/safety'; color: string }
+  | { kind: 'signOut'; label: string; color: string }
+  | { kind: 'delete'; label: string; color: string };
+
 export default function ProfileScreen() {
-  const { userName, level, levelTitle, totalXP, currentStreak } = useAppStore();
+  const { userName, level, levelTitle, totalXP, currentStreak, resetLocalSession } = useAppStore();
 
   const nextLevelXP = level * NEXT_LEVEL_XP_STEP;
   const xpProgress = Math.min(totalXP / nextLevelXP, 1);
@@ -45,13 +50,48 @@ export default function ProfileScreen() {
     { emoji: '🌬️', title: 'Deep Breathing', xp: 50 },
   ];
 
-  const accountRows = [
-    { label: 'Settings', route: '/settings', color: colors.onSurface },
-    { label: 'Notifications', route: '/notifications', color: colors.onSurface },
-    { label: 'Safety Resources', route: '/safety', color: colors.onSurface },
-    { label: 'Sign Out', route: null, color: colors.onSurfaceVariant },
-    { label: 'Delete Account', route: null, color: colors.error },
+  const accountRows: AccountRow[] = [
+    { kind: 'link', label: 'Settings', route: '/settings', color: colors.onSurface },
+    { kind: 'link', label: 'Notifications', route: '/notifications', color: colors.onSurface },
+    { kind: 'link', label: 'Safety Resources', route: '/safety', color: colors.onSurface },
+    { kind: 'signOut', label: 'Sign Out', color: colors.onSurfaceVariant },
+    { kind: 'delete', label: 'Delete Account', color: colors.error },
   ];
+
+  const handleSignOut = () => {
+    Alert.alert(
+      'Sign out',
+      'You will return to the welcome screen. Data on this device is kept until you delete it or remove the app.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Sign out',
+          onPress: () => {
+            resetLocalSession();
+            router.replace('/onboarding');
+          },
+        },
+      ]
+    );
+  };
+
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      'Delete local data',
+      'This clears all app data stored on this device. After you connect Supabase, you can also remove your account from the server.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            resetLocalSession();
+            router.replace('/onboarding');
+          },
+        },
+      ]
+    );
+  };
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -251,10 +291,14 @@ export default function ProfileScreen() {
             <Pressable
               key={row.label}
               style={[styles.accountRow, i < accountRows.length - 1 && styles.accountRowBorder]}
-              onPress={() => row.route && router.push(row.route as any)}
+              onPress={() => {
+                if (row.kind === 'link') router.push(row.route);
+                else if (row.kind === 'signOut') handleSignOut();
+                else handleDeleteAccount();
+              }}
             >
               <Text style={[styles.accountLabel, { color: row.color }]}>{row.label}</Text>
-              {row.route && <Ionicons name="chevron-forward" size={20} color={colors.outline} />}
+              {row.kind === 'link' && <Ionicons name="chevron-forward" size={20} color={colors.outline} />}
             </Pressable>
           ))}
         </Card>

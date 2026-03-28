@@ -1,5 +1,16 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  ScrollView,
+  Pressable,
+  StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
+  Alert,
+  ActivityIndicator,
+  Linking,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
@@ -13,7 +24,55 @@ import { BottomSheet } from '../components/ui/BottomSheet';
 import { FieldLabel } from '../components/ui/FieldLabel';
 import { FieldInput } from '../components/ui/FieldInput';
 import { useAppStore } from '../store/useAppStore';
+import { isSupabaseConfigured, supabase, supabaseDashboardAuthUrl } from '../lib/supabase';
 import { colors, fonts, spacing, radii, shadow } from '../theme';
+
+/** Supabase enforces limits per IP and per project; a new email does not bypass them. */
+function isAuthRateLimitError(error: { message?: string; code?: string }): boolean {
+  const code = error.code ?? '';
+  const raw = (error.message ?? '').toLowerCase();
+  return (
+    code === 'over_email_send_rate_limit' ||
+    code === 'over_request_rate_limit' ||
+    code === 'over_sms_send_rate_limit' ||
+    /rate\s*limit|too many requests/i.test(raw)
+  );
+}
+
+function alertAuthRateLimit() {
+  const providersUrl = supabaseDashboardAuthUrl('providers');
+  const rateLimitsUrl = supabaseDashboardAuthUrl('rate-limits');
+  const body =
+    'Supabase is temporarily blocking more signups from this network or project. Using another email usually does not help.\n\n' +
+    'To keep testing: in the Supabase dashboard open Authentication → Providers → Email and turn off Confirm email (dev only). ' +
+    'That stops confirmation emails, which avoids the strict built-in email cap.\n\n' +
+    'You can also review Authentication → Rate Limits. Wait a few minutes and try again.';
+
+  const buttons: {
+    text: string;
+    style?: 'cancel' | 'default' | 'destructive';
+    onPress?: () => void;
+  }[] = [{ text: 'OK', style: 'cancel' }];
+
+  if (providersUrl) {
+    buttons.unshift({
+      text: 'Email settings',
+      onPress: () => {
+        void Linking.openURL(providersUrl);
+      },
+    });
+  }
+  if (rateLimitsUrl) {
+    buttons.unshift({
+      text: 'Rate limits',
+      onPress: () => {
+        void Linking.openURL(rateLimitsUrl);
+      },
+    });
+  }
+
+  Alert.alert('Signup limit reached', body, buttons);
+}
 
 const privacyPresets = [
   { key: 'only_me' as const, icon: '🔒', title: 'Only Me', desc: 'Maximum privacy — data stays on device.' },
@@ -31,12 +90,103 @@ export default function AccountPrivacyScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showConsent, setShowConsent] = useState(false);
+  const [authLoading, setAuthLoading] = useState(false);
 
   const privacyPreset = useAppStore((s) => s.privacyPreset);
   const setPrivacyPreset = useAppStore((s) => s.setPrivacyPreset);
   const permissions = useAppStore((s) => s.permissions);
   const togglePermission = useAppStore((s) => s.togglePermission);
   const setOnboardingComplete = useAppStore((s) => s.setOnboardingComplete);
+  const setUserName = useAppStore((s) => s.setUserName);
+
+  const confirmAndEnterSanctuary = async () => {
+    const trimmedName = name.trim();
+    const trimmedEmail = email.trim();
+    if (!trimmedName || !trimmedEmail || !password) {
+      Alert.alert('Missing fields', 'Please enter your name, email, and password.');
+      return;
+    }
+    if (password.length < 6) {
+      Alert.alert('Password too short', 'Use at least 6 characters.');
+      return;
+    }
+
+    if (!isSupabaseConfigured) {
+      Alert.alert(
+        'Supabase not configured',
+        'Add EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY to mobile/.env, then restart Expo with: npx expo start -c'
+      );
+      return;
+    }
+
+    setAuthLoading(true);
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: trimmedEmail,
+        password,
+        options: {
+          data: {
+            name: trimmedName,
+            full_name: trimmedName,
+          },
+        },
+      });
+
+      if (error) {
+        if (isAuthRateLimitError(error)) {
+          alertAuthRateLimit();
+          return;
+        }
+        const msg = error.message ?? '';
+        const looksLikeNetwork =
+          msg.includes('Network request failed') ||
+          msg.includes('Failed to fetch') ||
+          msg.includes('network');
+        Alert.alert(
+          looksLikeNetwork ? 'Can’t reach Supabase' : 'Could not create account',
+          looksLikeNetwork
+            ? 'Check Wi‑Fi or cellular and try without VPN. In mobile/.env set EXPO_PUBLIC_SUPABASE_URL to your project API URL (starts with https) and EXPO_PUBLIC_SUPABASE_ANON_KEY to the anon key—no spaces or quotes. Confirm the project is active in Supabase, save, then run npx expo start -c.'
+            : msg
+        );
+        return;
+      }
+
+      setUserName(trimmedName);
+      setOnboardingComplete();
+
+      if (data.session?.user) {
+        const { stressMode, notificationsEnabled, theme } = useAppStore.getState();
+        await supabase
+          .from('users')
+          .update({
+            name: trimmedName,
+            visibility: privacyPreset,
+            stress_mode: stressMode,
+            notifications_enabled: notificationsEnabled,
+            theme,
+            language: 'en',
+          })
+          .eq('id', data.session.user.id);
+      }
+
+      setShowConsent(false);
+      router.replace('/(tabs)');
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Something went wrong';
+      const looksLikeNetwork =
+        msg.includes('Network request failed') ||
+        msg.includes('Failed to fetch') ||
+        msg.includes('network');
+      Alert.alert(
+        looksLikeNetwork ? 'Can’t reach Supabase' : 'Error',
+        looksLikeNetwork
+          ? 'Network error reaching Supabase. Check connection, mobile/.env URL and anon key (no spaces), then npx expo start -c.'
+          : msg
+      );
+    } finally {
+      setAuthLoading(false);
+    }
+  };
 
   const handleTogglePermission = async (key: 'vitals' | 'mindfulness' | 'location') => {
     const isCurrentlyOn = permissions[key];
@@ -187,13 +337,18 @@ export default function AccountPrivacyScreen() {
             your explicit consent.
           </Text>
           <Button
-            title="Confirm and Enter Sanctuary"
-            onPress={() => {
-              setOnboardingComplete();
-              router.replace('/(tabs)');
-            }}
+            title={authLoading ? 'Creating account…' : 'Confirm and Enter Sanctuary'}
+            onPress={() => void confirmAndEnterSanctuary()}
             style={styles.consentButton}
+            disabled={authLoading}
           />
+          {authLoading && (
+            <ActivityIndicator
+              color={colors.primary}
+              style={{ marginBottom: spacing.md }}
+              accessibilityLabel="Creating account"
+            />
+          )}
           <Button
             title="Review Full Ethics Charter"
             variant="ghost"

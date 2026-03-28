@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
 export interface Task {
   id: string;
@@ -11,6 +12,8 @@ export interface Task {
   timeOfDay: 'morning' | 'afternoon' | 'evening';
   enabled: boolean;
 }
+
+export const PERSIST_STORAGE_KEY = 'organic-sanctuary-storage';
 
 const defaultTasks: Task[] = [
   { id: '1', icon: '☀️', title: 'Morning Breathwork', subtitle: 'Center yourself with 4-7-8 breathing', duration: '15M', timeOfDay: 'morning', enabled: true },
@@ -62,6 +65,11 @@ interface AppState {
   updateTasks: (tasks: Task[]) => void;
   addTask: (task: Task) => void;
   toggleTaskEnabled: (taskId: string) => void;
+
+  setUserName: (name: string) => void;
+
+  /** Clears persisted data and resets to defaults; signs out of Supabase when configured. */
+  resetLocalSession: () => void;
 }
 
 function getLevelTitle(level: number): 'Rookie' | 'Regular' | 'Master' | 'Legend' {
@@ -73,6 +81,54 @@ function getLevelTitle(level: number): 'Rookie' | 'Regular' | 'Master' | 'Legend
 
 function getLevelFromXP(xp: number): number {
   return Math.floor(xp / 200) + 1;
+}
+
+/** Default app state after sign-out / delete-account (local-only). */
+function getDefaultSessionState(): Omit<
+  AppState,
+  | 'setHasHydrated'
+  | 'completeTask'
+  | 'addXP'
+  | 'setPrivacyPreset'
+  | 'togglePermission'
+  | 'setStressMode'
+  | 'setOnboardingComplete'
+  | 'setJourneyMode'
+  | 'setNotificationsEnabled'
+  | 'setReminderTime'
+  | 'setTheme'
+  | 'updateTasks'
+  | 'addTask'
+  | 'toggleTaskEnabled'
+  | 'setUserName'
+  | 'resetLocalSession'
+> {
+  return {
+    userName: 'Guest',
+    hasCompletedOnboarding: false,
+    journeyMode: 'solo',
+
+    currentStreak: 0,
+    longestStreak: 0,
+    lastCompletedDate: null,
+
+    tasks: defaultTasks.map((t) => ({ ...t })),
+    todayCompletions: [],
+
+    totalXP: 0,
+    level: 1,
+    levelTitle: 'Rookie',
+
+    privacyPreset: 'only_me',
+    permissions: { vitals: false, mindfulness: true, location: false },
+
+    stressMode: 'medium',
+    notificationsEnabled: true,
+    reminderTime: '8am',
+    theme: 'light',
+
+    _hasHydrated: true,
+  };
 }
 
 export const useAppStore = create<AppState>()(
@@ -103,6 +159,18 @@ export const useAppStore = create<AppState>()(
 
       _hasHydrated: false,
       setHasHydrated: (v) => set({ _hasHydrated: v }),
+
+      setUserName: (userName) => set({ userName }),
+
+      resetLocalSession: () => {
+        if (isSupabaseConfigured) {
+          void supabase.auth.signOut();
+        }
+        void AsyncStorage.removeItem(PERSIST_STORAGE_KEY).catch(() => {});
+        set({
+          ...getDefaultSessionState(),
+        });
+      },
 
       completeTask: (taskId) => {
         const { todayCompletions, totalXP } = get();
@@ -142,7 +210,7 @@ export const useAppStore = create<AppState>()(
         })),
     }),
     {
-      name: 'organic-sanctuary-storage',
+      name: PERSIST_STORAGE_KEY,
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
         hasCompletedOnboarding: state.hasCompletedOnboarding,

@@ -17,7 +17,11 @@ interface ButtonProps {
 export function Button({ title, onPress, variant = 'primary', style, textStyle, disabled }: ButtonProps) {
   if (variant === 'primary') {
     return (
-      <Pressable onPress={onPress} disabled={disabled} style={({ pressed }) => [{ opacity: pressed ? 0.85 : 1 }, style]}>
+      <Pressable
+        onPress={onPress}
+        disabled={disabled}
+        style={({ pressed }) => [{ opacity: disabled ? 0.55 : pressed ? 0.85 : 1 }, style]}
+      >
         <LinearGradient
           colors={[...botanicalGradient.colors]}
           start={botanicalGradient.start}
