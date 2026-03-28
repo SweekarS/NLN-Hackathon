@@ -135,6 +135,8 @@ export const supabase = createClient(supabaseUrl, rawKey, {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: false,
+    /** PKCE is required for signInWithOAuth + exchangeCodeForSession (e.g. Google) on native. */
+    flowType: 'pkce',
   },
 });
 

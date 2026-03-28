@@ -24,6 +24,7 @@ module.exports = {
         },
       },
     },
+    plugins: [...(appJson.expo.plugins ?? []), 'expo-web-browser'],
     extra: {
       ...(appJson.expo.extra ?? {}),
       supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL ?? '',

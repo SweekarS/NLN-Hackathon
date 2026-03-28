@@ -23,9 +23,11 @@ import { Toggle } from '../components/ui/Toggle';
 import { BottomSheet } from '../components/ui/BottomSheet';
 import { FieldLabel } from '../components/ui/FieldLabel';
 import { FieldInput } from '../components/ui/FieldInput';
+import type { User } from '@supabase/supabase-js';
 import { useAppStore } from '../store/useAppStore';
+import { signInWithGoogle } from '../lib/auth-google';
 import { isSupabaseConfigured, supabase, supabaseDashboardAuthUrl } from '../lib/supabase';
-import { colors, fonts, spacing, radii, shadow } from '../theme';
+import { colors, fonts, spacing, radii } from '../theme';
 
 /** Supabase enforces limits per IP and per project; a new email does not bypass them. */
 function isAuthRateLimitError(error: { message?: string; code?: string }): boolean {
@@ -86,6 +88,7 @@ const permissionRows = [
 ];
 
 export default function AccountPrivacyScreen() {
+  const [authMode, setAuthMode] = useState<'signup' | 'signin'>('signup');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -99,11 +102,69 @@ export default function AccountPrivacyScreen() {
   const setOnboardingComplete = useAppStore((s) => s.setOnboardingComplete);
   const setUserName = useAppStore((s) => s.setUserName);
 
+  const persistProfileAndEnter = async (user: User, displayName: string) => {
+    setUserName(displayName);
+    setOnboardingComplete();
+    const { stressMode, notificationsEnabled, theme } = useAppStore.getState();
+    await supabase
+      .from('users')
+      .update({
+        name: displayName,
+        visibility: privacyPreset,
+        stress_mode: stressMode,
+        notifications_enabled: notificationsEnabled,
+        theme,
+        language: 'en',
+      })
+      .eq('id', user.id);
+    setShowConsent(false);
+    router.replace('/(tabs)');
+  };
+
+  const handleGoogleAuth = async () => {
+    if (!isSupabaseConfigured) {
+      Alert.alert(
+        'Supabase not configured',
+        'Add EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY to mobile/.env, then restart Expo with: npx expo start -c'
+      );
+      return;
+    }
+    setAuthLoading(true);
+    try {
+      const { error } = await signInWithGoogle();
+      if (error) {
+        Alert.alert('Google sign-in failed', error.message);
+        return;
+      }
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session?.user) return;
+
+      const meta = session.user.user_metadata as Record<string, string | undefined>;
+      const displayName =
+        meta.full_name ||
+        meta.name ||
+        (session.user.email ? session.user.email.split('@')[0] : '') ||
+        'Friend';
+      await persistProfileAndEnter(session.user, displayName);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Something went wrong';
+      Alert.alert('Error', msg);
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
   const confirmAndEnterSanctuary = async () => {
     const trimmedName = name.trim();
     const trimmedEmail = email.trim();
-    if (!trimmedName || !trimmedEmail || !password) {
-      Alert.alert('Missing fields', 'Please enter your name, email, and password.');
+    if (!trimmedEmail || !password) {
+      Alert.alert('Missing fields', 'Please enter your email and password.');
+      return;
+    }
+    if (authMode === 'signup' && !trimmedName) {
+      Alert.alert('Missing name', 'Please enter your full name to create an account.');
       return;
     }
     if (password.length < 6) {
@@ -121,6 +182,45 @@ export default function AccountPrivacyScreen() {
 
     setAuthLoading(true);
     try {
+      if (authMode === 'signin') {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: trimmedEmail,
+          password,
+        });
+
+        if (error) {
+          if (isAuthRateLimitError(error)) {
+            alertAuthRateLimit();
+            return;
+          }
+          const msg = error.message ?? '';
+          if (/invalid login|invalid credentials|email not confirmed/i.test(msg)) {
+            Alert.alert(
+              'Sign in failed',
+              'Check your email and password. If you just signed up, confirm your email or use Google, or ask your project admin to disable email confirmation for testing.'
+            );
+            return;
+          }
+          const looksLikeNetwork =
+            msg.includes('Network request failed') ||
+            msg.includes('Failed to fetch') ||
+            msg.includes('network');
+          Alert.alert(
+            looksLikeNetwork ? 'Can’t reach Supabase' : 'Could not sign in',
+            looksLikeNetwork
+              ? 'Check Wi‑Fi or cellular and try without VPN. In mobile/.env set EXPO_PUBLIC_SUPABASE_URL to your project API URL (starts with https) and EXPO_PUBLIC_SUPABASE_ANON_KEY to the anon key—no spaces or quotes. Confirm the project is active in Supabase, save, then run npx expo start -c.'
+              : msg
+          );
+          return;
+        }
+
+        if (data.user) {
+          const displayName = trimmedName || (trimmedEmail ? trimmedEmail.split('@')[0] : 'Friend');
+          await persistProfileAndEnter(data.user, displayName);
+        }
+        return;
+      }
+
       const { data, error } = await supabase.auth.signUp({
         email: trimmedEmail,
         password,
@@ -151,26 +251,15 @@ export default function AccountPrivacyScreen() {
         return;
       }
 
-      setUserName(trimmedName);
-      setOnboardingComplete();
-
       if (data.session?.user) {
-        const { stressMode, notificationsEnabled, theme } = useAppStore.getState();
-        await supabase
-          .from('users')
-          .update({
-            name: trimmedName,
-            visibility: privacyPreset,
-            stress_mode: stressMode,
-            notifications_enabled: notificationsEnabled,
-            theme,
-            language: 'en',
-          })
-          .eq('id', data.session.user.id);
+        await persistProfileAndEnter(data.session.user, trimmedName);
+      } else {
+        Alert.alert(
+          'Confirm your email',
+          'We sent a confirmation link. Open it, then return here and use Sign in (or Google).'
+        );
+        setShowConsent(false);
       }
-
-      setShowConsent(false);
-      router.replace('/(tabs)');
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Something went wrong';
       const looksLikeNetwork =
@@ -249,9 +338,31 @@ export default function AccountPrivacyScreen() {
 
           <Animated.View entering={FadeInUp.duration(600).delay(100)}>
             <Card style={styles.formCard}>
-              <Text style={styles.cardTitle}>Create Account</Text>
-              <FieldLabel label="Full Name" />
-              <FieldInput value={name} onChangeText={setName} placeholder="Your full name" />
+              <Text style={styles.cardTitle}>Account</Text>
+              <View style={styles.authModeRow}>
+                <Pressable
+                  onPress={() => setAuthMode('signup')}
+                  style={[styles.authModeChip, authMode === 'signup' && styles.authModeChipActive]}
+                >
+                  <Text style={[styles.authModeText, authMode === 'signup' && styles.authModeTextActive]}>
+                    Sign up
+                  </Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => setAuthMode('signin')}
+                  style={[styles.authModeChip, authMode === 'signin' && styles.authModeChipActive]}
+                >
+                  <Text style={[styles.authModeText, authMode === 'signin' && styles.authModeTextActive]}>
+                    Sign in
+                  </Text>
+                </Pressable>
+              </View>
+              {authMode === 'signup' && (
+                <>
+                  <FieldLabel label="Full Name" />
+                  <FieldInput value={name} onChangeText={setName} placeholder="Your full name" />
+                </>
+              )}
               <FieldLabel label="Email" />
               <FieldInput
                 value={email}
@@ -264,15 +375,26 @@ export default function AccountPrivacyScreen() {
               <FieldInput
                 value={password}
                 onChangeText={setPassword}
-                placeholder="Create a secure password"
+                placeholder={authMode === 'signup' ? 'Create a secure password' : 'Your password'}
                 secureTextEntry
               />
+              <Pressable
+                onPress={() => void handleGoogleAuth()}
+                disabled={authLoading}
+                style={({ pressed }) => [
+                  styles.googleButton,
+                  { opacity: authLoading ? 0.55 : pressed ? 0.9 : 1 },
+                ]}
+              >
+                <Ionicons name="logo-google" size={22} color={colors.onSurface} style={styles.googleIcon} />
+                <Text style={styles.googleButtonText}>Continue with Google</Text>
+              </Pressable>
             </Card>
           </Animated.View>
 
           <Animated.View entering={FadeInUp.duration(500).delay(200)}>
             <Button
-              title="Initialize Sanctuary"
+              title={authMode === 'signup' ? 'Continue with email' : 'Sign in with email'}
               onPress={() => setShowConsent(true)}
               style={styles.initButton}
             />
@@ -337,7 +459,15 @@ export default function AccountPrivacyScreen() {
             your explicit consent.
           </Text>
           <Button
-            title={authLoading ? 'Creating account…' : 'Confirm and Enter Sanctuary'}
+            title={
+              authLoading
+                ? authMode === 'signin'
+                  ? 'Signing in…'
+                  : 'Creating account…'
+                : authMode === 'signin'
+                  ? 'Sign in and enter sanctuary'
+                  : 'Create account and enter sanctuary'
+            }
             onPress={() => void confirmAndEnterSanctuary()}
             style={styles.consentButton}
             disabled={authLoading}
@@ -346,7 +476,7 @@ export default function AccountPrivacyScreen() {
             <ActivityIndicator
               color={colors.primary}
               style={{ marginBottom: spacing.md }}
-              accessibilityLabel="Creating account"
+              accessibilityLabel={authMode === 'signin' ? 'Signing in' : 'Creating account'}
             />
           )}
           <Button
@@ -397,6 +527,51 @@ const styles = StyleSheet.create({
   },
   formCard: {
     marginBottom: spacing.base,
+  },
+  authModeRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  authModeChip: {
+    flex: 1,
+    paddingVertical: spacing.sm,
+    borderRadius: radii.input,
+    borderWidth: 1.5,
+    borderColor: colors.outlineVariant,
+    alignItems: 'center',
+    backgroundColor: colors.surfaceLow,
+  },
+  authModeChipActive: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primaryLighter,
+  },
+  authModeText: {
+    fontFamily: fonts.bodySemiBold,
+    fontSize: 15,
+    color: colors.onSurfaceVariant,
+  },
+  authModeTextActive: {
+    color: colors.primary,
+  },
+  googleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: spacing.md,
+    paddingVertical: spacing.md,
+    borderRadius: radii.button,
+    borderWidth: 1.5,
+    borderColor: colors.outlineVariant,
+    backgroundColor: colors.surface,
+  },
+  googleIcon: {
+    marginRight: spacing.sm,
+  },
+  googleButtonText: {
+    fontFamily: fonts.bodySemiBold,
+    fontSize: 16,
+    color: colors.onSurface,
   },
   cardTitle: {
     fontSize: 18,
