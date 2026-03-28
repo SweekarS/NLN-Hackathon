@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, ScrollView, Pressable, StyleSheet, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import * as Location from 'expo-location';
+import { Pedometer } from 'expo-sensors';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Toggle } from '../components/ui/Toggle';
@@ -21,7 +23,6 @@ const privacyPresets = [
 
 const permissionRows = [
   { key: 'vitals' as const, icon: '💓', title: 'Vital Metrics', desc: 'Heart rate, sleep, activity data' },
-  { key: 'mindfulness' as const, icon: '🧠', title: 'Mindfulness Analytics', desc: 'Meditation & focus sessions' },
   { key: 'location' as const, icon: '📍', title: 'Environment Awareness', desc: 'Location-based wellness cues' },
 ];
 
@@ -36,6 +37,49 @@ export default function AccountPrivacyScreen() {
   const permissions = useAppStore((s) => s.permissions);
   const togglePermission = useAppStore((s) => s.togglePermission);
   const setOnboardingComplete = useAppStore((s) => s.setOnboardingComplete);
+
+  const handleTogglePermission = async (key: 'vitals' | 'mindfulness' | 'location') => {
+    const isCurrentlyOn = permissions[key];
+
+    // If turning off, just turn it off immediately
+    if (isCurrentlyOn) {
+      togglePermission(key);
+      return;
+    }
+
+    // If turning on, we request the native device permission first
+    try {
+      if (key === 'location') {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status === 'granted') {
+          togglePermission(key);
+        } else {
+          Alert.alert('Permission Denied', 'Location permission is required for this feature.');
+        }
+      } else if (key === 'vitals') {
+        const isAvailable = await Pedometer.isAvailableAsync();
+        
+        if (!isAvailable) {
+           Alert.alert('Sensor Not Available', 'Motion tracking is not available on this simulator/device. Simulating successful permission grant for testing.');
+           togglePermission(key);
+           return;
+        }
+
+        const { status } = await Pedometer.requestPermissionsAsync();
+        if (status === 'granted') {
+          togglePermission(key);
+        } else {
+          Alert.alert('Permission Denied', 'Motion data permission is required for Vital Metrics.');
+        }
+      } else {
+        // Mindfulness or any other permission that doesn't need system APIs
+        togglePermission(key);
+      }
+    } catch (error) {
+      console.error('Error requesting permission:', error);
+      Alert.alert('Error', String(error) || 'An error occurred while requesting permission.');
+    }
+  };
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -84,21 +128,6 @@ export default function AccountPrivacyScreen() {
             />
           </Animated.View>
 
-          <Animated.View entering={FadeInUp.duration(500).delay(300)} style={styles.dataRow}>
-            <Card style={styles.dataCard}>
-              <View style={styles.dataCardInner}>
-                <Ionicons name="download-outline" size={24} color={colors.primary} />
-                <Text style={styles.dataCardLabel}>Export Data</Text>
-              </View>
-            </Card>
-            <Card style={styles.dataCard}>
-              <View style={styles.dataCardInner}>
-                <Ionicons name="trash-outline" size={24} color={colors.error} />
-                <Text style={styles.dataCardLabel}>Delete Data</Text>
-              </View>
-            </Card>
-          </Animated.View>
-
           <Animated.View entering={FadeInUp.duration(500).delay(400)}>
             <Card>
               <Text style={styles.cardTitle}>Privacy Presets</Text>
@@ -141,7 +170,7 @@ export default function AccountPrivacyScreen() {
                     <Text style={styles.permTitle}>{row.title}</Text>
                     <Text style={styles.permDesc}>{row.desc}</Text>
                   </View>
-                  <Toggle value={permissions[row.key]} onToggle={() => togglePermission(row.key)} />
+                  <Toggle value={permissions[row.key]} onToggle={() => handleTogglePermission(row.key)} />
                 </View>
               ))}
             </Card>

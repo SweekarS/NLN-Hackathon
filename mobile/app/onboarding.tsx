@@ -96,22 +96,6 @@ export default function OnboardingScreen() {
           </View>
         </Animated.View>
 
-        <Animated.View entering={FadeInUp.duration(500).delay(600)}>
-          <Pressable onPress={togglePrivacy} style={styles.accordionHeader}>
-            <Text style={styles.accordionTitle}>🔒 Privacy & Consent</Text>
-            <Text style={styles.accordionChevron}>{privacyExpanded ? '▲' : '▼'}</Text>
-          </Pressable>
-          {privacyExpanded && (
-            <Animated.View entering={FadeIn.duration(300)} style={styles.accordionBody}>
-              <Text style={styles.accordionText}>
-                Your data never leaves your device without explicit consent. We use end-to-end encryption
-                and zero-knowledge architecture. No tracking, no ads, no third-party data sharing. You own
-                your wellness journey completely — export or delete your data at any time.
-              </Text>
-            </Animated.View>
-          )}
-        </Animated.View>
-
         <View style={styles.buttonWrap}>
           <Button title="Start My Journey" onPress={() => router.push('/account-privacy')} />
           <Button
