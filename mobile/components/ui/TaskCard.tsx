@@ -1,6 +1,13 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
-import Animated, { useAnimatedStyle, withTiming } from 'react-native-reanimated';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withSequence,
+  interpolate,
+  Extrapolation,
+} from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import type { Task } from '../../types/task';
@@ -17,9 +24,37 @@ interface TaskCardProps {
 
 export function TaskCard({ task, isDone, onOpen }: TaskCardProps) {
   const iconName = resolveTaskIonicon(task);
-  const animStyle = useAnimatedStyle(() => ({
-    opacity: withTiming(isDone ? 0.65 : 1, { duration: 300 }),
-    transform: [{ scale: withTiming(isDone ? 0.98 : 1, { duration: 300 }) }],
+  const doneProgress = useSharedValue(isDone ? 1 : 0);
+  const checkPop = useSharedValue(1);
+  const wasDone = useRef(isDone);
+
+  useEffect(() => {
+    doneProgress.value = withSpring(isDone ? 1 : 0, {
+      damping: 17,
+      stiffness: 200,
+      mass: 0.55,
+    });
+    if (isDone && !wasDone.current) {
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      checkPop.value = withSequence(
+        withSpring(1.18, { damping: 10, stiffness: 400 }),
+        withSpring(1, { damping: 14, stiffness: 320 })
+      );
+    }
+    wasDone.current = isDone;
+  }, [isDone, doneProgress, checkPop]);
+
+  const cardStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(doneProgress.value, [0, 1], [1, 0.72], Extrapolation.CLAMP),
+    transform: [
+      {
+        scale: interpolate(doneProgress.value, [0, 1], [1, 0.985], Extrapolation.CLAMP),
+      },
+    ],
+  }));
+
+  const checkStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: checkPop.value }],
   }));
 
   const handlePress = () => {
@@ -36,7 +71,7 @@ export function TaskCard({ task, isDone, onOpen }: TaskCardProps) {
 
   return (
     <Pressable onPress={handlePress} disabled={isDone} accessibilityRole="button">
-      <Animated.View style={[styles.card, animStyle]}>
+      <Animated.View style={[styles.card, cardStyle]}>
         <View style={styles.left}>
           <IconCircle name={iconName} size="md" />
           <View style={styles.textBlock}>
@@ -53,13 +88,13 @@ export function TaskCard({ task, isDone, onOpen }: TaskCardProps) {
               <Text style={styles.duration}>{durationLabel}</Text>
             </View>
           ) : null}
-          <View style={[styles.actionHint, isDone && styles.actionDone]}>
+          <Animated.View style={[styles.actionHint, isDone && styles.actionDone, checkStyle]}>
             <Ionicons
               name={isDone ? 'checkmark-circle' : 'chevron-forward'}
               size={26}
               color={isDone ? colors.white : colors.primary}
             />
-          </View>
+          </Animated.View>
         </View>
       </Animated.View>
     </Pressable>

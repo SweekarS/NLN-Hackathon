@@ -59,7 +59,11 @@ export function taskIdToLogFlagKey(taskId: string): keyof DailyLogFlags | null {
   }
 }
 
-/** Map legacy or custom task ids: known ids first, else slot index when exactly 4 tasks (0–3). */
+/**
+ * Map task id → daily_logs column. Known ids first; else first four **positions** in the
+ * task list (0–3) map to morning/social/phone/evening so completions work with any list length.
+ * Tasks beyond index 3 have no Supabase flag (still tracked in `todayCompletions`).
+ */
 export function resolveLogFlagKey(
   taskId: string,
   tasks: Task[],
@@ -67,7 +71,7 @@ export function resolveLogFlagKey(
   const direct = taskIdToLogFlagKey(taskId);
   if (direct) return direct;
   const idx = tasks.findIndex((t) => t.id === taskId);
-  if (tasks.length === 4 && idx >= 0 && idx <= 3) {
+  if (idx >= 0 && idx < 4) {
     const bySlot: (keyof DailyLogFlags)[] = [
       'morning_done',
       'social_done',

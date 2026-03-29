@@ -812,7 +812,7 @@ export const useAppStore = create<AppState>()(
 
         if (todayCompletions.includes(taskId)) return;
         const taskDef = tasks.find((t) => t.id === taskId);
-        if (!taskDef || !resolveLogFlagKey(taskId, tasks)) return;
+        if (!taskDef) return;
 
         const beforeFlags = flagsFromTaskIds(todayCompletions, tasks);
         const newCompletions = [...todayCompletions, taskId];

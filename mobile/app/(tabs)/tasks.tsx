@@ -1,9 +1,26 @@
-import React, { useState, useCallback, useMemo } from 'react';
-import { View, Text, ScrollView, StyleSheet, Pressable, Image } from 'react-native';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
+  Pressable,
+  Image,
+  LayoutAnimation,
+  Platform,
+  UIManager,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
+import Animated, {
+  FadeIn,
+  FadeInUp,
+  LinearTransition,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from 'react-native-reanimated';
 import { router } from 'expo-router';
 
 import { colors, fonts, spacing, radii, shadow, botanicalGradient } from '../../theme';
@@ -28,6 +45,27 @@ export default function TasksScreen() {
           enabledTasks.length) *
         100
       : 0;
+
+  const pctAnim = useSharedValue(completionPct);
+  useEffect(() => {
+    pctAnim.value = withSpring(completionPct, { damping: 18, stiffness: 140 });
+  }, [completionPct, pctAnim]);
+
+  useEffect(() => {
+    if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+      UIManager.setLayoutAnimationEnabledExperimental(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    LayoutAnimation.configureNext(
+      LayoutAnimation.create(260, LayoutAnimation.Types.easeInEaseOut, LayoutAnimation.Properties.opacity)
+    );
+  }, [completionPct]);
+
+  const barAnimStyle = useAnimatedStyle(() => ({
+    width: `${Math.min(pctAnim.value, 100)}%`,
+  }));
 
   const openTask = useCallback((task: Task) => {
     setActiveTask(task);
@@ -126,7 +164,7 @@ export default function TasksScreen() {
               </ProgressRing>
             </View>
             <View style={styles.barTrack}>
-              <View style={[styles.barFill, { width: `${Math.min(completionPct, 100)}%` }]} />
+              <Animated.View style={[styles.barFill, barAnimStyle]} />
             </View>
           </LinearGradient>
         </Animated.View>
@@ -134,7 +172,11 @@ export default function TasksScreen() {
         {/* Task list */}
         <View style={styles.taskList}>
           {enabledTasks.map((task, idx) => (
-            <Animated.View key={task.id} entering={FadeInUp.delay(220 + idx * 70).duration(450)}>
+            <Animated.View
+              key={task.id}
+              layout={LinearTransition.springify().damping(18).stiffness(160)}
+              entering={FadeInUp.delay(220 + idx * 70).duration(450)}
+            >
               <TaskCard
                 task={task}
                 isDone={todayCompletions.includes(task.id)}

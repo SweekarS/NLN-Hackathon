@@ -112,6 +112,7 @@ export function TaskInteractionModal({ visible, task, onClose, onComplete }: Pro
 
   const handleMarkDone = () => {
     if (!t) return;
+    if (mode === 'photo_upload' && !photoUri) return;
     onComplete(t.id);
     onClose();
   };
@@ -120,9 +121,9 @@ export function TaskInteractionModal({ visible, task, onClose, onComplete }: Pro
 
   const total = totalSecRef.current || Math.max(60, (t.duration_minutes ?? 10) * 60);
   const timerProgress = mode === 'timer' && total > 0 ? 1 - remaining / total : 0;
-  const timerFinished = mode === 'timer' && remaining === 0 && totalSecRef.current > 0;
   const canCompletePhoto = mode === 'photo_upload' && !!photoUri;
-  const canCompleteTimer = mode === 'timer' && timerFinished;
+  /** Timer can be completed anytime (early exit); photo still requires an image. */
+  const markDoneDisabled = mode === 'photo_upload' && !canCompletePhoto;
 
   return (
     <Modal
@@ -181,7 +182,6 @@ export function TaskInteractionModal({ visible, task, onClose, onComplete }: Pro
                 title="Mark as Done"
                 onPress={handleMarkDone}
                 variant="primary"
-                disabled={!canCompleteTimer}
                 style={styles.cta}
               />
             </View>
@@ -217,7 +217,7 @@ export function TaskInteractionModal({ visible, task, onClose, onComplete }: Pro
                 title="Mark as Done"
                 onPress={handleMarkDone}
                 variant="primary"
-                disabled={!canCompletePhoto}
+                disabled={markDoneDisabled}
                 style={styles.cta}
               />
             </View>
