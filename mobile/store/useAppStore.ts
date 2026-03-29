@@ -23,8 +23,12 @@ import {
   saveOnboardingCompleteToProfile,
   parseTasksFromProfileJson,
   inferHasCompletedOnboarding,
+  fetchRemoteNotifications,
+  markNotificationReadRemote,
+  type RemoteNotification,
 } from '../lib/sync-dashboard-stats';
 import type { Task } from '../types/task';
+import { scheduleDailyReminders } from '../lib/notifications';
 
 export type { Task };
 
@@ -174,9 +178,15 @@ interface AppState {
     location: boolean;
   };
 
+  serverNotifications: RemoteNotification[];
+  unreadCount: number;
+
+
   stressMode: 'low' | 'medium' | 'high';
   notificationsEnabled: boolean;
-  reminderTime: '8am' | '10am' | 'off';
+  notifDailyRituals: boolean;
+  notifEncouragement: boolean;
+  notifProgressNudges: boolean;
   theme: 'light' | 'dark' | 'forest';
 
   onboardingDraft: OnboardingDraft;
@@ -196,7 +206,9 @@ interface AppState {
   setOnboardingComplete: () => void;
   setJourneyMode: (mode: 'solo' | 'friend' | 'anonymous') => void;
   setNotificationsEnabled: (v: boolean) => void;
-  setReminderTime: (t: '8am' | '10am' | 'off') => void;
+  setNotifDailyRituals: (v: boolean) => void;
+  setNotifEncouragement: (v: boolean) => void;
+  setNotifProgressNudges: (v: boolean) => void;
   setTheme: (t: 'light' | 'dark' | 'forest') => void;
   updateTasks: (tasks: Task[]) => void;
   addTask: (task: Task) => void;
@@ -207,6 +219,11 @@ interface AppState {
 
   /** Aligns logical day, pulls `profiles` + `daily_logs`, then optional legacy heatmap/weekly tables. */
   syncUserStats: () => Promise<void>;
+
+  /** Notifications */
+  fetchNotifications: () => Promise<void>;
+  markNotificationRead: (id: string) => Promise<void>;
+
 
   /** Pass `userId` right after sign-in so the session is not read before it is persisted (avoids skipping the sync). */
   refreshDashboardStatsFromRemote: (userId?: string) => Promise<void>;
@@ -245,7 +262,9 @@ function getDefaultSessionState(): Omit<
   | 'setOnboardingComplete'
   | 'setJourneyMode'
   | 'setNotificationsEnabled'
-  | 'setReminderTime'
+  | 'setNotifDailyRituals'
+  | 'setNotifEncouragement'
+  | 'setNotifProgressNudges'
   | 'setTheme'
   | 'updateTasks'
   | 'addTask'
@@ -259,6 +278,8 @@ function getDefaultSessionState(): Omit<
   | 'ensureLogicalDayAligned'
   | 'resetLocalSession'
   | 'syncUserStats'
+  | 'fetchNotifications'
+  | 'markNotificationRead'
 > {
   return {
     userName: 'Guest',
@@ -291,8 +312,14 @@ function getDefaultSessionState(): Omit<
 
     stressMode: 'medium',
     notificationsEnabled: true,
-    reminderTime: '8am',
+    notifDailyRituals: true,
+    notifEncouragement: false,
+    notifProgressNudges: true,
     theme: 'light',
+
+    serverNotifications: [],
+    unreadCount: 0,
+
 
     _hasHydrated: true,
     _remoteProfileReady: true,
@@ -331,8 +358,14 @@ export const useAppStore = create<AppState>()(
 
       stressMode: 'medium' as const,
       notificationsEnabled: true,
-      reminderTime: '8am' as const,
+      notifDailyRituals: true as const,
+      notifEncouragement: false as const,
+      notifProgressNudges: true as const,
       theme: 'light' as const,
+
+      serverNotifications: [],
+      unreadCount: 0,
+
 
       onboardingDraft: emptyOnboardingDraft(),
       setOnboardingDraft: (partial) =>
@@ -356,6 +389,7 @@ export const useAppStore = create<AppState>()(
           return;
         }
         await get().refreshDashboardStatsFromRemote();
+        await get().fetchNotifications();
       },
 
       setUserName: (userName) => set({ userName }),
@@ -381,6 +415,18 @@ export const useAppStore = create<AppState>()(
             weeklyActiveDaysCount: computeWeeklyActiveDays(dailyLogsByDate, anchor, emptyFlags),
             currentStreak: computeCurrentStreak(dailyLogsByDate, anchor, emptyFlags),
           });
+          
+          if (get().notificationsEnabled) {
+            scheduleDailyReminders(
+              true, 
+              {
+                dailyRituals: get().notifDailyRituals,
+                encouragement: get().notifEncouragement,
+                progressNudges: get().notifProgressNudges
+              },
+              get().todayCompletions.length < get().tasks.length
+            ).catch(() => {});
+          }
         } else if (!lastLogicalDateKey) {
           set({ lastLogicalDateKey: anchor });
         }
@@ -544,6 +590,39 @@ export const useAppStore = create<AppState>()(
         }
       },
 
+      fetchNotifications: async () => {
+        if (!isSupabaseConfigured) return;
+        const { data: auth } = await supabase.auth.getUser();
+        const uid = auth.user?.id;
+        if (!uid) return;
+
+        const { data, error } = await fetchRemoteNotifications(uid);
+        if (!error && data) {
+          const unreadCount = data.filter((n) => !n.is_read).length;
+          set({ serverNotifications: data, unreadCount });
+        }
+      },
+
+      markNotificationRead: async (id: string) => {
+        const { serverNotifications } = get();
+        const notification = serverNotifications.find((n) => n.id === id);
+        
+        if (notification && !notification.is_read) {
+          // Optimistic local update
+          const updated = serverNotifications.map((n) => 
+            n.id === id ? { ...n, is_read: true } : n
+          );
+          set({ 
+            serverNotifications: updated, 
+            unreadCount: Math.max(0, get().unreadCount - 1) 
+          });
+
+          if (isSupabaseConfigured) {
+            await markNotificationReadRemote(id);
+          }
+        }
+      },
+
       resetLocalSession: () => {
         if (isSupabaseConfigured) {
           void supabase.auth.signOut();
@@ -618,6 +697,19 @@ export const useAppStore = create<AppState>()(
           activeDays90: newActiveDays90,
         });
 
+        // Update notifications schedule immediately
+        if (st.notificationsEnabled) {
+          scheduleDailyReminders(
+            true, 
+            {
+              dailyRituals: st.notifDailyRituals,
+              encouragement: st.notifEncouragement,
+              progressNudges: st.notifProgressNudges
+            },
+            newCompletions.length < st.tasks.length
+          ).catch(() => {});
+        }
+
         void (async () => {
           if (!isSupabaseConfigured) return;
           const { data: auth } = await supabase.auth.getUser();
@@ -658,8 +750,36 @@ export const useAppStore = create<AppState>()(
       setStressMode: (mode) => set({ stressMode: mode }),
       setOnboardingComplete: () => set({ hasCompletedOnboarding: true }),
       setJourneyMode: (mode) => set({ journeyMode: mode }),
-      setNotificationsEnabled: (v) => set({ notificationsEnabled: v }),
-      setReminderTime: (t) => set({ reminderTime: t }),
+      setNotificationsEnabled: (v) => {
+        set({ notificationsEnabled: v });
+        scheduleDailyReminders(
+          v, 
+          {
+            dailyRituals: get().notifDailyRituals,
+            encouragement: get().notifEncouragement,
+            progressNudges: get().notifProgressNudges
+          },
+          get().todayCompletions.length < get().tasks.length
+        ).catch(() => {});
+      },
+      setNotifDailyRituals: (v) => {
+        set({ notifDailyRituals: v });
+        if (get().notificationsEnabled) {
+          scheduleDailyReminders(true, { dailyRituals: v, encouragement: get().notifEncouragement, progressNudges: get().notifProgressNudges }, get().todayCompletions.length < get().tasks.length).catch(() => {});
+        }
+      },
+      setNotifEncouragement: (v) => {
+        set({ notifEncouragement: v });
+        if (get().notificationsEnabled) {
+          scheduleDailyReminders(true, { dailyRituals: get().notifDailyRituals, encouragement: v, progressNudges: get().notifProgressNudges }, get().todayCompletions.length < get().tasks.length).catch(() => {});
+        }
+      },
+      setNotifProgressNudges: (v) => {
+        set({ notifProgressNudges: v });
+        if (get().notificationsEnabled) {
+          scheduleDailyReminders(true, { dailyRituals: get().notifDailyRituals, encouragement: get().notifEncouragement, progressNudges: v }, get().todayCompletions.length < get().tasks.length).catch(() => {});
+        }
+      },
       setTheme: (t) => set({ theme: t }),
       updateTasks: (tasks) => set({ tasks }),
       addTask: (task) => set((s) => ({ tasks: [...s.tasks, task] })),
@@ -695,7 +815,9 @@ export const useAppStore = create<AppState>()(
         permissions: state.permissions,
         stressMode: state.stressMode,
         notificationsEnabled: state.notificationsEnabled,
-        reminderTime: state.reminderTime,
+        notifDailyRituals: state.notifDailyRituals,
+        notifEncouragement: state.notifEncouragement,
+        notifProgressNudges: state.notifProgressNudges,
         theme: state.theme,
       }),
       onRehydrateStorage: () => (state) => {

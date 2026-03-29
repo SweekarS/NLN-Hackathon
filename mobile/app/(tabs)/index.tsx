@@ -38,6 +38,7 @@ export default function HomeScreen() {
     syncUserStats,
     dailyLogsByDate,
     lastLogicalDateKey,
+    unreadCount,
   } = useAppStore();
   const [achievementVisible, setAchievementVisible] = useState(false);
 
@@ -81,7 +82,14 @@ export default function HomeScreen() {
             <Text style={styles.appTitle}>The Organic Sanctuary</Text>
           </View>
           <Pressable onPress={() => router.push('/notifications')} hitSlop={8}>
-            <Ionicons name="notifications-outline" size={24} color={colors.onSurface} />
+            <View style={{ position: 'relative' }}>
+              <Ionicons name="notifications-outline" size={24} color={colors.onSurface} />
+              {unreadCount > 0 && (
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
+                </View>
+              )}
+            </View>
           </Pressable>
         </Animated.View>
 
@@ -399,5 +407,24 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bodyMedium,
     color: colors.outline,
     marginTop: spacing.xs,
+  },
+  badge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    backgroundColor: colors.error,
+    borderRadius: 8,
+    minWidth: 16,
+    height: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 3,
+    borderWidth: 1.5,
+    borderColor: colors.surface,
+  },
+  badgeText: {
+    color: colors.white,
+    fontSize: 9,
+    fontFamily: fonts.bodyBold || fonts.headlineBold,
   },
 });

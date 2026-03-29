@@ -3,6 +3,17 @@ import type { DailyLogFlags } from './dashboard-stats';
 import type { Task } from '../types/task';
 import { addLogicalDays, getLogicalDateString } from './logical-date';
 
+export interface RemoteNotification {
+  id: string;
+  created_at: string;
+  user_id: string;
+  title: string;
+  message: string;
+  is_read: boolean;
+  task_id: string | null;
+  icon: string | null;
+}
+
 type ProfileRow = {
   id: string;
   full_name: string | null;
@@ -55,6 +66,36 @@ export async function updateProfileStatsRemote(
       last_active_date: new Date().toISOString(),
     })
     .eq('id', userId);
+  return { error: error ? new Error(error.message) : null };
+}
+
+export async function fetchRemoteNotifications(userId: string): Promise<{ data: RemoteNotification[]; error: Error | null }> {
+  if (!isSupabaseConfigured) return { data: [], error: null };
+  const { data, error } = await supabase
+    .from('notifications')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(20);
+
+  if (error) {
+    if (error.message.includes('relation "notifications" does not exist')) {
+      console.log('Notifications table not created gracefully handling');
+      return { data: [], error: null };
+    }
+    return { data: [], error: new Error(error.message) };
+  }
+  return { data: (data as RemoteNotification[]) || [], error: null };
+}
+
+export async function markNotificationReadRemote(
+  notificationId: string
+): Promise<{ error: Error | null }> {
+  if (!isSupabaseConfigured) return { error: null };
+  const { error } = await supabase
+    .from('notifications')
+    .update({ is_read: true })
+    .eq('id', notificationId);
   return { error: error ? new Error(error.message) : null };
 }
 

@@ -1,4 +1,5 @@
 import '../lib/supabase';
+import { requestPermissionsAsync } from '../lib/notifications';
 import { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -30,7 +31,10 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
-    if (fontsLoaded) SplashScreen.hideAsync();
+    if (fontsLoaded) {
+      SplashScreen.hideAsync();
+      requestPermissionsAsync().catch((err) => console.log('Notification perm check failed', err));
+    }
   }, [fontsLoaded]);
 
   if (!fontsLoaded) return null;
@@ -50,6 +54,7 @@ export default function RootLayout() {
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="customize" options={{ presentation: 'card' }} />
         <Stack.Screen name="notifications" options={{ presentation: 'card' }} />
+        <Stack.Screen name="notification-settings" options={{ presentation: 'card' }} />
         <Stack.Screen name="safety" options={{ presentation: 'card' }} />
         <Stack.Screen name="settings" options={{ presentation: 'card' }} />
       </Stack>
