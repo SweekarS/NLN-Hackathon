@@ -33,15 +33,15 @@ export const navItems = [
 export const featureCards = [
   {
     icon: '🌱',
-    title: 'AI-personalized onboarding rituals',
+    title: 'AI-personalized onboarding Conditioning',
     description:
-      'A short quiz helps Gemini generate a personalized daily ritual set that fits each person’s rhythm.',
+      'A short quiz helps Gemini generate a personalized daily Conditioning set that fits each person’s rhythm.',
   },
   {
     icon: '✅',
     title: 'Concrete daily tasks',
     description:
-      'Rituals include timers, photo check-ins, and simple completions so progress feels practical and clear.',
+      'Conditioning include timers, photo check-ins, and simple completions so progress feels practical and clear.',
   },
   {
     icon: '📈',
@@ -59,14 +59,14 @@ export const featureCards = [
 
 export const faqItems = [
   {
-    question: 'Is StreakSync a 24/7 AI therapist?',
+    question: 'Is Phool a 24/7 AI therapist?',
     answer:
-      'No. The current build uses Gemini during onboarding to generate personalized daily rituals. It does not replace clinicians or emergency care.',
+      'No. The current build uses Gemini during onboarding to generate personalized daily Conditioning. It does not replace clinicians or emergency care.',
   },
   {
     question: 'What happens if AI is unavailable?',
     answer:
-      'The app falls back to sensible default ritual tasks so onboarding does not dead-end.',
+      'The app falls back to sensible default Conditioning tasks so onboarding does not dead-end.',
   },
   {
     question: 'Who is this for?',
@@ -76,6 +76,6 @@ export const faqItems = [
   {
     question: 'Does this replace crisis lines or professionals?',
     answer:
-      'No. StreakSync is a daily stability companion and includes safety guidance that points users to real support pathways.',
+      'No. Phool is a daily stability companion and includes safety guidance that points users to real support pathways.',
   },
 ]

@@ -9,7 +9,7 @@ export function TrustSafetySection() {
           title="Supportive, private, and honest about limits."
         />
         <p>
-          StreakSync is not a replacement for licensed professionals or emergency services. It helps
+          Phool is not a replacement for licensed professionals or emergency services. It helps
           people build stability early, while safety resources guide them toward human support when
           needed.
         </p>

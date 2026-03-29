@@ -7,8 +7,8 @@ export function ClosingCTASection() {
       <div className="landing-container closing-shell">
         <h2>Start with one gentle step, then keep going.</h2>
         <p>
-          Early support should feel approachable. Join StreakSync and build your own sustainable
-          ritual path.
+          Early support should feel approachable. Join Phool and build your own sustainable
+          Conditioning path.
         </p>
         <div className="hero-actions">
           <LandingButton variant="primary" href={APP_URL}>

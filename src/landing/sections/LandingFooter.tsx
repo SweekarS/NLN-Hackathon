@@ -4,7 +4,7 @@ export function LandingFooter() {
   return (
     <footer className="landing-footer">
       <div className="landing-container footer-inner">
-        <p>StreakSync — The Organic Sanctuary</p>
+        <p>Phool — The Organic Sanctuary</p>
         <nav aria-label="Footer links">
           <a href="#safety">Safety</a>
           <a href={WAITLIST_URL}>Privacy</a>

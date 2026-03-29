@@ -15,7 +15,7 @@ export function HowItWorksSection() {
           </article>
           <article className="step-card">
             <p className="step-index">02</p>
-            <h3>Personalized ritual plan</h3>
+            <h3>Personalized Conditioning plan</h3>
             <p>
               Gemini produces tailored tasks with practical interaction modes such as timer, photo,
               and completion check.
@@ -25,7 +25,7 @@ export function HowItWorksSection() {
             <p className="step-index">03</p>
             <h3>Daily rhythm and reflection</h3>
             <p>
-              Users complete rituals, build streak consistency, and review supportive insights over
+              Users complete Conditioning, build streak consistency, and review supportive insights over
               time.
             </p>
           </article>

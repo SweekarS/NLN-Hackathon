@@ -120,11 +120,11 @@ export default function CustomizeScreen() {
   const confirmDelete = useCallback(
     (t: Task) => {
       if (tasks.length <= 1) {
-        Alert.alert('Keep one ritual', 'You need at least one task in your ritual list.');
+        Alert.alert('Keep one Conditioning', 'You need at least one task in your Conditioning list.');
         return;
       }
       Alert.alert(
-        'Remove ritual',
+        'Remove Conditioning',
         `Remove “${t.title}”? This cannot be undone.`,
         [
           { text: 'Cancel', style: 'cancel' },
@@ -146,7 +146,7 @@ export default function CustomizeScreen() {
       icon: 'leaf-outline',
       icon_type: 'leaf',
       title: taskName.trim(),
-      subtitle: 'Custom ritual',
+      subtitle: 'Custom Conditioning',
       timeOfDay: selectedTime,
       enabled: true,
       interaction_type: 'simple_check',
@@ -197,14 +197,14 @@ export default function CustomizeScreen() {
               <Text style={styles.headlineAccent}>rhythm.</Text>
             </Text>
             <Text style={styles.subtitleText}>
-              Edit or remove rituals, or add new ones. Changes sync when you save.
+              Edit or remove Conditioning, or add new ones. Changes sync when you save.
             </Text>
           </Animated.View>
 
           <Animated.View entering={FadeInUp.delay(300).duration(500)}>
             <Card style={styles.ritualCard}>
               <View style={styles.ritualHeader}>
-                <Text style={styles.ritualTitle}>Add a Ritual</Text>
+                <Text style={styles.ritualTitle}>Add a Conditioning</Text>
                 <Text style={styles.slotsLabel}>
                   {Math.min(usedSlots, totalSlots)} of {totalSlots} slots used
                 </Text>
@@ -225,7 +225,7 @@ export default function CustomizeScreen() {
                 ))}
               </View>
 
-              <FieldLabel label="Ritual Name" />
+              <FieldLabel label="Conditioning Name" />
               <FieldInput
                 value={taskName}
                 onChangeText={setTaskName}
@@ -264,7 +264,7 @@ export default function CustomizeScreen() {
             </Card>
           </Animated.View>
 
-          <SectionTitle title="Your rituals" />
+          <SectionTitle title="Your Conditioning" />
 
           {tasks.map((item, idx) => (
             <Animated.View
@@ -372,7 +372,7 @@ export default function CustomizeScreen() {
                 bounces={false}
                 contentContainerStyle={styles.modalScrollContent}
               >
-                <Text style={styles.modalTitle}>Edit ritual</Text>
+                <Text style={styles.modalTitle}>Edit Conditioning</Text>
                 <FieldLabel label="Title" />
                 <FieldInput value={editTitle} onChangeText={setEditTitle} placeholder="Title" />
                 <FieldLabel label="Description" />

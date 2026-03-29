@@ -83,7 +83,7 @@ export function TaskInteractionModal({
       remaining < totalSecRef.current
     ) {
       Alert.alert(
-        'Leave this ritual?',
+        'Leave this Conditioning?',
         'Timer progress will be lost if you close now.',
         [
           { text: 'Stay', style: 'cancel' },

@@ -1,9 +1,9 @@
-# StreakSync Landing Page PRD
+# Phool Landing Page PRD
 
 ## Product
-- **Name:** StreakSync
+- **Name:** Phool
 - **Subtitle:** The Organic Sanctuary
-- **Purpose:** Help people in stigma-heavy communities build mental stability through private daily rituals before stress escalates.
+- **Purpose:** Help people in stigma-heavy communities build mental stability through private daily Conditioning before stress escalates.
 
 ## Problem
 People who need support often avoid formal care early because of stigma, social pressure, and fear of judgment. Existing habit apps feel generic and clinical, and they do not provide a culturally sensitive “first step” experience.
@@ -19,10 +19,10 @@ People who need support often avoid formal care early because of stigma, social 
 4. Present a premium, calm “Living Editorial” visual identity.
 
 ## Non-Negotiable Product Truths
-- Gemini is used during onboarding to generate personalized rituals.
+- Gemini is used during onboarding to generate personalized Conditioning.
 - The app is **not** a 24/7 therapy chat companion.
 - Safety resources must be framed as human support pathways.
-- Fallback ritual tasks exist when AI is unavailable.
+- Fallback Conditioning tasks exist when AI is unavailable.
 
 ## Information Architecture
 1. Sticky nav with anchors and CTA.
@@ -57,7 +57,7 @@ People who need support often avoid formal care early because of stigma, social 
 - Honor `prefers-reduced-motion` with static fallback.
 
 ## Content/Copy Rules
-- Align messaging with `docs/PITCH_STREAKSYNC.md`.
+- Align messaging with [`README.md`](../README.md) product framing.
 - Keep language supportive, non-clinical, and non-judgmental.
 - Never imply replacement for professionals or emergency care.
 

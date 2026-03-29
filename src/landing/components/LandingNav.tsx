@@ -7,10 +7,10 @@ export function LandingNav() {
     <header className="landing-nav-wrap">
       <nav className="landing-nav">
         <div className="landing-container nav-inner">
-          <a href="#top" className="brand-lockup" aria-label="StreakSync Home">
+          <a href="#top" className="brand-lockup" aria-label="Phool Home">
             <BrandMark />
             <div>
-              <p className="brand-name">StreakSync</p>
+              <p className="brand-name">Phool</p>
               <p className="brand-tagline">The Organic Sanctuary</p>
             </div>
           </a>

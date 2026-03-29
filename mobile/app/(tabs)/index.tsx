@@ -182,7 +182,7 @@ export default function HomeScreen() {
                 <View style={styles.balanceTextBlock}>
                   <Text style={styles.balanceTitle}>Today's Balance</Text>
                   <Text style={styles.balanceSubtitle}>
-                    {todayCompletions.length} of {tasks.length} rituals complete
+                    {todayCompletions.length} of {tasks.length} Conditioning complete
                   </Text>
                 </View>
                 <Ionicons

@@ -10,7 +10,7 @@ export function HeroSection() {
         <div className="landing-hero-video-frame">
           <iframe
             src={getYoutubeHeroEmbedUrl()}
-            title="StreakSync hero video"
+            title="Phool hero video"
             allow="autoplay; encrypted-media"
           />
         </div>
@@ -20,9 +20,9 @@ export function HeroSection() {
 
       <section className="landing-hero-overlay" aria-label="Introduction">
         <div className="landing-container landing-hero-overlay-inner">
-          <h1 className="landing-hero-title">Build calm daily rituals before stress becomes a crisis.</h1>
+          <h1 className="landing-hero-title">Build calm daily Conditioning before stress becomes a crisis.</h1>
           <p className="landing-hero-lede">
-            StreakSync helps people in stigma-heavy communities start with small, practical steps. No
+            Phool helps people in stigma-heavy communities start with small, practical steps. No
             judgment, no pressure, and no clinical overwhelm on day one.
           </p>
           <div className="hero-actions landing-hero-actions">

@@ -317,7 +317,7 @@ export default function InsightsScreen() {
         <Card style={styles.cardGap}>
           <Text style={styles.journalRange}>Mar 18 — Mar 24</Text>
           <Text style={styles.journalBody}>
-            A week of steady morning rituals and evening reflections. Your
+            A week of steady morning Conditioning and evening reflections. Your
             breathwork sessions deepened.
           </Text>
         </Card>
@@ -396,7 +396,7 @@ export default function InsightsScreen() {
           {[
             {
               id: 'sunset_yoga',
-              category: 'MORNING RITUAL',
+              category: 'MORNING CONDITIONING',
               title: 'Try Sunset Yoga',
               buttonText: 'EXPLORE ROUTINE',
               image: require('../../assets/images/sunset_yoga.png'),

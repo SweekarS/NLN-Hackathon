@@ -33,8 +33,8 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Allow access to your photos to complete ritual check-ins.",
-          "cameraPermission": "Allow camera to capture moments for your rituals."
+          "photosPermission": "Allow access to your photos to complete Conditioning check-ins.",
+          "cameraPermission": "Allow camera to capture moments for your Conditioning."
         }
       ]
     ]

@@ -47,7 +47,7 @@ export function PhoneFrame({
           transform: `translateY(${phoneY}px) scale(${phoneScale})`,
         }}
       >
-        <img src="/landing/phone-mockup.png" alt="StreakSync app preview in phone frame" />
+        <img src="/landing/phone-mockup.png" alt="Phool app preview in phone frame" />
         <div className="showcase-phone-screen">{children}</div>
       </div>
     </div>

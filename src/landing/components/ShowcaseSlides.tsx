@@ -1,11 +1,11 @@
 export const showcaseSlides = [
   {
     eyebrow: 'Step 01',
-    title: 'Personalized ritual setup',
+    title: 'Personalized Conditioning setup',
     description:
       'Onboarding asks simple questions about energy, social comfort, and recharge patterns.',
     points: [
-      'Gemini personalizes daily rituals from quiz answers.',
+      'Gemini personalizes daily Conditioning from quiz answers.',
       'Fallback defaults keep onboarding resilient if AI is unavailable.',
     ],
   },
