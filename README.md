@@ -36,10 +36,11 @@
 5. [Landing page composition](#landing-page-composition)
 6. [Prerequisites](#prerequisites)
 7. [Setup](#setup)
-8. [Scripts](#scripts)
-9. [Documentation](#documentation)
-10. [Team](#team)
-11. [Disclaimer](#disclaimer)
+8. [Demo and reproducibility](#demo-and-reproducibility)
+9. [Scripts](#scripts)
+10. [Documentation](#documentation)
+11. [Team](#team)
+12. [Disclaimer](#disclaimer)
 
 ---
 
@@ -214,6 +215,33 @@ npm start
 
 ---
 
+## Demo and reproducibility
+
+### Live demo (no API keys)
+
+The **deployed marketing site** on Vercel (linked in the badge above and under [Abstract](#abstract)) is the simplest way for judges or reviewers to see the full landing experience: narrative, motion, FAQ, and CTAs. **No `.env` or backend keys are required** for that URL.
+
+### Mobile app (keys required)
+
+The Expo app expects **`mobile/.env`** created from [`mobile/.env.example`](mobile/.env.example). The following are **intentionally not committed** to this repository:
+
+| Secret | Purpose |
+|--------|---------|
+| **Supabase** URL + anon key | Auth and database sync |
+| **Google Gemini** API key (optional) | Onboarding conditioning generation and other AI-assisted flows |
+
+Without valid Supabase values, sign-in and data features will not work. Without Gemini, the app should fall back where implemented, but AI-powered surfaces will be limited. **Clone the repo and supply your own keys** to run or demo the mobile product end-to-end.
+
+### Early access / waitlist
+
+Landing CTAs such as **Join waitlist** use **`WAITLIST_URL`** in [`src/landing/content.ts`](src/landing/content.ts) (Google Form for launch notifications). Update that constant if the form URL changes.
+
+### Notebooks and local model files
+
+This repository does **not** include Jupyter notebooks or on-disk model weights (e.g. `.pt`, `.onnx`). Personalization uses the **hosted Gemini API** when configured; there is no separate training pipeline in-repo.
+
+---
+
 ## Scripts
 
 | Scope | Command | Description |
@@ -237,13 +265,15 @@ npm start
 
 ## Team
 
-| Contributor |
-|-------------|
-| **Arya Kafle** |
-| **Ashim Pandey** |
-| **Sudip Sharma** |
-| **Sushant Shrestha** |
-| **Sweekar Shrestha** |
+| Name | Role |
+|------|------|
+| **Arya Kafle** | Idea inspiration and research |
+| **Ashim Pandey** | Script writing, meeting coordination, presentation |
+| **Sudip Sharma** | Mobile app development |
+| **Sushant Shrestha** | Mobile app development and app demo |
+| **Sweekar Shrestha** | Idea inspiration; full marketing / landing site (web) |
+
+**Collaboration:** **Sweekar Shrestha** led all **web** work. **Sudip Sharma** and **Sushant Shrestha** led **mobile**. Everyone contributed across the project.
 
 ---
 
