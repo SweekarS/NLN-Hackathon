@@ -3,61 +3,66 @@ import { View, Text, StyleSheet, Pressable } from 'react-native';
 import Animated, { useAnimatedStyle, withTiming } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
+import type { Task } from '../../types/task';
 import { IconCircle } from './IconCircle';
+import { resolveTaskIonicon } from '../../lib/task-icons';
 import { colors, fonts, radii, shadow, spacing } from '../../theme';
 
 interface TaskCardProps {
-  iconName: keyof typeof Ionicons.glyphMap;
-  title: string;
-  subtitle: string;
-  duration?: string;
+  task: Task;
   isDone: boolean;
-  onComplete: () => void;
+  /** Opens interaction flow (timer / photo / simple). */
+  onOpen: () => void;
 }
 
-export function TaskCard({ iconName, title, subtitle, duration, isDone, onComplete }: TaskCardProps) {
+export function TaskCard({ task, isDone, onOpen }: TaskCardProps) {
+  const iconName = resolveTaskIonicon(task);
   const animStyle = useAnimatedStyle(() => ({
     opacity: withTiming(isDone ? 0.65 : 1, { duration: 300 }),
     transform: [{ scale: withTiming(isDone ? 0.98 : 1, { duration: 300 }) }],
   }));
 
   const handlePress = () => {
-    if (!isDone) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      onComplete();
-    }
+    if (isDone) return;
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onOpen();
   };
 
+  const durationLabel =
+    task.duration ||
+    (task.interaction_type === 'timer' && task.duration_minutes
+      ? `${task.duration_minutes}M`
+      : undefined);
+
   return (
-    <Animated.View style={[styles.card, animStyle]}>
-      <View style={styles.left}>
-        <IconCircle name={iconName} size="md" />
-        <View style={styles.textBlock}>
-          <Text style={styles.title}>{title}</Text>
-          <Text style={styles.subtitle}>{subtitle}</Text>
-        </View>
-      </View>
-      <View style={styles.right}>
-        {duration && (
-          <View style={styles.durationBadge}>
-            <Ionicons name="time-outline" size={12} color={colors.outline} />
-            <Text style={styles.duration}>{duration}</Text>
+    <Pressable onPress={handlePress} disabled={isDone} accessibilityRole="button">
+      <Animated.View style={[styles.card, animStyle]}>
+        <View style={styles.left}>
+          <IconCircle name={iconName} size="md" />
+          <View style={styles.textBlock}>
+            <Text style={styles.title}>{task.title}</Text>
+            <Text style={styles.subtitle} numberOfLines={2}>
+              {task.subtitle}
+            </Text>
           </View>
-        )}
-        <Pressable
-          onPress={handlePress}
-          style={[styles.btn, isDone && styles.btnDone]}
-          accessibilityRole="button"
-          accessibilityLabel={isDone ? 'Completed' : 'Mark complete'}
-        >
-          <Ionicons
-            name={isDone ? 'checkmark-circle' : 'ellipse-outline'}
-            size={28}
-            color={isDone ? colors.white : colors.primary}
-          />
-        </Pressable>
-      </View>
-    </Animated.View>
+        </View>
+        <View style={styles.right}>
+          {durationLabel ? (
+            <View style={styles.durationBadge}>
+              <Ionicons name="time-outline" size={12} color={colors.outline} />
+              <Text style={styles.duration}>{durationLabel}</Text>
+            </View>
+          ) : null}
+          <View style={[styles.actionHint, isDone && styles.actionDone]}>
+            <Ionicons
+              name={isDone ? 'checkmark-circle' : 'chevron-forward'}
+              size={26}
+              color={isDone ? colors.white : colors.primary}
+            />
+          </View>
+        </View>
+      </Animated.View>
+    </Pressable>
   );
 }
 
@@ -79,6 +84,7 @@ const styles = StyleSheet.create({
   },
   textBlock: {
     flex: 1,
+    paddingRight: spacing.sm,
   },
   title: {
     fontSize: 15,
@@ -92,8 +98,8 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   right: {
-    alignItems: 'center',
-    gap: 4,
+    alignItems: 'flex-end',
+    gap: 6,
   },
   durationBadge: {
     flexDirection: 'row',
@@ -109,14 +115,14 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bodySemiBold,
     color: colors.outline,
   },
-  btn: {
-    width: 44,
-    height: 44,
+  actionHint: {
+    width: 40,
+    height: 40,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 22,
+    borderRadius: 20,
   },
-  btnDone: {
+  actionDone: {
     backgroundColor: colors.primary,
   },
 });

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet, Pressable, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -6,19 +6,44 @@ import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
 import { router } from 'expo-router';
 
-import { colors, fonts, spacing, radii, botanicalGradient } from '../../theme';
+import { colors, fonts, spacing, radii, shadow, botanicalGradient } from '../../theme';
 import { useAppStore } from '../../store/useAppStore';
-import { GreenCard } from '../../components/ui/GreenCard';
+import type { Task } from '../../types/task';
 import { LightCard } from '../../components/ui/LightCard';
 import { Button } from '../../components/ui/Button';
 import { TaskCard } from '../../components/ui/TaskCard';
-import { IconCircle } from '../../components/ui/IconCircle';
+import { ProgressRing } from '../../components/ui/ProgressRing';
+import { TaskInteractionModal } from '../../components/tasks/TaskInteractionModal';
 
 export default function TasksScreen() {
   const { tasks, todayCompletions, completeTask, avatarImage } = useAppStore();
+  const [activeTask, setActiveTask] = useState<Task | null>(null);
+  const [modalVisible, setModalVisible] = useState(false);
 
+  const enabledTasks = useMemo(() => tasks.filter((t) => t.enabled), [tasks]);
   const completionPct =
-    tasks.length > 0 ? (todayCompletions.length / tasks.length) * 100 : 0;
+    enabledTasks.length > 0
+      ? (todayCompletions.filter((id) => enabledTasks.some((t) => t.id === id)).length /
+          enabledTasks.length) *
+        100
+      : 0;
+
+  const openTask = useCallback((task: Task) => {
+    setActiveTask(task);
+    setModalVisible(true);
+  }, []);
+
+  const closeModal = useCallback(() => {
+    setModalVisible(false);
+    setActiveTask(null);
+  }, []);
+
+  const handleCompleteFromModal = useCallback(
+    (taskId: string) => {
+      completeTask(taskId);
+    },
+    [completeTask]
+  );
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -49,8 +74,8 @@ export default function TasksScreen() {
           </Pressable>
         </Animated.View>
 
-        {/* Header */}
-        <Animated.View entering={FadeInUp.delay(100).duration(500)} style={styles.headerRow}>
+        {/* Title row */}
+        <Animated.View entering={FadeInUp.delay(80).duration(500)} style={styles.headerRow}>
           <Text style={styles.pageTitle}>Daily Rituals</Text>
           <Button
             title="Customize"
@@ -60,66 +85,82 @@ export default function TasksScreen() {
           />
         </Animated.View>
         <Text style={styles.subtitle}>
-          {tasks.length} steps toward clarity today
+          {enabledTasks.length} steps toward clarity today
         </Text>
 
-        {/* Progress Banner */}
-        <Animated.View entering={FadeInUp.delay(200).duration(500)}>
-          <GreenCard style={styles.progressCard}>
-            <View style={styles.progressRow}>
-              <Text style={styles.progressText}>
-                TODAY'S PROGRESS {Math.round(completionPct)}%
-              </Text>
+        {/* Progress + ring */}
+        <Animated.View entering={FadeInUp.delay(160).duration(500)}>
+          <LinearGradient
+            colors={['#0B5C3F', '#0A7A52', '#2E9B6E']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.progressHero}
+          >
+            <Text style={styles.progressLabel}>TODAY&apos;S PROGRESS</Text>
+            <View style={styles.ringRow}>
+              <ProgressRing
+                progress={completionPct / 100}
+                size={140}
+                strokeWidth={12}
+                color={colors.primaryLight}
+                bgColor="rgba(255,255,255,0.22)"
+              >
+                <Text style={styles.pctBig}>{Math.round(completionPct)}%</Text>
+              </ProgressRing>
             </View>
-            <View style={styles.progressBarTrack}>
-              <View
-                style={[
-                  styles.progressBarFill,
-                  { width: `${Math.min(completionPct, 100)}%` },
-                ]}
-              />
+            <View style={styles.barTrack}>
+              <View style={[styles.barFill, { width: `${Math.min(completionPct, 100)}%` }]} />
             </View>
-          </GreenCard>
+          </LinearGradient>
         </Animated.View>
 
-        {/* Task List */}
+        {/* Task list */}
         <View style={styles.taskList}>
-          {tasks.map((task, idx) => (
-            <Animated.View
-              key={task.id}
-              entering={FadeInUp.delay(300 + idx * 80).duration(500)}
-            >
+          {enabledTasks.map((task, idx) => (
+            <Animated.View key={task.id} entering={FadeInUp.delay(220 + idx * 70).duration(450)}>
               <TaskCard
-                iconName={task.icon as any}
-                title={task.title}
-                subtitle={task.subtitle}
-                duration={task.duration}
+                task={task}
                 isDone={todayCompletions.includes(task.id)}
-                onComplete={() => completeTask(task.id)}
+                onOpen={() => openTask(task)}
               />
             </Animated.View>
           ))}
         </View>
 
-        {/* Rest Nudge */}
-        <Animated.View entering={FadeInUp.delay(600).duration(500)}>
+        {/* Rest Cycle */}
+        <Animated.View entering={FadeInUp.delay(520).duration(500)}>
           <LightCard style={styles.restCard}>
-            <IconCircle name="moon-outline" size="lg" />
-            <Text style={styles.restTitle}>Approaching a Rest Cycle?</Text>
+            <View style={styles.restIconWrap}>
+              <LinearGradient
+                colors={['#E8F5EE', '#F6FBF7']}
+                style={styles.restIconBg}
+              >
+                <Ionicons name="moon-outline" size={28} color={colors.primary} />
+              </LinearGradient>
+            </View>
+            <Text style={styles.restTitle}>Rest Cycle</Text>
             <Text style={styles.restSubtitle}>
-              Listen to your body — rest is part of growth.
+              Approaching a rest cycle? Listen to your body — rest is part of growth.
             </Text>
             <Button
               title="Enable Rest Mode"
               onPress={() => {}}
               variant="ghost"
               style={styles.restBtn}
+              textStyle={styles.restBtnText}
             />
           </LightCard>
         </Animated.View>
 
         <View style={{ height: spacing['3xl'] }} />
       </ScrollView>
+
+      <TaskInteractionModal
+        visible={modalVisible}
+        task={activeTask}
+        onClose={closeModal}
+        onComplete={handleCompleteFromModal}
+      />
     </SafeAreaView>
   );
 }
@@ -180,31 +221,37 @@ const styles = StyleSheet.create({
     color: colors.onSurfaceVariant,
     marginBottom: spacing.lg,
   },
-  progressCard: {
+  progressHero: {
+    borderRadius: radii.card,
+    padding: spacing.xl,
+    marginBottom: spacing.lg,
+    ...shadow.card,
+  },
+  progressLabel: {
+    fontSize: 12,
+    fontFamily: fonts.bodyBold,
+    color: 'rgba(255,255,255,0.92)',
+    letterSpacing: 1.2,
+    textAlign: 'center',
+    marginBottom: spacing.base,
+  },
+  ringRow: {
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: spacing.lg,
   },
-  progressRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: spacing.md,
-  },
-  progressText: {
-    fontSize: 14,
-    fontFamily: fonts.bodyBold,
+  pctBig: {
+    fontSize: 28,
+    fontFamily: fonts.headlineExtraBold,
     color: colors.white,
   },
-  completeAllBtn: {
-    height: 36,
-    paddingHorizontal: spacing.md,
-  },
-  progressBarTrack: {
+  barTrack: {
     height: 8,
-    backgroundColor: 'rgba(255,255,255,0.25)',
     borderRadius: 4,
+    backgroundColor: 'rgba(255,255,255,0.25)',
     overflow: 'hidden',
   },
-  progressBarFill: {
+  barFill: {
     height: '100%',
     backgroundColor: colors.primaryLight,
     borderRadius: 4,
@@ -215,20 +262,39 @@ const styles = StyleSheet.create({
   },
   restCard: {
     alignItems: 'center',
-    gap: spacing.sm,
+    paddingVertical: spacing.xl,
+    paddingHorizontal: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.surfaceMid,
+  },
+  restIconWrap: {
+    marginBottom: spacing.sm,
+  },
+  restIconBg: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   restTitle: {
-    fontSize: 16,
-    fontFamily: fonts.bodySemiBold,
+    fontSize: 18,
+    fontFamily: fonts.headlineBold,
     color: colors.onSurface,
+    marginBottom: spacing.xs,
   },
   restSubtitle: {
-    fontSize: 13,
+    fontSize: 14,
     fontFamily: fonts.bodyRegular,
     color: colors.onSurfaceVariant,
     textAlign: 'center',
+    lineHeight: 21,
+    marginBottom: spacing.sm,
   },
   restBtn: {
     marginTop: spacing.xs,
+  },
+  restBtnText: {
+    color: colors.primary,
   },
 });

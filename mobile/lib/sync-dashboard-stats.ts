@@ -1,6 +1,7 @@
 import { supabase, isSupabaseConfigured } from './supabase';
 import type { DailyLogFlags } from './dashboard-stats';
 import type { Task } from '../types/task';
+import { normalizeTask } from './task-model';
 import { addLogicalDays, getLogicalDateString } from './logical-date';
 
 type ProfileRow = {
@@ -82,6 +83,19 @@ export async function saveOnboardingCompleteToProfile(
   return { error: error ? new Error(error.message) : null };
 }
 
+/** Persist ritual definitions after Customize (edit/delete). */
+export async function updateProfileTasksJsonRemote(
+  userId: string,
+  tasks: Task[]
+): Promise<{ error: Error | null }> {
+  if (!isSupabaseConfigured) return { error: null };
+  const { error } = await supabase
+    .from('profiles')
+    .update({ tasks_json: tasks, last_active_date: new Date().toISOString() })
+    .eq('id', userId);
+  return { error: error ? new Error(error.message) : null };
+}
+
 function isTaskArray(raw: unknown): raw is Task[] {
   if (!Array.isArray(raw) || raw.length === 0) return false;
   return raw.every(
@@ -96,10 +110,7 @@ function isTaskArray(raw: unknown): raw is Task[] {
 
 export function parseTasksFromProfileJson(raw: unknown): Task[] | null {
   if (!isTaskArray(raw)) return null;
-  return raw.map((t) => ({
-    ...t,
-    enabled: t.enabled !== false,
-  }));
+  return raw.map((t) => normalizeTask({ ...t, enabled: t.enabled !== false }));
 }
 
 /** When DB column is missing or false, infer from activity (legacy users). */

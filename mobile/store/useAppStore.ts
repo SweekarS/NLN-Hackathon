@@ -21,12 +21,15 @@ import {
   upsertDailyLogRemote,
   updateProfileStatsRemote,
   saveOnboardingCompleteToProfile,
+  updateProfileTasksJsonRemote,
   parseTasksFromProfileJson,
   inferHasCompletedOnboarding,
 } from '../lib/sync-dashboard-stats';
-import type { Task } from '../types/task';
+import type { Task, CustomTask, InteractionType } from '../types/task';
+import { normalizeTask, formatDurationMinutesLabel, applySensibleTimerDurations } from '../lib/task-model';
+import { extractJsonArray } from '../lib/gemini-json';
 
-export type { Task };
+export type { Task, CustomTask, InteractionType };
 
 export interface OnboardingDraft {
   firstName: string;
@@ -47,48 +50,65 @@ export function emptyOnboardingDraft(): OnboardingDraft {
 }
 
 export const FALLBACK_GEMINI_TASKS: Task[] = [
-  {
+  normalizeTask({
     id: 'morning',
     icon: 'sunny-outline',
+    icon_type: 'sun',
     title: 'Morning Routine',
     subtitle: 'A gentle start aligned with how you like to wake your mind.',
     duration: '15M',
     timeOfDay: 'morning',
     enabled: true,
-  },
-  {
+    interaction_type: 'timer',
+    duration_minutes: 15,
+    completed: false,
+  }),
+  normalizeTask({
     id: 'social',
     icon: 'people-outline',
+    icon_type: 'social',
     title: 'Social Check-in',
     subtitle: 'A small moment to connect in the way that feels natural to you.',
     duration: '10M',
     timeOfDay: 'afternoon',
     enabled: true,
-  },
-  {
+    interaction_type: 'photo_upload',
+    completed: false,
+  }),
+  normalizeTask({
     id: 'focus',
     icon: 'phone-portrait-outline',
+    icon_type: 'phone',
     title: 'Phone-Free Hour',
     subtitle: 'Protect space for deep focus or rest from screens.',
     duration: '60M',
     timeOfDay: 'afternoon',
     enabled: true,
-  },
-  {
+    interaction_type: 'timer',
+    duration_minutes: 60,
+    completed: false,
+  }),
+  normalizeTask({
     id: 'evening',
     icon: 'moon-outline',
+    icon_type: 'moon',
     title: 'Evening Wind-Down',
     subtitle: 'Ease into rest the way your nervous system prefers.',
     duration: '20M',
     timeOfDay: 'evening',
     enabled: true,
-  },
+    interaction_type: 'simple_check',
+    completed: false,
+  }),
 ];
 
 type GeminiTaskJson = {
   id: string;
   title: string;
   description: string;
+  icon_type: string;
+  interaction_type: InteractionType;
+  duration_minutes?: number;
   completed?: boolean;
 };
 
@@ -106,11 +126,22 @@ const ID_ICON: Record<string, string> = {
   evening: 'moon-outline',
 };
 
+function coerceMinutes(v: unknown): number | undefined {
+  if (typeof v === 'number' && Number.isFinite(v)) return v;
+  if (typeof v === 'string') {
+    const n = parseFloat(String(v).replace(/,/g, '.'));
+    return Number.isFinite(n) ? n : undefined;
+  }
+  return undefined;
+}
+
+/** Maps Gemini JSON → tasks and clamps timer lengths to realistic ranges. */
 export function mapGeminiJsonToTasks(raw: unknown): Task[] | null {
-  if (!Array.isArray(raw) || raw.length !== 4) return null;
+  const arr = extractJsonArray(raw);
+  if (!arr || arr.length !== 4) return null;
   const out: Task[] = [];
-  for (const item of raw) {
-    const o = item as GeminiTaskJson;
+  for (const item of arr) {
+    const o = item as Partial<GeminiTaskJson> & Record<string, unknown>;
     if (
       typeof o?.id !== 'string' ||
       typeof o?.title !== 'string' ||
@@ -118,26 +149,89 @@ export function mapGeminiJsonToTasks(raw: unknown): Task[] | null {
     ) {
       return null;
     }
+    const interactionRaw = String(o.interaction_type ?? '')
+      .trim()
+      .toLowerCase();
+    if (!['timer', 'photo_upload', 'simple_check'].includes(interactionRaw)) {
+      return null;
+    }
+    const interaction = interactionRaw as InteractionType;
+    let durationMinutes: number | undefined;
+    if (interaction === 'timer') {
+      const dm = coerceMinutes(o.duration_minutes);
+      if (dm == null || dm < 1 || dm > 180) return null;
+      durationMinutes = dm;
+    }
+    const iconType =
+      typeof o.icon_type === 'string' && o.icon_type.trim().length > 0 ? o.icon_type.trim() : 'leaf';
     const timeOfDay = ID_TIME[o.id] ?? 'morning';
-    out.push({
+    const baseIcon = ID_ICON[o.id] ?? 'leaf-outline';
+    const task = normalizeTask({
       id: o.id,
-      icon: ID_ICON[o.id] ?? 'leaf-outline',
+      icon: baseIcon,
+      icon_type: iconType,
       title: o.title,
       subtitle: o.description,
+      duration: formatDurationMinutesLabel(durationMinutes),
       timeOfDay,
       enabled: true,
+      interaction_type: interaction,
+      duration_minutes: durationMinutes,
+      completed: false,
     });
+    out.push(task);
   }
-  return out;
+  return applySensibleTimerDurations(out);
 }
 
 export const PERSIST_STORAGE_KEY = 'organic-sanctuary-storage';
 
 const defaultTasks: Task[] = [
-  { id: '1', icon: 'sunny-outline', title: 'Morning Breathwork', subtitle: 'Center yourself with 4-7-8 breathing', duration: '15M', timeOfDay: 'morning', enabled: true },
-  { id: '2', icon: 'water-outline', title: 'Hydration Ritual', subtitle: 'Nourish your body with mindful sips', timeOfDay: 'afternoon', enabled: true },
-  { id: '3', icon: 'book-outline', title: 'Gratitude Journal', subtitle: 'Write three blessings from today', duration: '10M', timeOfDay: 'evening', enabled: true },
-  { id: '4', icon: 'leaf-outline', title: 'Forest Bathing Walk', subtitle: 'Immerse yourself in nature\'s calm', duration: '30M', timeOfDay: 'morning', enabled: true },
+  normalizeTask({
+    id: '1',
+    icon: 'sunny-outline',
+    icon_type: 'sun',
+    title: 'Morning Breathwork',
+    subtitle: 'Center yourself with 4-7-8 breathing',
+    duration: '15M',
+    timeOfDay: 'morning',
+    enabled: true,
+    interaction_type: 'timer',
+    duration_minutes: 15,
+  }),
+  normalizeTask({
+    id: '2',
+    icon: 'water-outline',
+    icon_type: 'drop',
+    title: 'Hydration Ritual',
+    subtitle: 'Nourish your body with mindful sips',
+    timeOfDay: 'afternoon',
+    enabled: true,
+    interaction_type: 'simple_check',
+  }),
+  normalizeTask({
+    id: '3',
+    icon: 'book-outline',
+    icon_type: 'book',
+    title: 'Gratitude Journal',
+    subtitle: 'Write three blessings from today',
+    duration: '10M',
+    timeOfDay: 'evening',
+    enabled: true,
+    interaction_type: 'simple_check',
+  }),
+  normalizeTask({
+    id: '4',
+    icon: 'leaf-outline',
+    icon_type: 'leaf',
+    title: 'Forest Bathing Walk',
+    subtitle: "Immerse yourself in nature's calm",
+    duration: '30M',
+    timeOfDay: 'morning',
+    enabled: true,
+    interaction_type: 'timer',
+    duration_minutes: 30,
+  }),
 ];
 
 interface AppState {
@@ -201,6 +295,9 @@ interface AppState {
   updateTasks: (tasks: Task[]) => void;
   addTask: (task: Task) => void;
   toggleTaskEnabled: (taskId: string) => void;
+  updateTask: (taskId: string, patch: Partial<Task>) => void;
+  deleteTask: (taskId: string) => void;
+  persistTasksToProfile: () => Promise<void>;
 
   setUserName: (name: string) => void;
   setAvatarImage: (uri: string | null) => void;
@@ -250,6 +347,9 @@ function getDefaultSessionState(): Omit<
   | 'updateTasks'
   | 'addTask'
   | 'toggleTaskEnabled'
+  | 'updateTask'
+  | 'deleteTask'
+  | 'persistTasksToProfile'
   | 'setUserName'
   | 'setAvatarImage'
   | 'setOnboardingDraft'
@@ -418,7 +518,7 @@ export const useAppStore = create<AppState>()(
         const parsedTasks = parseTasksFromProfileJson(profile?.tasks_json);
         let tasks = st.tasks;
         if (parsedTasks && parsedTasks.length > 0) {
-          tasks = parsedTasks;
+          tasks = parsedTasks.map((t) => normalizeTask(t));
         }
 
         const merged: Record<string, Partial<DailyLogFlags>> = { ...st.dailyLogsByDate, ...remoteLogs };
@@ -661,12 +761,38 @@ export const useAppStore = create<AppState>()(
       setNotificationsEnabled: (v) => set({ notificationsEnabled: v }),
       setReminderTime: (t) => set({ reminderTime: t }),
       setTheme: (t) => set({ theme: t }),
-      updateTasks: (tasks) => set({ tasks }),
-      addTask: (task) => set((s) => ({ tasks: [...s.tasks, task] })),
+      updateTasks: (next) => set({ tasks: next.map((t) => normalizeTask(t)) }),
+      addTask: (task) =>
+        set((s) => ({ tasks: [...s.tasks, normalizeTask({ ...task, interaction_type: task.interaction_type ?? 'simple_check' })] })),
       toggleTaskEnabled: (taskId) =>
         set((s) => ({
           tasks: s.tasks.map((t) => (t.id === taskId ? { ...t, enabled: !t.enabled } : t)),
         })),
+
+      updateTask: (taskId, patch) =>
+        set((s) => ({
+          tasks: s.tasks.map((t) =>
+            t.id === taskId ? normalizeTask({ ...t, ...patch }) : t
+          ),
+        })),
+
+      deleteTask: (taskId) =>
+        set((s) => {
+          if (s.tasks.length <= 1) return s;
+          return {
+            tasks: s.tasks.filter((t) => t.id !== taskId),
+            todayCompletions: s.todayCompletions.filter((id) => id !== taskId),
+          };
+        }),
+
+      persistTasksToProfile: async () => {
+        if (!isSupabaseConfigured) return;
+        const { data: auth } = await supabase.auth.getUser();
+        const uid = auth.user?.id;
+        if (!uid) return;
+        const { tasks } = get();
+        await updateProfileTasksJsonRemote(uid, tasks);
+      },
     }),
     {
       name: PERSIST_STORAGE_KEY,

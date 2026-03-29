@@ -103,9 +103,15 @@ function phaseFromParams(params: { phase?: string | string[] }): string | undefi
 }
 
 function resolveGeminiApiKey(): string {
-  const fromEnv = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
   const extra = Constants.expoConfig?.extra as { geminiApiKey?: string } | undefined;
-  return (typeof fromEnv === 'string' && fromEnv.length > 0 ? fromEnv : extra?.geminiApiKey) ?? '';
+  const fromEnv =
+    typeof process.env.EXPO_PUBLIC_GEMINI_API_KEY === 'string'
+      ? process.env.EXPO_PUBLIC_GEMINI_API_KEY.trim()
+      : '';
+  const fromExtra = typeof extra?.geminiApiKey === 'string' ? extra.geminiApiKey.trim() : '';
+  const raw = fromEnv || fromExtra;
+  if (!raw.length) return '';
+  return raw.replace(/^["']|["']$/g, '');
 }
 
 function stripJsonFence(text: string): string {
@@ -114,6 +120,22 @@ function stripJsonFence(text: string): string {
     t = t.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/s, '');
   }
   return t.trim();
+}
+
+/** Models may return multiple parts (e.g. thoughts + JSON); prefer the segment that looks like JSON. */
+function extractJsonTextFromParts(parts: { text?: string }[] | undefined): string | null {
+  if (!parts?.length) return null;
+  const texts = parts
+    .map((p) => (typeof p.text === 'string' ? p.text : ''))
+    .filter((t) => t.length > 0);
+  if (!texts.length) return null;
+  const jsonLike = texts.find((t) => /^\s*[\[{]/.test(t.trim()));
+  if (jsonLike) return jsonLike.trim();
+  const joined = texts.join('\n').trim();
+  const arrayMatch = joined.match(/\[\s*\{[\s\S]*\}\s*\]/);
+  if (arrayMatch) return arrayMatch[0].trim();
+  const bracket = joined.match(/\[[\s\S]*\]/);
+  return bracket ? bracket[0].trim() : joined;
 }
 
 function isValidDob(s: string): boolean {
@@ -130,7 +152,14 @@ function isValidDob(s: string): boolean {
 function isValidGeminiTaskArray(tasks: Task[]): boolean {
   if (tasks.length !== 4) return false;
   const ids = new Set(tasks.map((t) => t.id));
-  return ids.has('morning') && ids.has('social') && ids.has('focus') && ids.has('evening');
+  if (!ids.has('morning') || !ids.has('social') || !ids.has('focus') || !ids.has('evening')) {
+    return false;
+  }
+  return tasks.every((t) => {
+    const it = t.interaction_type;
+    if (it === 'timer') return (t.duration_minutes ?? 0) >= 1;
+    return it === 'photo_upload' || it === 'simple_check';
+  });
 }
 
 function optionLabel(options: QuizOption[], choice: 1 | 2 | 3 | null | undefined): string {
@@ -172,8 +201,20 @@ const GEMINI_SYSTEM_PROMPT = [
   'Output rules (critical):',
   '- Respond with **only** valid JSON: a single array of exactly 4 objects.',
   '- No markdown, no code fences, no commentary before or after the array.',
-  '- Each object: id (string), title (string), description (string), completed (boolean, always false).',
   '- Required ids in order: "morning", "social", "focus", "evening".',
+  '- Each object MUST include:',
+  '  - id, title, description (string), completed (boolean, always false),',
+  '  - icon_type: short hint for the UI icon (e.g. sun, drop, book, leaf, chat, moon, phone, heart).',
+  '  - interaction_type: exactly one of "timer", "photo_upload", "simple_check".',
+  '    - Use "timer" for seated practice, breathing, meditation, or anything needing a timed session.',
+  '    - Use "photo_upload" for social check-ins, outdoor moments, or anything where a photo proof fits.',
+  '    - Use "simple_check" for journaling, quick habits, or one-tap completions.',
+  '  - duration_minutes: required positive integer ONLY when interaction_type is "timer". Use realistic ranges:',
+  '    - Breathing, grounding, or short morning rituals: 3–5 minutes (never longer for breathwork).',
+  '    - Focus / phone-free blocks: 10–45 minutes.',
+  '    - Evening wind-down if timed: 5–25 minutes.',
+  '    - Other timed practices: 5–30 minutes.',
+  '    Omit or null for non-timer types.',
 ].join('\n');
 
 /** User turn: quiz data + strict JSON shape reminder. */
@@ -185,12 +226,12 @@ function buildGeminiUserPrompt(draft: OnboardingDraft): string {
     'Profile:',
     answers,
     '',
-    'Return ONLY a raw JSON array (no markdown) in this shape (replace titles/descriptions with personalized copy):',
+    'Return ONLY a raw JSON array (no markdown). Example shape (fill with personalized copy):',
     '[',
-    '  { "id": "morning", "title": "...", "description": "...", "completed": false },',
-    '  { "id": "social", "title": "...", "description": "...", "completed": false },',
-    '  { "id": "focus", "title": "...", "description": "...", "completed": false },',
-    '  { "id": "evening", "title": "...", "description": "...", "completed": false }',
+    '  { "id": "morning", "title": "...", "description": "...", "icon_type": "sun", "interaction_type": "timer", "duration_minutes": 15, "completed": false },',
+    '  { "id": "social", "title": "...", "description": "...", "icon_type": "chat", "interaction_type": "photo_upload", "completed": false },',
+    '  { "id": "focus", "title": "...", "description": "...", "icon_type": "phone", "interaction_type": "timer", "duration_minutes": 25, "completed": false },',
+    '  { "id": "evening", "title": "...", "description": "...", "icon_type": "moon", "interaction_type": "simple_check", "completed": false }',
     ']',
   ].join('\n');
 }
@@ -204,38 +245,93 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-const GEMINI_MODELS = ['gemini-2.0-flash', 'gemini-1.5-flash'] as const;
+/** Try 2.5 Flash first; `gemini-flash-latest` tracks current flash and helps when 2.5 is rate-limited. */
+const GEMINI_MODELS = ['gemini-2.5-flash', 'gemini-flash-latest'] as const;
+
+function geminiRequestBody(userPrompt: string, useJsonMime: boolean) {
+  return JSON.stringify({
+    systemInstruction: { parts: [{ text: GEMINI_SYSTEM_PROMPT }] },
+    contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
+    generationConfig: {
+      temperature: 0.75,
+      maxOutputTokens: 2048,
+      ...(useJsonMime ? { responseMimeType: 'application/json' as const } : {}),
+    },
+  });
+}
 
 async function tryGenerateWithModel(
   model: string,
   userPrompt: string,
   apiKey: string,
-  signal: AbortSignal
+  signal: AbortSignal,
+  useJsonMime: boolean
 ): Promise<Task[] | null> {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`;
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      systemInstruction: { parts: [{ text: GEMINI_SYSTEM_PROMPT }] },
-      contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
-      generationConfig: { temperature: 0.75, maxOutputTokens: 2048 },
-    }),
-    signal,
-  });
+  const body = geminiRequestBody(userPrompt, useJsonMime);
 
-  if (!res.ok) return null;
+  const runFetch = () =>
+    fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body,
+      signal,
+    });
+
+  let res = await runFetch();
+  if (res.status === 429) {
+    await sleep(2500);
+    if (!signal.aborted) res = await runFetch();
+  }
+  if (res.status === 429) {
+    await sleep(5000);
+    if (!signal.aborted) res = await runFetch();
+  }
+
+  if (!res.ok) {
+    if (__DEV__) {
+      const errText = await res.text().catch(() => '');
+      console.warn(`[Gemini] ${model} HTTP ${res.status}`, errText.slice(0, 500));
+    }
+    return null;
+  }
 
   const data = (await res.json()) as {
-    candidates?: { content?: { parts?: { text?: string }[] } }[];
+    error?: { message?: string; code?: number };
+    promptFeedback?: { blockReason?: string };
+    candidates?: Array<{
+      finishReason?: string;
+      content?: { parts?: { text?: string }[] };
+    }>;
   };
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (typeof text !== 'string' || !text.length) return null;
+
+  if (data.error) {
+    if (__DEV__) console.warn('[Gemini] error field', data.error.message ?? data.error);
+    return null;
+  }
+
+  if (data.promptFeedback?.blockReason) {
+    if (__DEV__) console.warn('[Gemini] prompt blocked', data.promptFeedback.blockReason);
+    return null;
+  }
+
+  const cand = data.candidates?.[0];
+  if (!cand) return null;
+
+  const fr = cand.finishReason;
+  if (fr === 'SAFETY' || fr === 'RECITATION' || fr === 'BLOCKLIST') {
+    if (__DEV__) console.warn('[Gemini] finishReason', fr);
+    return null;
+  }
+
+  const text = extractJsonTextFromParts(cand.content?.parts);
+  if (!text?.length) return null;
 
   let parsed: unknown;
   try {
     parsed = JSON.parse(stripJsonFence(text));
   } catch {
+    if (__DEV__) console.warn('[Gemini] JSON parse failed', text.slice(0, 200));
     return null;
   }
 
@@ -253,13 +349,22 @@ async function fetchGeminiTasks(draft: OnboardingDraft, apiKey: string): Promise
   const timer = setTimeout(() => controller.abort(), 30_000);
 
   try {
-    for (const model of GEMINI_MODELS) {
-      if (controller.signal.aborted) break;
-      try {
-        const tasks = await tryGenerateWithModel(model, userPrompt, apiKey, controller.signal);
-        if (tasks) return tasks;
-      } catch {
-        /* try next model */
+    /* Plain text first: some keys/models handle JSON-in-prose more reliably than responseMimeType. */
+    for (const useJsonMime of [false, true] as const) {
+      for (const model of GEMINI_MODELS) {
+        if (controller.signal.aborted) break;
+        try {
+          const tasks = await tryGenerateWithModel(
+            model,
+            userPrompt,
+            apiKey,
+            controller.signal,
+            useJsonMime
+          );
+          if (tasks) return tasks;
+        } catch {
+          /* try next model */
+        }
       }
     }
     return fallback;
