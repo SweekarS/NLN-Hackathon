@@ -1,4 +1,5 @@
 import './landing.css'
+import { TransitionBand } from './components/TransitionBand'
 import { WaveDivider } from './components/WaveDivider'
 import { AppShowcaseSection } from './sections/AppShowcaseSection'
 import { ClosingCTASection } from './sections/ClosingCTASection'
@@ -20,10 +21,12 @@ export default function LandingPage() {
         <WaveDivider />
         <StorySection />
         <ProductSection />
-        <WaveDivider />
+        <WaveDivider flipped />
+        <TransitionBand />
         <FeaturesSection />
         <HowItWorksSection />
         <TrustSafetySection />
+        <WaveDivider compact />
         <FAQSection />
         <ClosingCTASection />
       </main>

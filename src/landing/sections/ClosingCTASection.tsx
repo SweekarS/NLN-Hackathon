@@ -1,10 +1,11 @@
-import { APP_URL, WAITLIST_URL } from '../content'
 import { LandingButton } from '../components/LandingButton'
+import { RevealOnView } from '../components/RevealOnView'
+import { APP_URL, WAITLIST_URL } from '../content'
 
 export function ClosingCTASection() {
   return (
     <section className="landing-section closing-cta">
-      <div className="landing-container closing-shell">
+      <RevealOnView className="landing-container closing-shell">
         <h2>Start with one gentle step, then keep going.</h2>
         <p>
           Early support should feel approachable. Join Phool and build your own sustainable
@@ -18,7 +19,7 @@ export function ClosingCTASection() {
             Stay updated
           </LandingButton>
         </div>
-      </div>
+      </RevealOnView>
     </section>
   )
 }
