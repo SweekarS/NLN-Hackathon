@@ -21,6 +21,7 @@ import {
   fetchJournalEntriesRemote,
   type JournalEntry,
 } from '../lib/sync-dashboard-stats';
+import { getLogicalDateString } from '../lib/logical-date';
 import { Button } from '../components/ui/Button';
 
 type Tab = 'write' | 'past';
@@ -31,15 +32,39 @@ export default function JournalScreen() {
   const [activeTab, setActiveTab] = useState<Tab>('write');
   const [pastEntries, setPastEntries] = useState<JournalEntry[]>([]);
   const [loadingEntries, setLoadingEntries] = useState(false);
+  const [todayEntryExists, setTodayEntryExists] = useState(false);
   const { lastLogicalDateKey } = useAppStore();
+
+  const today = lastLogicalDateKey || getLogicalDateString();
 
   useFocusEffect(
     useCallback(() => {
-      if (activeTab === 'past') {
+      if (activeTab === 'write') {
+        checkTodayEntry();
+      } else if (activeTab === 'past') {
         loadPastEntries();
       }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeTab]),
   );
+
+  const checkTodayEntry = async () => {
+    try {
+      const result = await fetchJournalEntriesRemote();
+      if (!result.error && result.data.length > 0) {
+        // Find today's entry
+        const found = result.data.find((entry) => entry.log_date === today);
+        if (found) {
+          setTodayEntryExists(true);
+        } else {
+          setTodayEntryExists(false);
+        }
+        setPastEntries(result.data);
+      }
+    } catch (err) {
+      console.error('Error checking today entry:', err);
+    }
+  };
 
   const loadPastEntries = async () => {
     setLoadingEntries(true);
@@ -79,6 +104,8 @@ export default function JournalScreen() {
       } else {
         Alert.alert('Success', 'Your reflection has been saved.');
         setReflection('');
+        // Mark that today's entry exists
+        setTodayEntryExists(true);
         // Refresh past entries
         loadPastEntries();
       }
@@ -148,7 +175,16 @@ export default function JournalScreen() {
       </View>
 
       {/* Write Tab */}
-      {activeTab === 'write' && (
+      {activeTab === 'write' && todayEntryExists ? (
+        <View style={styles.alreadyWrittenContainer}>
+          <Ionicons name="checkmark-circle" size={48} color={colors.primary} />
+          <Text style={styles.alreadyWrittenTitle}>Already written today</Text>
+          <Text style={styles.alreadyWrittenText}>
+            You can only write one journal entry per day. Your reflection for
+            today has been saved.
+          </Text>
+        </View>
+      ) : activeTab === 'write' ? (
         <ScrollView
           style={styles.scroll}
           contentContainerStyle={styles.content}
@@ -177,7 +213,7 @@ export default function JournalScreen() {
             disabled={loading}
           />
         </ScrollView>
-      )}
+      ) : null}
 
       {/* Past Entries Tab */}
       {activeTab === 'past' && (
@@ -283,13 +319,13 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     minHeight: 300,
     fontSize: 16,
-    fontFamily: fonts.body,
+    fontFamily: fonts.bodyRegular,
     color: colors.onSurface,
     textAlignVertical: 'top',
   },
   charCount: {
     fontSize: 12,
-    fontFamily: fonts.body,
+    fontFamily: fonts.bodyRegular,
     color: colors.onSurfaceVariant,
     textAlign: 'right',
   },
@@ -312,7 +348,7 @@ const styles = StyleSheet.create({
   },
   emptySubtext: {
     fontSize: 14,
-    fontFamily: fonts.body,
+    fontFamily: fonts.bodyRegular,
     color: colors.onSurfaceVariant,
     marginTop: spacing.sm,
     textAlign: 'center',
@@ -335,8 +371,29 @@ const styles = StyleSheet.create({
   },
   entryContent: {
     fontSize: 14,
-    fontFamily: fonts.body,
+    fontFamily: fonts.bodyRegular,
     color: colors.onSurface,
+    lineHeight: 20,
+  },
+  alreadyWrittenContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+  },
+  alreadyWrittenTitle: {
+    fontSize: 20,
+    fontFamily: fonts.headlineBold,
+    color: colors.onSurface,
+    marginTop: spacing.base,
+    textAlign: 'center',
+  },
+  alreadyWrittenText: {
+    fontSize: 14,
+    fontFamily: fonts.bodyRegular,
+    color: colors.onSurfaceVariant,
+    marginTop: spacing.sm,
+    textAlign: 'center',
     lineHeight: 20,
   },
 });
