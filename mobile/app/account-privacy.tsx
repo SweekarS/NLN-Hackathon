@@ -339,30 +339,8 @@ export default function AccountPrivacyScreen() {
           <Animated.View entering={FadeInUp.duration(600).delay(100)}>
             <Card style={styles.formCard}>
               <Text style={styles.cardTitle}>Account</Text>
-              <View style={styles.authModeRow}>
-                <Pressable
-                  onPress={() => setAuthMode('signup')}
-                  style={[styles.authModeChip, authMode === 'signup' && styles.authModeChipActive]}
-                >
-                  <Text style={[styles.authModeText, authMode === 'signup' && styles.authModeTextActive]}>
-                    Sign up
-                  </Text>
-                </Pressable>
-                <Pressable
-                  onPress={() => setAuthMode('signin')}
-                  style={[styles.authModeChip, authMode === 'signin' && styles.authModeChipActive]}
-                >
-                  <Text style={[styles.authModeText, authMode === 'signin' && styles.authModeTextActive]}>
-                    Sign in
-                  </Text>
-                </Pressable>
-              </View>
-              {authMode === 'signup' && (
-                <>
-                  <FieldLabel label="Full Name" />
-                  <FieldInput value={name} onChangeText={setName} placeholder="Your full name" />
-                </>
-              )}
+              <FieldLabel label="Full Name" />
+              <FieldInput value={name} onChangeText={setName} placeholder="Your full name" />
               <FieldLabel label="Email" />
               <FieldInput
                 value={email}
@@ -375,20 +353,9 @@ export default function AccountPrivacyScreen() {
               <FieldInput
                 value={password}
                 onChangeText={setPassword}
-                placeholder={authMode === 'signup' ? 'Create a secure password' : 'Your password'}
+                placeholder="Create a secure password"
                 secureTextEntry
               />
-              <Pressable
-                onPress={() => void handleGoogleAuth()}
-                disabled={authLoading}
-                style={({ pressed }) => [
-                  styles.googleButton,
-                  { opacity: authLoading ? 0.55 : pressed ? 0.9 : 1 },
-                ]}
-              >
-                <Ionicons name="logo-google" size={22} color={colors.onSurface} style={styles.googleIcon} />
-                <Text style={styles.googleButtonText}>Continue with Google</Text>
-              </Pressable>
             </Card>
           </Animated.View>
 
@@ -400,34 +367,7 @@ export default function AccountPrivacyScreen() {
             />
           </Animated.View>
 
-          <Animated.View entering={FadeInUp.duration(500).delay(400)}>
-            <Card>
-              <Text style={styles.cardTitle}>Privacy Presets</Text>
-              <View style={styles.presetsWrap}>
-                {privacyPresets.map((p) => {
-                  const selected = privacyPreset === p.key;
-                  return (
-                    <Pressable
-                      key={p.key}
-                      onPress={() => setPrivacyPreset(p.key)}
-                      style={[styles.presetOption, selected && styles.presetSelected]}
-                    >
-                      <Text style={styles.presetIcon}>{p.icon}</Text>
-                      <View style={{ flex: 1 }}>
-                        <Text style={styles.presetTitle}>{p.title}</Text>
-                        <Text style={styles.presetDesc}>{p.desc}</Text>
-                      </View>
-                      {selected && (
-                        <View style={styles.checkBadge}>
-                          <Text style={styles.checkMark}>✓</Text>
-                        </View>
-                      )}
-                    </Pressable>
-                  );
-                })}
-              </View>
-            </Card>
-          </Animated.View>
+
 
           <Animated.View entering={FadeInUp.duration(500).delay(500)}>
             <Card style={styles.permissionsCard}>

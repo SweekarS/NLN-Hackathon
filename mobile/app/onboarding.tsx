@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, Pressable, StyleSheet, LayoutAnimation, Platform, UIManager } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInUp, FadeOut } from 'react-native-reanimated';
 import { router } from 'expo-router';
 import { Card } from '../components/ui/Card';
 import { GreenCard } from '../components/ui/GreenCard';
 import { Button } from '../components/ui/Button';
+import { FieldInput } from '../components/ui/FieldInput';
+import { FieldLabel } from '../components/ui/FieldLabel';
+import { Logo } from '../components/ui/Logo';
 import { useAppStore } from '../store/useAppStore';
 import { colors, fonts, spacing, radii, shadow } from '../theme';
 
@@ -28,8 +31,10 @@ const features = [
 export default function OnboardingScreen() {
   const journeyMode = useAppStore((s) => s.journeyMode);
   const setJourneyMode = useAppStore((s) => s.setJourneyMode);
-  const setOnboardingComplete = useAppStore((s) => s.setOnboardingComplete);
   const [privacyExpanded, setPrivacyExpanded] = useState(false);
+  const [step, setStep] = useState<'intro' | 'journey' | 'login'>('intro');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
   const togglePrivacy = () => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -39,74 +44,108 @@ export default function OnboardingScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <Animated.View entering={FadeIn.duration(600)} style={styles.headerRow}>
-          <Text style={styles.headerLeaf}>🌿</Text>
-          <Text style={styles.headerTitle}>The Organic Sanctuary</Text>
-        </Animated.View>
+        {step === 'intro' && (
+          <Animated.View entering={FadeIn.duration(400)} exiting={FadeOut.duration(400)} style={{ flex: 1 }}>
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
+              <Animated.View entering={FadeInUp.duration(600).delay(50)}>
+                <Logo size={160} />
+              </Animated.View>
 
-        <Animated.View entering={FadeInUp.duration(700).delay(100)}>
-          <GreenCard style={styles.heroCard}>
-            <Text style={styles.heroTitle}>You are in a safe space.</Text>
-            <Text style={styles.heroSub}>
-              Your journey toward gentle wellness begins here. No pressure, no judgment — just growth.
-            </Text>
-          </GreenCard>
-        </Animated.View>
+              <Animated.View entering={FadeInUp.duration(700).delay(150)}>
+                <Text style={{
+                  marginTop: spacing['2xl'],
+                  fontSize: 24,
+                  fontFamily: fonts.headlineExtraBold,
+                  color: colors.primary,
+                  textAlign: 'center',
+                  paddingHorizontal: spacing.lg,
+                  lineHeight: 32
+                }}>
+                  The Organic Sanctuary
+                </Text>
+              </Animated.View>
+            </View>
 
-        <View style={styles.featuresWrap}>
-          {features.map((f, i) => (
-            <Animated.View key={f.title} entering={FadeInUp.duration(500).delay(200 + i * 100)}>
-              <Card style={styles.featureCard}>
-                <Text style={styles.featureIcon}>{f.icon}</Text>
-                <View style={styles.featureText}>
-                  <Text style={styles.featureTitle}>{f.title}</Text>
-                  <Text style={styles.featureDesc}>{f.desc}</Text>
-                </View>
-              </Card>
+            <View style={[styles.buttonWrap, { marginTop: 'auto', paddingTop: spacing.xl }]}>
+              <Button title="Sign Up" onPress={() => setStep('journey')} />
+              <Button title="Sign In" variant="ghost" onPress={() => setStep('login')} />
+            </View>
+          </Animated.View>
+        )}
+
+        {step === 'journey' && (
+          <Animated.View entering={FadeIn.duration(400)} exiting={FadeOut.duration(400)}>
+            <Animated.View entering={FadeInUp.duration(500).delay(100)}>
+              <Text style={styles.stepLabel}>Step 1 of 2</Text>
+              <Text style={styles.sectionTitle}>Choose Your Journey</Text>
+
+              <View style={styles.journeyWrap}>
+                {journeyOptions.map((opt) => {
+                  const selected = journeyMode === opt.key;
+                  return (
+                    <Pressable
+                      key={opt.key}
+                      onPress={() => setJourneyMode(opt.key)}
+                      style={[styles.journeyCard, selected && styles.journeyCardSelected]}
+                    >
+                      <Text style={styles.journeyIcon}>{opt.icon}</Text>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.journeyTitle}>{opt.title}</Text>
+                        <Text style={styles.journeyDesc}>{opt.desc}</Text>
+                      </View>
+                      {selected && (
+                        <View style={styles.checkBadge}>
+                          <Text style={styles.checkMark}>✓</Text>
+                        </View>
+                      )}
+                    </Pressable>
+                  );
+                })}
+              </View>
             </Animated.View>
-          ))}
-        </View>
 
-        <Animated.View entering={FadeInUp.duration(500).delay(500)}>
-          <Text style={styles.stepLabel}>Step 1 of 2</Text>
-          <Text style={styles.sectionTitle}>Choose Your Journey</Text>
+            <View style={styles.buttonWrap}>
+              <Button title="Start My Journey" onPress={() => router.push('/account-privacy')} />
+              <Button title="Back" variant="ghost" onPress={() => setStep('intro')} />
+            </View>
+          </Animated.View>
+        )}
 
-          <View style={styles.journeyWrap}>
-            {journeyOptions.map((opt) => {
-              const selected = journeyMode === opt.key;
-              return (
-                <Pressable
-                  key={opt.key}
-                  onPress={() => setJourneyMode(opt.key)}
-                  style={[styles.journeyCard, selected && styles.journeyCardSelected]}
-                >
-                  <Text style={styles.journeyIcon}>{opt.icon}</Text>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.journeyTitle}>{opt.title}</Text>
-                    <Text style={styles.journeyDesc}>{opt.desc}</Text>
-                  </View>
-                  {selected && (
-                    <View style={styles.checkBadge}>
-                      <Text style={styles.checkMark}>✓</Text>
-                    </View>
-                  )}
-                </Pressable>
-              );
-            })}
-          </View>
-        </Animated.View>
+        {step === 'login' && (
+          <Animated.View entering={FadeIn.duration(400)} exiting={FadeOut.duration(400)}>
+            <Animated.View entering={FadeInUp.duration(500).delay(100)}>
+              <Text style={styles.sectionTitle}>Welcome Back</Text>
 
-        <View style={styles.buttonWrap}>
-          <Button title="Start My Journey" onPress={() => router.push('/account-privacy')} />
-          <Button
-            title="Maybe Later"
-            variant="ghost"
-            onPress={() => {
-              setOnboardingComplete();
-              router.replace('/(tabs)');
-            }}
-          />
-        </View>
+              <View style={[styles.featuresWrap, { marginTop: spacing.xl }]}>
+                <View style={{ marginBottom: spacing.md }}>
+                  <FieldLabel label="Email" />
+                  <FieldInput
+                    value={email}
+                    onChangeText={setEmail}
+                    placeholder="Enter your email"
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                  />
+                </View>
+
+                <View style={{ marginBottom: spacing.md }}>
+                  <FieldLabel label="Password" />
+                  <FieldInput
+                    value={password}
+                    onChangeText={setPassword}
+                    placeholder="Enter your password"
+                    secureTextEntry
+                  />
+                </View>
+              </View>
+            </Animated.View>
+
+            <View style={styles.buttonWrap}>
+              <Button title="Login" onPress={() => router.replace('/(tabs)')} />
+              <Button title="Back" variant="ghost" onPress={() => setStep('intro')} />
+            </View>
+          </Animated.View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -118,6 +157,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
   },
   scroll: {
+    flexGrow: 1,
     padding: spacing.lg,
     paddingBottom: spacing['4xl'],
   },
@@ -134,6 +174,11 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontFamily: fonts.headlineExtraBold,
     color: colors.primary,
+  },
+  logoContainer: {
+    alignItems: 'center',
+    marginBottom: spacing.xl,
+    marginTop: spacing.sm,
   },
   heroCard: {
     minHeight: 200,
