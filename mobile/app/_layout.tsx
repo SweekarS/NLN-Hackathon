@@ -61,6 +61,7 @@ export default function RootLayout() {
           options={{ presentation: 'card' }}
         />
         <Stack.Screen name="safety" options={{ presentation: 'card' }} />
+        <Stack.Screen name="counselor-chat" options={{ presentation: 'card' }} />
         <Stack.Screen name="settings" options={{ presentation: 'card' }} />
       </Stack>
     </GestureHandlerRootView>

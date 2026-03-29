@@ -51,9 +51,14 @@ export default function SafetyScreen() {
 
         <Animated.View entering={FadeIn.duration(500).delay(200)}>
           <Card style={styles.sectionCard}>
-            <Pressable style={styles.contactRow}>
+            <Pressable
+              style={styles.contactRow}
+              onPress={() => router.push('/counselor-chat')}
+              accessibilityRole="button"
+              accessibilityLabel="Chat to AI Counselor"
+            >
               <Ionicons name="chatbubble-ellipses" size={22} color={colors.primary} />
-              <Text style={styles.contactLabel}>Text a Crisis Counselor</Text>
+              <Text style={styles.contactLabel}>Chat to AI Counselor</Text>
               <Ionicons name="arrow-forward" size={20} color={colors.onSurfaceVariant} />
             </Pressable>
           </Card>
