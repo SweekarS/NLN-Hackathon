@@ -8,9 +8,11 @@
 }
 
 .landing-nav-wrap {
-  position: sticky;
+  position: fixed;
   top: 0;
-  z-index: 40;
+  left: 0;
+  right: 0;
+  z-index: 50;
   padding: 1rem 0;
   pointer-events: none;
 }
@@ -176,40 +178,36 @@
   margin-top: 1.35rem;
 }
 
-.landing-hero-video-shell .landing-nav-wrap {
-  position: relative;
-  z-index: 40;
-}
-
-.landing-hero-video-shell .landing-nav {
+/* Dark glass nav while hero (#top) is in view */
+.landing-nav-wrap--hero .landing-nav {
   background: rgba(13, 21, 18, 0.52);
   border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
 }
 
-.landing-hero-video-shell .brand-name {
+.landing-nav-wrap--hero .brand-name {
   color: #ffffff;
 }
 
-.landing-hero-video-shell .brand-tagline {
+.landing-nav-wrap--hero .brand-tagline {
   color: rgba(255, 255, 255, 0.65);
 }
 
-.landing-hero-video-shell .nav-links a {
+.landing-nav-wrap--hero .nav-links a {
   color: rgba(255, 255, 255, 0.88);
 }
 
-.landing-hero-video-shell .nav-links a:hover {
+.landing-nav-wrap--hero .nav-links a:hover {
   color: #ffffff;
   background: rgba(255, 255, 255, 0.12);
 }
 
-.landing-hero-video-shell .landing-btn.secondary {
+.landing-nav-wrap--hero .landing-btn.secondary {
   color: var(--primary);
   background: rgba(255, 255, 255, 0.92);
 }
 
-.landing-hero-video-shell .landing-btn.secondary:hover {
+.landing-nav-wrap--hero .landing-btn.secondary:hover {
   background: #ffffff;
 }
 
@@ -858,7 +856,7 @@
   background: linear-gradient(165deg, var(--surface-container-lowest) 0%, var(--surface-container-low) 100%);
 }
 
-/* How it works — scroll-driven highlight */
+/* How it works: scroll-driven highlight */
 .how-section {
   min-height: 260vh;
   padding: 0;

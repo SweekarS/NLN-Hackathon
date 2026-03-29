@@ -1,5 +1,4 @@
-import { APP_URL, WAITLIST_URL, getYoutubeHeroEmbedUrl } from '../content'
-import { LandingNav } from '../components/LandingNav'
+import { APP_URL, getYoutubeHeroEmbedUrl } from '../content'
 import { LandingButton } from '../components/LandingButton'
 
 export function HeroSection() {
@@ -16,8 +15,6 @@ export function HeroSection() {
         </div>
       </div>
 
-      <LandingNav />
-
       <section className="landing-hero-overlay" aria-label="Introduction">
         <div className="landing-container landing-hero-overlay-inner">
           <h1 className="landing-hero-title">Build calm daily Conditioning before stress becomes a crisis.</h1>
@@ -26,11 +23,13 @@ export function HeroSection() {
             judgment, no pressure, and no clinical overwhelm on day one.
           </p>
           <div className="hero-actions landing-hero-actions">
-            <LandingButton variant="primary" href={APP_URL}>
+            <LandingButton
+              variant="primary"
+              href={APP_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
               Get early access
-            </LandingButton>
-            <LandingButton variant="secondary" href={WAITLIST_URL}>
-              See the product
             </LandingButton>
           </div>
         </div>

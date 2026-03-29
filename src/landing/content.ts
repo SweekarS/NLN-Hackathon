@@ -1,5 +1,7 @@
-export const WAITLIST_URL = '#'
-export const APP_URL = '#'
+/** Google Form: early signup / launch notifications */
+export const WAITLIST_URL =
+  'https://docs.google.com/forms/d/e/1FAIpQLSdeR1hzN-qZZxbTXUA_YdkuIBbcmWrqv5D9sjVj7ZdFoP6zXA/viewform'
+export const APP_URL = 'https://github.com/SweekarS/Phool'
 
 /** Hero background video (YouTube). */
 export const YOUTUBE_HERO_VIDEO_ID = '8bl1Gg4GFXA'

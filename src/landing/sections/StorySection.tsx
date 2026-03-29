@@ -24,7 +24,7 @@ export function StorySection() {
         <RevealOnView delayMs={140}>
           <aside className="landing-callout section-glow">
             <p className="landing-callout-eyebrow">Why it matters</p>
-            <blockquote>Silence is not neutral—it is where small struggles become harder to reverse.</blockquote>
+            <blockquote>Silence is not neutral. It is where small struggles become harder to reverse.</blockquote>
             <p className="landing-callout-note">
               Phool meets people where stigma makes speaking up feel risky, with privacy-first daily
               structure.

@@ -1,5 +1,6 @@
 html {
   scroll-behavior: smooth;
+  scroll-padding-top: var(--landing-nav-offset);
 }
 
 @media (prefers-reduced-motion: reduce) {

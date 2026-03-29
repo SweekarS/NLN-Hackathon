@@ -1,6 +1,6 @@
 import { LandingButton } from '../components/LandingButton'
 import { RevealOnView } from '../components/RevealOnView'
-import { APP_URL, WAITLIST_URL } from '../content'
+import { WAITLIST_URL } from '../content'
 
 export function ClosingCTASection() {
   return (
@@ -12,10 +12,12 @@ export function ClosingCTASection() {
           Conditioning path.
         </p>
         <div className="hero-actions">
-          <LandingButton variant="primary" href={APP_URL}>
-            Download when live
-          </LandingButton>
-          <LandingButton variant="secondary" href={WAITLIST_URL}>
+          <LandingButton
+            variant="secondary"
+            href={WAITLIST_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
             Stay updated
           </LandingButton>
         </div>

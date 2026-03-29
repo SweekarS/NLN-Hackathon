@@ -24,7 +24,7 @@ export function ProductSection() {
         <RevealOnView delayMs={140}>
           <aside className="landing-callout section-glow">
             <p className="landing-callout-eyebrow">The feeling</p>
-            <blockquote>One gentle step at a time—not a scorecard.</blockquote>
+            <blockquote>One gentle step at a time, not a scorecard.</blockquote>
             <p className="landing-callout-note">
               Conditioning are concrete and completable, so momentum shows up in real life, not just in the
               app.
