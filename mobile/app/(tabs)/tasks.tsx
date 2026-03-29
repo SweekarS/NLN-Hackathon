@@ -41,6 +41,9 @@ export default function TasksScreen() {
   const { tasks, todayCompletions, completeTask, unreadCount } =
     useAppStore();
   const [activeTask, setActiveTask] = useState<Task | null>(null);
+  const [activeTaskListIndex, setActiveTaskListIndex] = useState<number | undefined>(
+    undefined,
+  );
   const [modalVisible, setModalVisible] = useState(false);
 
   const enabledTasks = useMemo(() => tasks.filter((t) => t.enabled), [tasks]);
@@ -80,14 +83,16 @@ export default function TasksScreen() {
     width: `${Math.min(pctAnim.value, 100)}%`,
   }));
 
-  const openTask = useCallback((task: Task) => {
+  const openTask = useCallback((task: Task, listIndex: number) => {
     setActiveTask(task);
+    setActiveTaskListIndex(listIndex);
     setModalVisible(true);
   }, []);
 
   const closeModal = useCallback(() => {
     setModalVisible(false);
     setActiveTask(null);
+    setActiveTaskListIndex(undefined);
   }, []);
 
   const handleCompleteFromModal = useCallback(
@@ -180,8 +185,9 @@ export default function TasksScreen() {
             >
               <TaskCard
                 task={task}
+                listIndex={idx}
                 isDone={todayCompletions.includes(task.id)}
-                onOpen={() => openTask(task)}
+                onOpen={() => openTask(task, idx)}
               />
             </Animated.View>
           ))}
@@ -193,6 +199,7 @@ export default function TasksScreen() {
       <TaskInteractionModal
         visible={modalVisible}
         task={activeTask}
+        taskListIndex={activeTaskListIndex}
         onClose={closeModal}
         onComplete={handleCompleteFromModal}
       />

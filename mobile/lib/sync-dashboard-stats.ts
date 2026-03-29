@@ -153,7 +153,9 @@ function isTaskArray(raw: unknown): raw is Task[] {
 
 export function parseTasksFromProfileJson(raw: unknown): Task[] | null {
   if (!isTaskArray(raw)) return null;
-  return raw.map((t) => normalizeTask({ ...t, enabled: t.enabled !== false }));
+  return raw.map((t, i) =>
+    normalizeTask({ ...t, enabled: t.enabled !== false }, i),
+  );
 }
 
 /** When DB column is missing or false, infer from activity (legacy users). */

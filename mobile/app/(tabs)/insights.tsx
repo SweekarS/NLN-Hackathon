@@ -1,5 +1,13 @@
-import React, { useMemo } from 'react';
-import { View, Text, ScrollView, StyleSheet, Pressable } from 'react-native';
+import React, { useEffect, useMemo, useRef } from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
+  Pressable,
+  Alert,
+  Linking,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -58,6 +66,9 @@ export default function InsightsScreen() {
     lastLogicalDateKey,
     userName,
     unreadCount,
+    isHealthConnected,
+    biometrics,
+    connectHealth,
   } = useAppStore(
     useShallow((s) => ({
       currentStreak: s.currentStreak,
@@ -70,8 +81,60 @@ export default function InsightsScreen() {
       lastLogicalDateKey: s.lastLogicalDateKey,
       userName: s.userName,
       unreadCount: s.unreadCount,
+      isHealthConnected: s.isHealthConnected,
+      biometrics: s.biometrics,
+      connectHealth: s.connectHealth,
     })),
   );
+
+  const { completedTodayCount, hasEnabledTasks } = useMemo(() => {
+    const enabled = tasks.filter((t) => t.enabled);
+    const completedTodayCount = todayCompletions.filter((id) =>
+      enabled.some((t) => t.id === id),
+    ).length;
+    return {
+      completedTodayCount,
+      hasEnabledTasks: enabled.length > 0,
+    };
+  }, [todayCompletions, tasks]);
+
+  const nudgeShownRef = useRef(false);
+
+  useEffect(() => {
+    if (!isHealthConnected) {
+      nudgeShownRef.current = false;
+      return;
+    }
+    const noTasksDoneToday =
+      hasEnabledTasks && completedTodayCount === 0;
+    const lowEnergy =
+      biometrics.steps < 4000 ||
+      biometrics.sleepHours < 5.5 ||
+      noTasksDoneToday;
+    if (!lowEnergy) return;
+    if (nudgeShownRef.current) return;
+    nudgeShownRef.current = true;
+    Alert.alert(
+      'Low Battery Detected',
+      "You've had less rest and movement than usual lately. Everything okay? It's okay to take a break. Do you want to check in with your squad?",
+      [
+        { text: "I'm okay", style: 'cancel' },
+        {
+          text: 'Message Squad',
+          onPress: () => {
+            Linking.openURL('sms:').catch(() => {});
+          },
+        },
+      ],
+    );
+  }, [
+    isHealthConnected,
+    biometrics.steps,
+    biometrics.sleepHours,
+    biometrics.socialBattery,
+    completedTodayCount,
+    hasEnabledTasks,
+  ]);
 
   const anchorDate = lastLogicalDateKey ?? getLogicalDateString();
   const todayFlags = flagsFromTaskIds(todayCompletions, tasks);
@@ -254,40 +317,65 @@ export default function InsightsScreen() {
           </Text>
         </Card>
 
-        {/* Biometric Trends */}
+        {/* Biometric Trends (simulated Apple Health when connected) */}
         <SectionTitle title="Biometric Trends" />
         <Card style={styles.cardGap}>
-          {[
-            {
-              icon: 'bed-outline' as const,
-              label: 'Sleep Quality',
-              value: '7.8 hrs avg',
-            },
-            {
-              icon: 'footsteps-outline' as const,
-              label: 'Daily Steps',
-              value: '6,420 avg',
-            },
-            {
-              icon: 'people-outline' as const,
-              label: 'Social Battery',
-              value: '72%',
-            },
-            {
-              icon: 'flower-outline' as const,
-              label: 'Mindfulness',
-              value: '18 min avg',
-            },
-          ].map((item, i, arr) => (
-            <View
-              key={item.label}
-              style={[styles.bioRow, i < arr.length - 1 && styles.bioRowBorder]}
+          {!isHealthConnected ? (
+            <Pressable
+              onPress={() => connectHealth()}
+              style={({ pressed }) => [
+                styles.healthSyncButton,
+                pressed && styles.healthSyncButtonPressed,
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel="Sync with Apple Health and Fitness"
             >
-              <IconCircle name={item.icon} size="sm" />
-              <Text style={styles.bioLabel}>{item.label}</Text>
-              <Text style={styles.bioValue}>{item.value}</Text>
-            </View>
-          ))}
+              <Ionicons
+                name="heart-circle"
+                size={22}
+                color="#FFFFFF"
+                style={styles.healthSyncIcon}
+              />
+              <Text style={styles.healthSyncLabel}>
+                Sync with Apple Health & Fitness
+              </Text>
+              <Ionicons
+                name="chevron-forward"
+                size={18}
+                color="rgba(255,255,255,0.65)"
+              />
+            </Pressable>
+          ) : (
+            [
+              {
+                icon: 'footsteps-outline' as const,
+                label: '👟 Daily Steps',
+                value: biometrics.steps.toLocaleString(),
+              },
+              {
+                icon: 'bed-outline' as const,
+                label: '🌙 Sleep Quality',
+                value: `${biometrics.sleepHours.toFixed(1)} hrs`,
+              },
+              {
+                icon: 'battery-charging-outline' as const,
+                label: '🔋 Social Battery',
+                value: `${biometrics.socialBattery}%`,
+              },
+            ].map((item, i, arr) => (
+              <View
+                key={item.label}
+                style={[
+                  styles.bioRow,
+                  i < arr.length - 1 && styles.bioRowBorder,
+                ]}
+              >
+                <IconCircle name={item.icon} size="sm" />
+                <Text style={styles.bioLabel}>{item.label}</Text>
+                <Text style={styles.bioValue}>{item.value}</Text>
+              </View>
+            ))
+          )}
         </Card>
 
         {/* Nurture Your Next Week */}
@@ -592,6 +680,28 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontFamily: fonts.bodySemiBold,
     color: colors.primary,
+  },
+  healthSyncButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1C1C1E',
+    borderRadius: radii.lg,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.base,
+    gap: spacing.sm,
+  },
+  healthSyncButtonPressed: {
+    opacity: 0.88,
+  },
+  healthSyncIcon: {
+    marginRight: 2,
+  },
+  healthSyncLabel: {
+    flex: 1,
+    fontSize: 16,
+    fontFamily: fonts.bodySemiBold,
+    color: '#FFFFFF',
+    letterSpacing: -0.2,
   },
   nurtureScroll: {
     marginLeft: -spacing.lg,

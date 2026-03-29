@@ -23,6 +23,8 @@ import { normalizeTask } from '../../lib/task-model';
 type Props = {
   visible: boolean;
   task: Task | null;
+  /** Index in the ritual list — helps infer timer/photo/check for custom task ids. */
+  taskListIndex?: number;
   onClose: () => void;
   onComplete: (taskId: string) => void;
 };
@@ -36,10 +38,11 @@ function formatClock(totalSeconds: number): string {
 export function TaskInteractionModal({
   visible,
   task,
+  taskListIndex,
   onClose,
   onComplete,
 }: Props) {
-  const t = task ? normalizeTask(task) : null;
+  const t = task ? normalizeTask(task, taskListIndex) : null;
   const mode = t?.interaction_type ?? 'simple_check';
 
   const [photoUri, setPhotoUri] = useState<string | null>(null);
@@ -50,7 +53,7 @@ export function TaskInteractionModal({
 
   useEffect(() => {
     if (!visible || !task) return;
-    const nt = normalizeTask(task);
+    const nt = normalizeTask(task, taskListIndex);
     if (nt.interaction_type === 'timer') {
       const secs = Math.max(60, Math.round((nt.duration_minutes ?? 10) * 60));
       totalSecRef.current = secs;
@@ -59,7 +62,7 @@ export function TaskInteractionModal({
     }
     setPhotoUri(null);
     setCaption('');
-  }, [visible, task?.id]);
+  }, [visible, task?.id, taskListIndex]);
 
   useEffect(() => {
     if (!visible || !t || t.interaction_type !== 'timer' || paused) return;

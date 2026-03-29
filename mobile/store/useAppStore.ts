@@ -22,7 +22,6 @@ import {
   upsertDailyLogRemote,
   updateProfileStatsRemote,
   saveOnboardingCompleteToProfile,
-  updateProfileTasksJsonRemote,
   parseTasksFromProfileJson,
   inferHasCompletedOnboarding,
   fetchRemoteNotifications,
@@ -37,6 +36,10 @@ import {
 } from '../lib/task-model';
 import { extractJsonArray } from '../lib/gemini-json';
 import { scheduleDailyReminders } from '../lib/notifications';
+import {
+  scheduleProfileTasksJsonSync,
+  flushProfileTasksJsonSync,
+} from '../lib/tasks-json-sync';
 
 export type { Task, CustomTask, InteractionType };
 
@@ -290,6 +293,11 @@ interface AppState {
   notifProgressNudges: boolean;
   theme: 'light' | 'dark' | 'forest';
 
+  /** Simulated Apple Health linkage (Expo Go–safe; no native HealthKit module). */
+  isHealthConnected: boolean;
+  biometrics: { steps: number; sleepHours: number; socialBattery: number };
+  connectHealth: () => void;
+
   onboardingDraft: OnboardingDraft;
   setOnboardingDraft: (partial: Partial<OnboardingDraft>) => void;
   clearOnboardingDraft: () => void;
@@ -369,6 +377,7 @@ function getDefaultSessionState(): Omit<
   | 'setNotifEncouragement'
   | 'setNotifProgressNudges'
   | 'setTheme'
+  | 'connectHealth'
   | 'updateTasks'
   | 'addTask'
   | 'toggleTaskEnabled'
@@ -427,6 +436,9 @@ function getDefaultSessionState(): Omit<
     serverNotifications: [],
     unreadCount: 0,
 
+    isHealthConnected: false,
+    biometrics: { steps: 0, sleepHours: 0, socialBattery: 0 },
+
     _hasHydrated: true,
     _remoteProfileReady: true,
   };
@@ -472,6 +484,9 @@ export const useAppStore = create<AppState>()(
 
       serverNotifications: [],
       unreadCount: 0,
+
+      isHealthConnected: false,
+      biometrics: { steps: 0, sleepHours: 0, socialBattery: 0 },
 
       onboardingDraft: emptyOnboardingDraft(),
       setOnboardingDraft: (partial) =>
@@ -591,7 +606,7 @@ export const useAppStore = create<AppState>()(
         const parsedTasks = parseTasksFromProfileJson(profile?.tasks_json);
         let tasks = st.tasks;
         if (parsedTasks && parsedTasks.length > 0) {
-          tasks = parsedTasks.map((t) => normalizeTask(t));
+          tasks = parsedTasks.map((t, i) => normalizeTask(t, i));
         }
 
         const merged: Record<string, Partial<DailyLogFlags>> = {
@@ -996,47 +1011,73 @@ export const useAppStore = create<AppState>()(
         }
       },
       setTheme: (t) => set({ theme: t }),
-      updateTasks: (next) => set({ tasks: next.map((t) => normalizeTask(t)) }),
-      addTask: (task) =>
-        set((s) => ({
-          tasks: [
-            ...s.tasks,
-            normalizeTask({
-              ...task,
-              interaction_type: task.interaction_type ?? 'simple_check',
-            }),
-          ],
-        })),
-      toggleTaskEnabled: (taskId) =>
+
+      connectHealth: () => {
+        const steps = 3000 + Math.floor(Math.random() * 5001);
+        const sleepRaw = 4.5 + Math.random() * 3;
+        const sleepHours = Math.round(sleepRaw * 10) / 10;
+        const socialBattery = 20 + Math.floor(Math.random() * 61);
+        set({
+          isHealthConnected: true,
+          biometrics: { steps, sleepHours, socialBattery },
+        });
+      },
+
+      updateTasks: (next) => {
+        set({ tasks: next.map((t, i) => normalizeTask(t, i)) });
+        scheduleProfileTasksJsonSync(() => get().tasks);
+      },
+      addTask: (task) => {
+        set((s) => {
+          const idx = s.tasks.length;
+          return {
+            tasks: [
+              ...s.tasks,
+              normalizeTask(
+                {
+                  ...task,
+                  interaction_type: task.interaction_type ?? 'simple_check',
+                },
+                idx,
+              ),
+            ],
+          };
+        });
+        scheduleProfileTasksJsonSync(() => get().tasks);
+      },
+      toggleTaskEnabled: (taskId) => {
         set((s) => ({
           tasks: s.tasks.map((t) =>
             t.id === taskId ? { ...t, enabled: !t.enabled } : t,
           ),
-        })),
+        }));
+        scheduleProfileTasksJsonSync(() => get().tasks);
+      },
 
-      updateTask: (taskId, patch) =>
+      updateTask: (taskId, patch) => {
         set((s) => ({
-          tasks: s.tasks.map((t) =>
-            t.id === taskId ? normalizeTask({ ...t, ...patch }) : t,
+          tasks: s.tasks.map((t, i) =>
+            t.id === taskId
+              ? normalizeTask({ ...t, ...patch }, i)
+              : t,
           ),
-        })),
+        }));
+        scheduleProfileTasksJsonSync(() => get().tasks);
+      },
 
-      deleteTask: (taskId) =>
+      deleteTask: (taskId) => {
         set((s) => {
           if (s.tasks.length <= 1) return s;
           return {
             tasks: s.tasks.filter((t) => t.id !== taskId),
             todayCompletions: s.todayCompletions.filter((id) => id !== taskId),
           };
-        }),
+        });
+        scheduleProfileTasksJsonSync(() => get().tasks);
+      },
 
       persistTasksToProfile: async () => {
-        if (!isSupabaseConfigured) return;
-        const { data: auth } = await supabase.auth.getUser();
-        const uid = auth.user?.id;
-        if (!uid) return;
-        const { tasks } = get();
-        await updateProfileTasksJsonRemote(uid, tasks);
+        await flushProfileTasksJsonSync(() => get().tasks);
       },
     }),
     {
@@ -1070,6 +1111,8 @@ export const useAppStore = create<AppState>()(
         notifEncouragement: state.notifEncouragement,
         notifProgressNudges: state.notifProgressNudges,
         theme: state.theme,
+        isHealthConnected: state.isHealthConnected,
+        biometrics: state.biometrics,
       }),
       onRehydrateStorage: () => (state) => {
         state?.setHasHydrated(true);
