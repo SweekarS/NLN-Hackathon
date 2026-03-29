@@ -7,16 +7,16 @@ import {
   Pressable,
   Alert,
   Linking,
-  Image,
+  ImageBackground,
   Modal,
+  ImageSourcePropType,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useShallow } from 'zustand/react/shallow';
-import { colors, fonts, spacing, radii } from '../../theme';
+import { colors, fonts, spacing, radii, shadow } from '../../theme';
 import { useAppStore } from '../../store/useAppStore';
 import {
   buildMindfulnessFlow7Day,
@@ -57,16 +57,44 @@ function calculateStreakProgress(
   return { progress: Math.min(progress, 1), percentage };
 }
 
-export default function InsightsScreen() {
-  const [selectedNurtureItem, setSelectedNurtureItem] = useState<{
-    id: string;
-    category: string;
-    title: string;
-    buttonText: string;
-    image: any;
-    description: string;
-  } | null>(null);
+type NurtureEvent = {
+  id: string;
+  title: string;
+  sub: string;
+  desc: string;
+  image: ImageSourcePropType;
+  date: string;
+};
 
+const NURTURE_EVENTS: NurtureEvent[] = [
+  {
+    id: 'digital_detox',
+    title: 'Digital Detox',
+    sub: 'Disconnect and recharge',
+    desc: 'Join our community for a weekend digital detox challenge to reset your mind and regain focus. Learn the science of disconnecting and reclaim your time.',
+    image: require('../../assets/images/digital_detox.png'),
+    date: 'Starts Friday, 8 PM',
+  },
+  {
+    id: 'sunset_yoga',
+    title: 'Sunset Yoga',
+    sub: 'Evening flow in the park',
+    desc: "A gentle sunset yoga session to stretch out the day's tension. Suitable for all levels, focusing on breath and slow movement.",
+    image: require('../../assets/images/sunset_yoga.png'),
+    date: 'Saturday, 6:30 PM',
+  },
+  {
+    id: 'leafy_greens',
+    title: 'Plant-based Nutrition',
+    sub: 'Nourish your body',
+    desc: 'A live workshop mapping out how plant-based eating impacts your overall energy, mental clarity, and focus for daily tasks.',
+    image: require('../../assets/images/leafy_greens.png'),
+    date: 'Sunday, 11 AM',
+  },
+];
+
+export default function InsightsScreen() {
+  const [selectedEvent, setSelectedEvent] = useState<NurtureEvent | null>(null);
   const {
     currentStreak,
     longestStreak,
@@ -134,7 +162,7 @@ export default function InsightsScreen() {
         {
           text: 'Message Squad',
           onPress: () => {
-            Linking.openURL('sms:').catch(() => {});
+            Linking.openURL('sms:').catch(() => { });
           },
         },
       ],
@@ -392,87 +420,70 @@ export default function InsightsScreen() {
 
         {/* Nurture Your Next Week */}
         <SectionTitle title="Nurture Your Next Week" />
-        <View style={styles.nurtureList}>
-          {[
-            {
-              id: 'sunset_yoga',
-              category: 'MORNING RITUAL',
-              title: 'Try Sunset Yoga',
-              buttonText: 'EXPLORE ROUTINE',
-              image: require('../../assets/images/sunset_yoga.png'),
-              description: 'Start your morning with a 15-minute sunset yoga routine to awaken your body and focus your mind. Perfect for early risers to center themselves before the day begins.'
-            },
-            {
-              id: 'leafy_greens',
-              category: 'INTERNAL HEALTH',
-              title: 'Leafy Greens Prep',
-              buttonText: 'RECIPE PACK',
-              image: require('../../assets/images/leafy_greens.png'),
-              description: 'Nourish your body from the inside out. This pack includes 5 easy, delicious leafy green recipes that you can prep on Sunday for a vibrant week.'
-            },
-            {
-              id: 'digital_detox',
-              category: 'RESTORATIVE SLEEP',
-              title: 'Digital Detox Hour',
-              buttonText: 'SCHEDULE ALERT',
-              image: require('../../assets/images/digital_detox.png'),
-              description: 'Reclaim your sleep quality by disconnecting from all screens one hour before bed. Set up an automated alert to remind you to power down.'
-            },
-          ].map((item) => (
-            <Animated.View key={item.id} entering={FadeIn.duration(400)}>
-              <Pressable onPress={() => setSelectedNurtureItem(item)}>
-                <View style={styles.newNurtureCard}>
-                  <Image source={item.image} style={styles.nurtureImage} />
-                  <LinearGradient
-                    colors={['transparent', 'rgba(0,0,0,0.85)']}
-                    style={styles.nurtureGradient}
-                  >
-                    <Text style={styles.nurtureCategory}>{item.category}</Text>
-                    <Text style={styles.nurtureMainTitle}>{item.title}</Text>
-                    <Pressable
-                      style={styles.nurtureBtn}
-                      onPress={() => setSelectedNurtureItem(item)}
-                    >
-                      <Text style={styles.nurtureBtnText}>{item.buttonText}</Text>
-                    </Pressable>
-                  </LinearGradient>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.nurtureScroll}
+        >
+          {NURTURE_EVENTS.map((event) => (
+            <Pressable key={event.id} onPress={() => setSelectedEvent(event)}>
+              <ImageBackground
+                source={event.image}
+                style={styles.nurtureHeroCard}
+                imageStyle={styles.nurtureHeroImage}
+              >
+                <View style={styles.nurtureHeroOverlay}>
+                  <View style={styles.nurturePill}>
+                    <Text style={styles.nurturePillText}>{event.date}</Text>
+                  </View>
+                  <View>
+                    <Text style={styles.nurtureHeroTitle}>{event.title}</Text>
+                    <Text style={styles.nurtureHeroSub}>{event.sub}</Text>
+                  </View>
                 </View>
-              </Pressable>
-            </Animated.View>
+              </ImageBackground>
+            </Pressable>
           ))}
-        </View>
+        </ScrollView>
 
         <View style={{ height: spacing['2xl'] }} />
       </ScrollView>
 
-      {/* Details Modal */}
+      {/* Event Modal */}
       <Modal
-        visible={!!selectedNurtureItem}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setSelectedNurtureItem(null)}
+        visible={!!selectedEvent}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setSelectedEvent(null)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            {selectedNurtureItem && (
+        <View style={styles.modalBg}>
+          <View style={styles.modalCard}>
+            {selectedEvent && (
               <>
-                <View style={styles.modalImageContainer}>
-                  <Image source={selectedNurtureItem.image} style={styles.modalImage} />
-                  <Pressable style={styles.modalClose} onPress={() => setSelectedNurtureItem(null)}>
-                    <Ionicons name="close-circle" size={32} color="#FFF" />
+                <ImageBackground
+                  source={selectedEvent.image}
+                  style={styles.modalHero}
+                  imageStyle={styles.modalHeroImage}
+                >
+                  <Pressable
+                    style={styles.modalClose}
+                    onPress={() => setSelectedEvent(null)}
+                  >
+                    <Ionicons name="close" size={24} color="#000" />
                   </Pressable>
-                </View>
-                <View style={styles.modalBody}>
-                  <Text style={styles.modalCategory}>{selectedNurtureItem.category}</Text>
-                  <Text style={styles.modalTitle}>{selectedNurtureItem.title}</Text>
-                  <Text style={styles.modalDesc}>{selectedNurtureItem.description}</Text>
-                  <Button 
-                    title={`Sign Up for ${selectedNurtureItem.title}`}
+                </ImageBackground>
+                <View style={styles.modalContentWrap}>
+                  <Text style={styles.modalTitle}>{selectedEvent.title}</Text>
+                  <Text style={styles.modalSubtitle}>{selectedEvent.date}</Text>
+                  <Text style={styles.modalDesc}>{selectedEvent.desc}</Text>
+
+                  <Button
+                    title="Sign Up"
                     onPress={() => {
-                      Alert.alert('Success', "You've been signed up for this event!");
-                      setSelectedNurtureItem(null);
+                      Alert.alert('Success', `You have signed up for ${selectedEvent.title}!`);
+                      setSelectedEvent(null);
                     }}
-                    style={{ marginTop: spacing.xl, marginBottom: spacing.lg }}
+                    style={{ marginTop: spacing.lg }}
                   />
                 </View>
               </>
@@ -778,104 +789,102 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     letterSpacing: -0.2,
   },
-  nurtureList: {
-    gap: spacing.base,
+  nurtureScroll: {
+    marginLeft: -spacing.lg,
+    paddingLeft: spacing.lg,
+    marginBottom: spacing.base,
   },
-  newNurtureCard: {
-    width: '100%',
-    height: 200,
-    borderRadius: radii.xl,
+  nurtureHeroCard: {
+    width: 250,
+    height: 180,
+    marginRight: spacing.md,
+    borderRadius: radii.card,
     overflow: 'hidden',
-    backgroundColor: colors.surfaceLow,
+    ...shadow.card,
   },
-  nurtureImage: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover',
-    position: 'absolute',
+  nurtureHeroImage: {
+    borderRadius: radii.card,
   },
-  nurtureGradient: {
+  nurtureHeroOverlay: {
     flex: 1,
-    justifyContent: 'flex-end',
-    padding: spacing.base,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    padding: spacing.md,
+    justifyContent: 'space-between',
   },
-  nurtureCategory: {
-    color: 'rgba(255,255,255,0.8)',
-    fontSize: 11,
-    fontFamily: fonts.bodyBold,
-    letterSpacing: 1.5,
-    marginBottom: 4,
-  },
-  nurtureMainTitle: {
-    color: colors.white,
-    fontSize: 22,
-    fontFamily: fonts.headlineBold,
-    marginBottom: spacing.md,
-  },
-  nurtureBtn: {
-    backgroundColor: 'rgba(255,255,255,0.2)',
+  nurturePill: {
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: radii.chip,
     alignSelf: 'flex-start',
-    paddingHorizontal: spacing.md,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.3)',
   },
-  nurtureBtnText: {
-    color: colors.white,
-    fontSize: 12,
+  nurturePillText: {
+    fontSize: 10,
     fontFamily: fonts.bodyBold,
-    letterSpacing: 0.5,
+    color: colors.white,
+    textTransform: 'uppercase',
   },
-  modalOverlay: {
+  nurtureHeroTitle: {
+    fontSize: 18,
+    fontFamily: fonts.headlineBold,
+    color: colors.white,
+    marginBottom: 2,
+  },
+  nurtureHeroSub: {
+    fontSize: 12,
+    fontFamily: fonts.bodyMedium,
+    color: 'rgba(255,255,255,0.85)',
+  },
+  modalBg: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    padding: spacing.md,
   },
-  modalContent: {
+  modalCard: {
     backgroundColor: colors.surface,
-    borderTopLeftRadius: radii.xl,
-    borderTopRightRadius: radii.xl,
+    borderRadius: radii.card,
     overflow: 'hidden',
-    maxHeight: '90%',
   },
-  modalImageContainer: {
-    position: 'relative',
-    height: 220,
+  modalHero: {
     width: '100%',
+    height: 180,
   },
-  modalImage: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover',
+  modalHeroImage: {
+    borderTopLeftRadius: radii.card,
+    borderTopRightRadius: radii.card,
   },
   modalClose: {
     position: 'absolute',
     top: spacing.md,
     right: spacing.md,
-    backgroundColor: 'rgba(0,0,0,0.3)',
-    borderRadius: 16,
+    backgroundColor: colors.white,
+    borderRadius: 20,
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...shadow.card,
   },
-  modalBody: {
+  modalContentWrap: {
     padding: spacing.lg,
   },
-  modalCategory: {
-    color: colors.primary,
-    fontSize: 11,
-    fontFamily: fonts.bodyBold,
-    letterSpacing: 1.5,
-    marginBottom: 8,
-  },
   modalTitle: {
+    fontSize: 22,
+    fontFamily: fonts.headlineExtraBold,
     color: colors.onSurface,
-    fontSize: 24,
-    fontFamily: fonts.headlineBold,
-    marginBottom: spacing.base,
+    marginBottom: 4,
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    fontFamily: fonts.bodySemiBold,
+    color: colors.primary,
+    marginBottom: spacing.md,
   },
   modalDesc: {
-    color: colors.onSurfaceVariant,
-    fontSize: 16,
+    fontSize: 15,
     fontFamily: fonts.bodyRegular,
-    lineHeight: 24,
+    color: colors.onSurfaceVariant,
+    lineHeight: 22,
   },
 });

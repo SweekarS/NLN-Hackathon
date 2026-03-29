@@ -270,7 +270,7 @@ interface AppState {
 
   totalXP: number;
   level: number;
-  levelTitle: 'Seeker' | 'Explorer' | 'Architect' | 'AuraFarm Master';
+  levelTitle: 'Sprout' | 'Sapling' | 'Grove Keeper' | 'Forest Sage' | 'Sanctuary Guardian' | 'Eternal Blossom';
 
   lastLogicalDateKey: string | null;
   dailyLogsByDate: Record<string, Partial<DailyLogFlags>>;
@@ -417,7 +417,7 @@ function getDefaultSessionState(): Omit<
 
     totalXP: 0,
     level: 1,
-    levelTitle: 'Seeker',
+    levelTitle: 'Sprout',
 
     lastLogicalDateKey: null,
     dailyLogsByDate: {},
@@ -466,7 +466,7 @@ export const useAppStore = create<AppState>()(
 
       totalXP: 0,
       level: 1,
-      levelTitle: 'Seeker' as const,
+      levelTitle: 'Sprout' as const,
 
       lastLogicalDateKey: null,
       dailyLogsByDate: {},

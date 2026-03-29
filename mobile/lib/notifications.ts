@@ -87,7 +87,7 @@ export async function scheduleDailyReminders(
       },
       {
         title: 'Evening Reflection 🌙',
-        body: 'Wind down gently and complete your daily AuraFarm tasks.',
+        body: 'Wind down gently and complete your daily Phool tasks.',
         time: getRandomTime(18, 20),
         skipIfDone: true,
       },
@@ -99,7 +99,7 @@ export async function scheduleDailyReminders(
     const affirmations = [
       'Take a deep breath. You are doing great today.',
       "A gentle reminder that it's okay to rest.",
-      'Every small step nurtures your growth on AuraFarm.',
+      'Every small step nurtures your growth on Phool.',
       'You are worthy of the peace you cultivate.',
     ];
     const randomAffirmation =

@@ -43,7 +43,7 @@ export default function NotificationsScreen() {
 
           <Text style={styles.headline}>Notification Center</Text>
           <Text style={styles.subtitle}>
-            Tune AuraFarm's gentle reminders
+            Tune Phool's gentle reminders
           </Text>
         </Animated.View>
 
@@ -51,7 +51,7 @@ export default function NotificationsScreen() {
           <GreenCard style={styles.masterCard}>
             <View style={styles.masterRow}>
               <Text style={styles.masterLabel}>
-                Enable all AuraFarm reminders
+                Enable all Phool reminders
               </Text>
               <Toggle
                 value={notificationsEnabled}

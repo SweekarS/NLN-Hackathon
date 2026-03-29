@@ -109,7 +109,7 @@ export default function HomeScreen() {
                   Grow at your own pace today.
                 </Text>
                 <Text style={styles.heroSubtitle}>
-                  Every small step nurtures your growth on AuraFarm.
+                  Every small step nurtures your growth on Phool.
                 </Text>
               </View>
               <LinearGradient
@@ -142,13 +142,15 @@ export default function HomeScreen() {
             />
           </View>
           <View style={styles.statsRow}>
-            <StatCard
-              iconName="sparkles-outline"
-              value={levelTitle}
-              label="GROWTH TIER"
-              delay={200}
-              hint={`Level ${level}`}
-            />
+            <Pressable onPress={() => router.push('/ranks')} style={{ flex: 1 }}>
+              <StatCard
+                iconName="sparkles-outline"
+                value={levelTitle}
+                label="GROWTH TIER"
+                delay={200}
+                hint={`Level ${level}`}
+              />
+            </Pressable>
             <StatCard
               iconName="trending-up-outline"
               value={String(totalXP)}

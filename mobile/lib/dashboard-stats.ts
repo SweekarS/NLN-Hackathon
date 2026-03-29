@@ -21,14 +21,15 @@ export function getLevelFromTotalXP(totalXP: number): number {
   return Math.floor(Math.max(0, totalXP) / XP_PER_LEVEL) + 1;
 }
 
-/** Growth tier label from level (not raw XP). */
 export function getGrowthTierTitle(
   level: number,
-): 'Seeker' | 'Explorer' | 'Architect' | 'AuraFarm Master' {
-  if (level >= 31) return 'AuraFarm Master';
-  if (level >= 16) return 'Architect';
-  if (level >= 6) return 'Explorer';
-  return 'Seeker';
+): 'Sprout' | 'Sapling' | 'Grove Keeper' | 'Forest Sage' | 'Sanctuary Guardian' | 'Eternal Blossom' {
+  if (level >= 46) return 'Eternal Blossom';
+  if (level >= 36) return 'Sanctuary Guardian';
+  if (level >= 26) return 'Forest Sage';
+  if (level >= 16) return 'Grove Keeper';
+  if (level >= 6) return 'Sapling';
+  return 'Sprout';
 }
 
 /** XP progress within the current level (0–499) toward the next level. */

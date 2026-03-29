@@ -78,7 +78,7 @@ function alertAuthRateLimit() {
 
 const privacyPresets = [
   { key: 'only_me' as const, iconName: 'lock-closed-outline' as const, title: 'Only Me', desc: 'Maximum privacy — data stays on device.' },
-  { key: 'circles' as const, iconName: 'people-outline' as const, title: 'AuraFarm Circles', desc: 'Share selectively with trusted circles.' },
+  { key: 'circles' as const, iconName: 'people-outline' as const, title: 'Phool Circles', desc: 'Share selectively with trusted circles.' },
   { key: 'global' as const, iconName: 'globe-outline' as const, title: 'Global Reach', desc: 'Contribute anonymously to community insights.' },
 ];
 
@@ -446,7 +446,7 @@ export default function AccountPrivacyScreen() {
           <Ionicons name="shield-checkmark" size={48} color={colors.primary} style={styles.consentIcon} />
           <Text style={styles.consentTitle}>Confirm Your Sovereignty</Text>
           <Text style={styles.consentBody}>
-            Your AuraFarm data is protected by end-to-end privacy. Nothing leaves your device without
+            Your Phool data is protected by end-to-end privacy. Nothing leaves your device without
             your explicit consent.
           </Text>
           <Button
@@ -456,8 +456,8 @@ export default function AccountPrivacyScreen() {
                   ? 'Signing in\u2026'
                   : 'Creating account\u2026'
                 : authMode === 'signin'
-                  ? 'Sign in to AuraFarm'
-                  : 'Create account on AuraFarm'
+                  ? 'Sign in to Phool'
+                  : 'Create account on Phool'
             }
             onPress={() => void confirmAndEnterAuraFarm()}
             style={styles.consentButton}

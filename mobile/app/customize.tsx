@@ -255,7 +255,7 @@ export default function CustomizeScreen() {
               </View>
 
               <Button
-                title="Add to AuraFarm"
+                title="Add to Phool"
                 onPress={handleAdd}
                 variant="primary"
                 style={styles.addBtn}

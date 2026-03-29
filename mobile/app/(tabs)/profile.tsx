@@ -70,22 +70,12 @@ export default function ProfileScreen() {
   const xpProgress = Math.min(intoLevel / XP_PER_LEVEL, 1);
 
   const pathSteps: PathStep[] = [
-    { label: 'Seeker', completed: level > 5, current: levelTitle === 'Seeker' },
-    {
-      label: 'Explorer',
-      completed: level > 15,
-      current: levelTitle === 'Explorer',
-    },
-    {
-      label: 'Architect',
-      completed: level > 30,
-      current: levelTitle === 'Architect',
-    },
-    {
-      label: 'AuraFarm Master',
-      completed: level >= 31,
-      current: levelTitle === 'AuraFarm Master',
-    },
+    { label: 'Sprout', completed: level > 5, current: levelTitle === 'Sprout' },
+    { label: 'Sapling', completed: level > 15, current: levelTitle === 'Sapling' },
+    { label: 'Grove Keeper', completed: level > 25, current: levelTitle === 'Grove Keeper' },
+    { label: 'Forest Sage', completed: level > 35, current: levelTitle === 'Forest Sage' },
+    { label: 'Sanctuary Guardian', completed: level > 45, current: levelTitle === 'Sanctuary Guardian' },
+    { label: 'Eternal Blossom', completed: level >= 46, current: levelTitle === 'Eternal Blossom' },
   ];
 
   const accountRows: AccountRow[] = [
@@ -218,30 +208,32 @@ export default function ProfileScreen() {
 
         {/* Level Card */}
         <Animated.View entering={FadeInUp.delay(100).duration(500)}>
-          <Card style={styles.cardGap}>
-            <View style={styles.levelRow}>
-              <LinearGradient
-                colors={[...botanicalGradient.colors]}
-                start={botanicalGradient.start}
-                end={botanicalGradient.end}
-                style={styles.levelCircle}
-              >
-                <Text style={styles.levelNum}>{level}</Text>
-                <Text style={styles.levelLabel}>LEVEL</Text>
-              </LinearGradient>
-              <View style={styles.levelInfo}>
-                <Text style={styles.levelTitle}>{levelTitle}</Text>
-                <Text style={styles.levelXP}>
-                  {totalXP} / {nextLevelTotal} XP
-                </Text>
-                <XPBar progress={xpProgress} height={10} />
+          <Pressable onPress={() => router.push('/ranks')}>
+            <Card style={styles.cardGap}>
+              <View style={styles.levelRow}>
+                <LinearGradient
+                  colors={[...botanicalGradient.colors]}
+                  start={botanicalGradient.start}
+                  end={botanicalGradient.end}
+                  style={styles.levelCircle}
+                >
+                  <Text style={styles.levelNum}>{level}</Text>
+                  <Text style={styles.levelLabel}>LEVEL</Text>
+                </LinearGradient>
+                <View style={styles.levelInfo}>
+                  <Text style={styles.levelTitle}>{levelTitle}</Text>
+                  <Text style={styles.levelXP}>
+                    {totalXP} / {nextLevelTotal} XP
+                  </Text>
+                  <XPBar progress={xpProgress} height={10} />
+                </View>
               </View>
-            </View>
-            <Text style={styles.levelRemaining}>
-              {nextLevelTotal - totalXP > 0 ? nextLevelTotal - totalXP : 0} XP
-              until Level {level + 1}
-            </Text>
-          </Card>
+              <Text style={styles.levelRemaining}>
+                {nextLevelTotal - totalXP > 0 ? nextLevelTotal - totalXP : 0} XP
+                until Level {level + 1}
+              </Text>
+            </Card>
+          </Pressable>
         </Animated.View>
 
         {/* Next Milestone */}
