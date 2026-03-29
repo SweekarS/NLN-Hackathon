@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -7,11 +7,14 @@ import {
   Pressable,
   Alert,
   Linking,
+  Image,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useShallow } from 'zustand/react/shallow';
 import { colors, fonts, spacing, radii } from '../../theme';
 import { useAppStore } from '../../store/useAppStore';
@@ -55,6 +58,15 @@ function calculateStreakProgress(
 }
 
 export default function InsightsScreen() {
+  const [selectedNurtureItem, setSelectedNurtureItem] = useState<{
+    id: string;
+    category: string;
+    title: string;
+    buttonText: string;
+    image: any;
+    description: string;
+  } | null>(null);
+
   const {
     currentStreak,
     longestStreak,
@@ -380,31 +392,94 @@ export default function InsightsScreen() {
 
         {/* Nurture Your Next Week */}
         <SectionTitle title="Nurture Your Next Week" />
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.nurtureScroll}
-        >
+        <View style={styles.nurtureList}>
           {[
             {
-              title: 'Try a digital sunset',
-              sub: 'No screens 1 hour before bed',
+              id: 'sunset_yoga',
+              category: 'MORNING RITUAL',
+              title: 'Try Sunset Yoga',
+              buttonText: 'EXPLORE ROUTINE',
+              image: require('../../assets/images/sunset_yoga.png'),
+              description: 'Start your morning with a 15-minute sunset yoga routine to awaken your body and focus your mind. Perfect for early risers to center themselves before the day begins.'
             },
             {
-              title: 'Morning gratitude',
-              sub: 'Write 3 things you appreciate',
+              id: 'leafy_greens',
+              category: 'INTERNAL HEALTH',
+              title: 'Leafy Greens Prep',
+              buttonText: 'RECIPE PACK',
+              image: require('../../assets/images/leafy_greens.png'),
+              description: 'Nourish your body from the inside out. This pack includes 5 easy, delicious leafy green recipes that you can prep on Sunday for a vibrant week.'
             },
-            { title: 'Walk in nature', sub: '20 minutes of forest bathing' },
-          ].map((tip) => (
-            <Card key={tip.title} style={styles.nurtureCard}>
-              <Text style={styles.nurtureTitle}>{tip.title}</Text>
-              <Text style={styles.nurtureSub}>{tip.sub}</Text>
-            </Card>
+            {
+              id: 'digital_detox',
+              category: 'RESTORATIVE SLEEP',
+              title: 'Digital Detox Hour',
+              buttonText: 'SCHEDULE ALERT',
+              image: require('../../assets/images/digital_detox.png'),
+              description: 'Reclaim your sleep quality by disconnecting from all screens one hour before bed. Set up an automated alert to remind you to power down.'
+            },
+          ].map((item) => (
+            <Animated.View key={item.id} entering={FadeIn.duration(400)}>
+              <Pressable onPress={() => setSelectedNurtureItem(item)}>
+                <View style={styles.newNurtureCard}>
+                  <Image source={item.image} style={styles.nurtureImage} />
+                  <LinearGradient
+                    colors={['transparent', 'rgba(0,0,0,0.85)']}
+                    style={styles.nurtureGradient}
+                  >
+                    <Text style={styles.nurtureCategory}>{item.category}</Text>
+                    <Text style={styles.nurtureMainTitle}>{item.title}</Text>
+                    <Pressable
+                      style={styles.nurtureBtn}
+                      onPress={() => setSelectedNurtureItem(item)}
+                    >
+                      <Text style={styles.nurtureBtnText}>{item.buttonText}</Text>
+                    </Pressable>
+                  </LinearGradient>
+                </View>
+              </Pressable>
+            </Animated.View>
           ))}
-        </ScrollView>
+        </View>
 
         <View style={{ height: spacing['2xl'] }} />
       </ScrollView>
+
+      {/* Details Modal */}
+      <Modal
+        visible={!!selectedNurtureItem}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setSelectedNurtureItem(null)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            {selectedNurtureItem && (
+              <>
+                <View style={styles.modalImageContainer}>
+                  <Image source={selectedNurtureItem.image} style={styles.modalImage} />
+                  <Pressable style={styles.modalClose} onPress={() => setSelectedNurtureItem(null)}>
+                    <Ionicons name="close-circle" size={32} color="#FFF" />
+                  </Pressable>
+                </View>
+                <View style={styles.modalBody}>
+                  <Text style={styles.modalCategory}>{selectedNurtureItem.category}</Text>
+                  <Text style={styles.modalTitle}>{selectedNurtureItem.title}</Text>
+                  <Text style={styles.modalDesc}>{selectedNurtureItem.description}</Text>
+                  <Button 
+                    title={`Sign Up for ${selectedNurtureItem.title}`}
+                    onPress={() => {
+                      Alert.alert('Success', "You've been signed up for this event!");
+                      setSelectedNurtureItem(null);
+                    }}
+                    style={{ marginTop: spacing.xl, marginBottom: spacing.lg }}
+                  />
+                </View>
+              </>
+            )}
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -703,24 +778,104 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     letterSpacing: -0.2,
   },
-  nurtureScroll: {
-    marginLeft: -spacing.lg,
-    paddingLeft: spacing.lg,
+  nurtureList: {
+    gap: spacing.base,
+  },
+  newNurtureCard: {
+    width: '100%',
+    height: 200,
+    borderRadius: radii.xl,
+    overflow: 'hidden',
+    backgroundColor: colors.surfaceLow,
+  },
+  nurtureImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+    position: 'absolute',
+  },
+  nurtureGradient: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    padding: spacing.base,
+  },
+  nurtureCategory: {
+    color: 'rgba(255,255,255,0.8)',
+    fontSize: 11,
+    fontFamily: fonts.bodyBold,
+    letterSpacing: 1.5,
+    marginBottom: 4,
+  },
+  nurtureMainTitle: {
+    color: colors.white,
+    fontSize: 22,
+    fontFamily: fonts.headlineBold,
+    marginBottom: spacing.md,
+  },
+  nurtureBtn: {
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    alignSelf: 'flex-start',
+    paddingHorizontal: spacing.md,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)',
+  },
+  nurtureBtnText: {
+    color: colors.white,
+    fontSize: 12,
+    fontFamily: fonts.bodyBold,
+    letterSpacing: 0.5,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: colors.surface,
+    borderTopLeftRadius: radii.xl,
+    borderTopRightRadius: radii.xl,
+    overflow: 'hidden',
+    maxHeight: '90%',
+  },
+  modalImageContainer: {
+    position: 'relative',
+    height: 220,
+    width: '100%',
+  },
+  modalImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  modalClose: {
+    position: 'absolute',
+    top: spacing.md,
+    right: spacing.md,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    borderRadius: 16,
+  },
+  modalBody: {
+    padding: spacing.lg,
+  },
+  modalCategory: {
+    color: colors.primary,
+    fontSize: 11,
+    fontFamily: fonts.bodyBold,
+    letterSpacing: 1.5,
+    marginBottom: 8,
+  },
+  modalTitle: {
+    color: colors.onSurface,
+    fontSize: 24,
+    fontFamily: fonts.headlineBold,
     marginBottom: spacing.base,
   },
-  nurtureCard: {
-    width: 200,
-    marginRight: spacing.md,
-  },
-  nurtureTitle: {
-    fontSize: 15,
-    fontFamily: fonts.bodySemiBold,
-    color: colors.onSurface,
-    marginBottom: spacing.xs,
-  },
-  nurtureSub: {
-    fontSize: 13,
-    fontFamily: fonts.bodyRegular,
+  modalDesc: {
     color: colors.onSurfaceVariant,
+    fontSize: 16,
+    fontFamily: fonts.bodyRegular,
+    lineHeight: 24,
   },
 });
