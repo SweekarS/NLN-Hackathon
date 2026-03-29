@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet, LayoutAnimation, Platform, UIManager, Alert, ActivityIndicator } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { View, Text, ScrollView, Pressable, StyleSheet, Platform, UIManager, Alert, KeyboardAvoidingView } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeIn, FadeInUp, FadeOut, LinearTransition } from 'react-native-reanimated';
 import { router } from 'expo-router';
-import { Card } from '../components/ui/Card';
-import { GreenCard } from '../components/ui/GreenCard';
 import { Button } from '../components/ui/Button';
 import { FieldInput } from '../components/ui/FieldInput';
 import { FieldLabel } from '../components/ui/FieldLabel';
@@ -25,16 +23,10 @@ const journeyOptions = [
   { key: 'anonymous' as const, iconName: 'globe-outline' as const, title: 'Anonymous Community', desc: 'Minimal identity and community support.' },
 ];
 
-const features = [
-  { iconName: 'lock-closed-outline' as const, title: 'Private by Design', desc: 'Your data stays yours. Always.' },
-  { iconName: 'leaf-outline' as const, title: 'Gentle Guidance', desc: 'Small steps, meaningful progress.' },
-  { iconName: 'heart-outline' as const, title: 'Zero Judgment', desc: 'Every pace is the right pace.' },
-];
-
 export default function OnboardingScreen() {
+  const insets = useSafeAreaInsets();
   const journeyMode = useAppStore((s) => s.journeyMode);
   const setJourneyMode = useAppStore((s) => s.setJourneyMode);
-  const [privacyExpanded, setPrivacyExpanded] = useState(false);
   const [step, setStep] = useState<'intro' | 'journey'>('intro');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -80,17 +72,29 @@ export default function OnboardingScreen() {
     }
   };
 
-  const togglePrivacy = () => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setPrivacyExpanded((v) => !v);
-  };
-
   return (
-    <SafeAreaView style={styles.safe}>
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+    <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+      <KeyboardAvoidingView
+        style={styles.kav}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top : 0}
+      >
+        <ScrollView
+          contentContainerStyle={styles.scroll}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+        >
         {step === 'intro' && (
           <Animated.View entering={FadeIn.duration(400)} exiting={FadeOut.duration(400)} style={{ flex: 1 }}>
-            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
+            <View
+              style={{
+                flex: 1,
+                justifyContent: 'center',
+                alignItems: 'center',
+                minHeight: showLoginFields ? 200 : 400,
+              }}
+            >
               <Animated.View entering={FadeInUp.duration(600).delay(50)}>
                 <Logo size={160} />
               </Animated.View>
@@ -188,7 +192,8 @@ export default function OnboardingScreen() {
         )}
 
 
-      </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -197,6 +202,9 @@ const styles = StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: colors.surface,
+  },
+  kav: {
+    flex: 1,
   },
   scroll: {
     flexGrow: 1,

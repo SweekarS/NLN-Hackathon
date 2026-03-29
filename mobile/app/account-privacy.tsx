@@ -11,7 +11,7 @@ import {
   ActivityIndicator,
   Linking,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { IconCircle } from '../components/ui/IconCircle';
@@ -88,6 +88,7 @@ const permissionRows = [
 ];
 
 export default function AccountPrivacyScreen() {
+  const insets = useSafeAreaInsets();
   const [authMode, setAuthMode] = useState<'signup' | 'signin'>('signup');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -318,13 +319,29 @@ export default function AccountPrivacyScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top : 0}
       >
-        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          contentContainerStyle={styles.scroll}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+        >
+          <Pressable
+            onPress={() => router.back()}
+            style={styles.backRow}
+            hitSlop={12}
+            accessibilityRole="button"
+            accessibilityLabel="Back to welcome"
+          >
+            <Ionicons name="chevron-back" size={24} color={colors.onSurface} />
+            <Text style={styles.backLabel}>Back</Text>
+          </Pressable>
+
           <Animated.View entering={FadeIn.duration(500)} style={styles.dotsRow}>
             <View style={[styles.dot, styles.dotFilled]} />
             <View style={[styles.dot, styles.dotFilled]} />
@@ -462,6 +479,17 @@ const styles = StyleSheet.create({
   scroll: {
     padding: spacing.lg,
     paddingBottom: spacing['4xl'],
+  },
+  backRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginBottom: spacing.sm,
+  },
+  backLabel: {
+    fontSize: 16,
+    fontFamily: fonts.bodySemiBold,
+    color: colors.onSurface,
   },
   dotsRow: {
     flexDirection: 'row',
