@@ -4,6 +4,16 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/favicon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#096444" />
+    <script>
+      (function () {
+        try {
+          if (localStorage.getItem('phool-theme') === 'dark') {
+            document.documentElement.dataset.theme = 'dark'
+          }
+        } catch (_) {}
+      })()
+    </script>
     <meta
       name="description"
       content="Phool helps people build mental stability through private daily Conditioning, with AI-personalized onboarding and safety-first support."
