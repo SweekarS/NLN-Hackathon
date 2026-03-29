@@ -116,7 +116,7 @@ export async function scheduleDailyReminders(
   if (config.progressNudges) {
     scheduledPayloads.push({
       title: 'Streak Saver 🛡️',
-      body: 'Only a few hours left! Complete your rituals to protect your streak.',
+      body: 'Only a few hours left! Complete your Conditioning to protect your streak.',
       time: { hour: 21, minute: 0 },
       skipIfDone: true,
     });

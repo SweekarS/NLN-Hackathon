@@ -1,14 +1,33 @@
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
 :root {
+  --landing-nav-offset: 5.75rem;
   --primary: #096444;
   --primary-container: #2e7d5b;
+  --primary-fixed-dim: #88d6af;
+  --on-primary: #ffffff;
   --secondary-container: #bfeecc;
+  --on-secondary-container: #446d52;
+  --secondary-fixed-dim: #a9dbb8;
+  --tertiary: #415d4f;
   --surface: #f6fbf7;
-  --surface-low: #f0f5f1;
-  --surface-card: #ffffff;
+  --surface-container-low: #f0f5f1;
+  --surface-container-lowest: #ffffff;
+  --surface-container-high: #e4e9e5;
   --outline: #bec9c1;
-  --text: #171d1b;
+  --charcoal: #1f2a24;
+  --text: #1f2a24;
   --text-muted: #3f4943;
-  --shadow: 0 12px 32px rgba(31, 42, 36, 0.07);
+  --ambient-shadow: 0 12px 32px rgba(23, 29, 27, 0.04);
+  --glass-nav: rgba(246, 251, 247, 0.8);
 
   font-family: 'Manrope', system-ui, -apple-system, sans-serif;
   line-height: 1.45;
@@ -29,7 +48,63 @@
 body {
   margin: 0;
   min-height: 100vh;
+  color: var(--text);
   background: radial-gradient(circle at top right, #dff4e6 0%, transparent 45%),
+    radial-gradient(circle at bottom left, #edf7f0 0%, transparent 42%), var(--surface);
+}
+
+#root {
+  min-height: 100vh;
+}
+
+h1,
+h2,
+h3,
+h4,
+p {
+  margin: 0;
+}
+
+button {
+  font: inherit;
+}
+:root {
+  --primary: #096444;
+  --primary-container: #2e7d5b;
+  --tertiary: #415d4f;
+  --secondary-container: #bfeecc;
+  --surface: #f6fbf7;
+  --surface-low: #f0f5f1;
+  --surface-container-high: #e4e9e5;
+  --surface-card: #ffffff;
+  --outline: #bec9c1;
+  --charcoal: #1f2a24;
+  --text: #1f2a24;
+  --text-muted: #3f4943;
+  --shadow: 0 12px 32px rgba(31, 42, 36, 0.07);
+  --ambient-shadow: 0 12px 32px rgba(23, 29, 27, 0.04);
+  --glass-nav: rgba(246, 251, 247, 0.8);
+
+  font-family: 'Manrope', system-ui, -apple-system, sans-serif;
+  line-height: 1.45;
+  font-weight: 500;
+  color: var(--text);
+  background: var(--surface);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: radial-gradient(circle at top right, #def2e4 0%, transparent 45%),
     radial-gradient(circle at bottom left, #edf7f0 0%, transparent 42%),
     var(--surface);
 }

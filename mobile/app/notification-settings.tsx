@@ -75,7 +75,7 @@ export default function NotificationsScreen() {
                 }}
               >
                 <IconCircle name="calendar-outline" size="sm" />
-                <Text style={styles.toggleLabel}>Daily Rituals</Text>
+                <Text style={styles.toggleLabel}>Daily Conditioning</Text>
               </View>
               <Toggle
                 value={notifDailyRituals}

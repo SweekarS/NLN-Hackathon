@@ -217,7 +217,7 @@ const defaultTasks: Task[] = [
     id: '2',
     icon: 'water-outline',
     icon_type: 'drop',
-    title: 'Hydration Ritual',
+    title: 'Hydration Conditioning',
     subtitle: 'Nourish your body with mindful sips',
     timeOfDay: 'afternoon',
     enabled: true,

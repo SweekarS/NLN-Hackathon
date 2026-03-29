@@ -137,7 +137,7 @@ export default function TasksScreen() {
           entering={FadeInUp.delay(80).duration(500)}
           style={styles.headerRow}
         >
-          <Text style={styles.pageTitle}>Daily Rituals</Text>
+          <Text style={styles.pageTitle}>Daily Conditioning</Text>
           <Button
             title="Customize"
             onPress={() => router.push('/customize')}
