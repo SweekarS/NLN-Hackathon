@@ -10,14 +10,17 @@ interface StatCardProps {
   value: string;
   label: string;
   delay?: number;
+  /** Small line under the label (e.g. gentle streak copy). */
+  hint?: string;
 }
 
-export function StatCard({ iconName, value, label, delay = 0 }: StatCardProps) {
+export function StatCard({ iconName, value, label, delay = 0, hint }: StatCardProps) {
   return (
     <Animated.View entering={FadeInUp.delay(delay).duration(500).springify()} style={styles.card}>
       <IconCircle name={iconName} size="sm" />
       <Text style={styles.value}>{value}</Text>
       <Text style={styles.label}>{label}</Text>
+      {hint ? <Text style={styles.hint}>{hint}</Text> : null}
     </Animated.View>
   );
 }
@@ -43,5 +46,13 @@ const styles = StyleSheet.create({
     color: colors.onSurfaceVariant,
     textTransform: 'uppercase',
     letterSpacing: 0.8,
+  },
+  hint: {
+    fontSize: 10,
+    fontFamily: fonts.bodyRegular,
+    color: colors.outline,
+    textAlign: 'center',
+    marginTop: 2,
+    lineHeight: 14,
   },
 });

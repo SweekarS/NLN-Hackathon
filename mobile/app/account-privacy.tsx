@@ -100,12 +100,10 @@ export default function AccountPrivacyScreen() {
   const setPrivacyPreset = useAppStore((s) => s.setPrivacyPreset);
   const permissions = useAppStore((s) => s.permissions);
   const togglePermission = useAppStore((s) => s.togglePermission);
-  const setOnboardingComplete = useAppStore((s) => s.setOnboardingComplete);
   const setUserName = useAppStore((s) => s.setUserName);
 
   const persistProfileAndEnter = async (user: User, displayName: string) => {
     setUserName(displayName);
-    setOnboardingComplete();
     const { stressMode, notificationsEnabled, theme } = useAppStore.getState();
     await supabase
       .from('users')
@@ -119,7 +117,7 @@ export default function AccountPrivacyScreen() {
       })
       .eq('id', user.id);
     setShowConsent(false);
-    router.replace('/(tabs)');
+    router.replace({ pathname: '/onboarding', params: { phase: 'quiz' } });
   };
 
   const handleGoogleAuth = async () => {

@@ -7,13 +7,14 @@ import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
 import { router, useFocusEffect } from 'expo-router';
 import { colors, fonts, spacing, radii, shadow, botanicalGradient } from '../../theme';
 import { useAppStore } from '../../store/useAppStore';
+import { xpProgressInCurrentLevel } from '../../lib/dashboard-stats';
 import { Card } from '../../components/ui/Card';
 import { GreenCard } from '../../components/ui/GreenCard';
 import { XPBar } from '../../components/ui/XPBar';
 import { SectionTitle } from '../../components/ui/SectionTitle';
 import { IconCircle } from '../../components/ui/IconCircle';
 
-const NEXT_LEVEL_XP_STEP = 200;
+const XP_PER_LEVEL = 500;
 
 interface PathStep {
   label: string;
@@ -35,14 +36,14 @@ export default function ProfileScreen() {
     }, [syncUserStats])
   );
 
-  const nextLevelXP = level * NEXT_LEVEL_XP_STEP;
-  const xpProgress = Math.min(totalXP / nextLevelXP, 1);
+  const { intoLevel, nextLevelTotal } = xpProgressInCurrentLevel(totalXP);
+  const xpProgress = Math.min(intoLevel / XP_PER_LEVEL, 1);
 
   const pathSteps: PathStep[] = [
-    { label: 'Rookie', completed: true, current: false },
-    { label: 'Regular', completed: true, current: false },
-    { label: 'Master', completed: false, current: levelTitle === 'Master' },
-    { label: 'Legend', completed: false, current: false },
+    { label: 'Seeker', completed: level > 5, current: levelTitle === 'Seeker' },
+    { label: 'Explorer', completed: level > 15, current: levelTitle === 'Explorer' },
+    { label: 'Architect', completed: level > 30, current: levelTitle === 'Architect' },
+    { label: 'Sanctuary Master', completed: level >= 31, current: levelTitle === 'Sanctuary Master' },
   ];
 
   const recentGrowth = [
@@ -157,10 +158,13 @@ export default function ProfileScreen() {
                 </View>
                 <View style={styles.statDivider} />
                 <View style={styles.statItem}>
-                  <Text style={styles.statValue}>{totalSessionsCompleted} Sessions</Text>
-                  <Text style={styles.statLabel}>Completed</Text>
+                  <Text style={styles.statValue}>{totalXP}</Text>
+                  <Text style={styles.statLabel}>Total XP</Text>
                 </View>
               </View>
+              <Text style={styles.sessionsSub}>
+                {totalSessionsCompleted} session{totalSessionsCompleted === 1 ? '' : 's'} logged
+              </Text>
             </View>
           </Card>
         </Animated.View>
@@ -181,13 +185,13 @@ export default function ProfileScreen() {
               <View style={styles.levelInfo}>
                 <Text style={styles.levelTitle}>{levelTitle}</Text>
                 <Text style={styles.levelXP}>
-                  {totalXP} / {nextLevelXP} XP
+                  {totalXP} / {nextLevelTotal} XP
                 </Text>
                 <XPBar progress={xpProgress} height={10} />
               </View>
             </View>
             <Text style={styles.levelRemaining}>
-              {nextLevelXP - totalXP > 0 ? nextLevelXP - totalXP : 0} XP until Level {level + 1}
+              {nextLevelTotal - totalXP > 0 ? nextLevelTotal - totalXP : 0} XP until Level {level + 1}
             </Text>
           </Card>
         </Animated.View>
@@ -410,6 +414,13 @@ const styles = StyleSheet.create({
     width: 1,
     height: 28,
     backgroundColor: colors.outlineVariant,
+  },
+  sessionsSub: {
+    fontSize: 12,
+    fontFamily: fonts.bodyRegular,
+    color: colors.onSurfaceVariant,
+    marginTop: spacing.sm,
+    textAlign: 'center',
   },
   cardGap: {
     marginTop: spacing.xs,

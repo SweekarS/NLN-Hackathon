@@ -1,7 +1,6 @@
 import { Redirect, Tabs } from 'expo-router';
 import { useAppStore } from '../../store/useAppStore';
 import { NavBar } from '../../components/ui/NavBar';
-import { colors } from '../../theme';
 
 export default function TabLayout() {
   const hasCompletedOnboarding = useAppStore((s) => s.hasCompletedOnboarding);

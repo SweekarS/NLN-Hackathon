@@ -8,6 +8,7 @@ import { router, useFocusEffect } from 'expo-router';
 
 import { colors, fonts, spacing, radii, shadow, botanicalGradient } from '../../theme';
 import { useAppStore } from '../../store/useAppStore';
+import { formatWeeklyAverageLabel } from '../../lib/dashboard-stats';
 import { Card } from '../../components/ui/Card';
 import { GreenCard } from '../../components/ui/GreenCard';
 import { LightCard } from '../../components/ui/LightCard';
@@ -20,7 +21,18 @@ import { Heatmap } from '../../components/ui/Heatmap';
 import { BottomSheet } from '../../components/ui/BottomSheet';
 
 export default function HomeScreen() {
-  const { currentStreak, level, totalXP, tasks, todayCompletions, avatarImage, syncUserStats, weeklyAvg, heatmapData } = useAppStore();
+  const {
+    currentStreak,
+    level,
+    totalXP,
+    tasks,
+    todayCompletions,
+    weeklyActiveDaysCount,
+    levelTitle,
+    avatarImage,
+    syncUserStats,
+    heatmapData,
+  } = useAppStore();
   const [achievementVisible, setAchievementVisible] = useState(false);
 
   useFocusEffect(
@@ -85,12 +97,29 @@ export default function HomeScreen() {
         {/* Stats Grid */}
         <View style={styles.statsGrid}>
           <View style={styles.statsRow}>
-            <StatCard iconName="flame-outline" value={String(currentStreak)} label="CURRENT STREAK" delay={0} />
-            <StatCard iconName="checkmark-circle-outline" value={`${Math.round(weeklyAvg)}%`} label="WEEKLY AVG" delay={100} />
+            <StatCard
+              iconName="flame-outline"
+              value={String(currentStreak)}
+              label="CURRENT STREAK"
+              delay={0}
+              hint={currentStreak === 0 ? 'Take your time' : undefined}
+            />
+            <StatCard
+              iconName="checkmark-circle-outline"
+              value={formatWeeklyAverageLabel(weeklyActiveDaysCount)}
+              label="WEEKLY AVG"
+              delay={100}
+            />
           </View>
           <View style={styles.statsRow}>
-            <StatCard iconName="sparkles-outline" value={`Lvl ${level}`} label="GROWTH TIER" delay={200} />
-            <StatCard iconName="trending-up-outline" value={`${(totalXP / 1000).toFixed(1)}k`} label="TOTAL XP" delay={300} />
+            <StatCard
+              iconName="sparkles-outline"
+              value={levelTitle}
+              label="GROWTH TIER"
+              delay={200}
+              hint={`Level ${level}`}
+            />
+            <StatCard iconName="trending-up-outline" value={String(totalXP)} label="TOTAL XP" delay={300} />
           </View>
         </View>
 

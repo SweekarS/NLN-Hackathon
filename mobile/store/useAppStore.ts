@@ -2,6 +2,25 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { getLogicalDateString, getLogicalDateRange } from '../lib/logical-date';
+import {
+  type DailyLogFlags,
+  XP_PER_TASK,
+  XP_BONUS_ALL_FOUR,
+  getLevelFromTotalXP,
+  getGrowthTierTitle,
+  flagsFromTaskIds,
+  completionIdsFromFlags,
+  countTasksDone,
+  computeCurrentStreak,
+  computeWeeklyActiveDays,
+  resolveLogFlagKey,
+} from '../lib/dashboard-stats';
+import {
+  fetchDashboardSnapshot,
+  upsertDailyLogRemote,
+  updateProfileStatsRemote,
+} from '../lib/sync-dashboard-stats';
 
 export interface Task {
   id: string;
@@ -11,6 +30,109 @@ export interface Task {
   duration?: string;
   timeOfDay: 'morning' | 'afternoon' | 'evening';
   enabled: boolean;
+}
+
+export interface OnboardingDraft {
+  firstName: string;
+  dateOfBirth: string;
+  morningKickstart: 1 | 2 | 3 | null;
+  socialConnection: 1 | 2 | 3 | null;
+  recharge: 1 | 2 | 3 | null;
+}
+
+export function emptyOnboardingDraft(): OnboardingDraft {
+  return {
+    firstName: '',
+    dateOfBirth: '',
+    morningKickstart: null,
+    socialConnection: null,
+    recharge: null,
+  };
+}
+
+export const FALLBACK_GEMINI_TASKS: Task[] = [
+  {
+    id: 'morning',
+    icon: 'sunny-outline',
+    title: 'Morning Routine',
+    subtitle: 'A gentle start aligned with how you like to wake your mind.',
+    duration: '15M',
+    timeOfDay: 'morning',
+    enabled: true,
+  },
+  {
+    id: 'social',
+    icon: 'people-outline',
+    title: 'Social Check-in',
+    subtitle: 'A small moment to connect in the way that feels natural to you.',
+    duration: '10M',
+    timeOfDay: 'afternoon',
+    enabled: true,
+  },
+  {
+    id: 'focus',
+    icon: 'phone-portrait-outline',
+    title: 'Phone-Free Hour',
+    subtitle: 'Protect space for deep focus or rest from screens.',
+    duration: '60M',
+    timeOfDay: 'afternoon',
+    enabled: true,
+  },
+  {
+    id: 'evening',
+    icon: 'moon-outline',
+    title: 'Evening Wind-Down',
+    subtitle: 'Ease into rest the way your nervous system prefers.',
+    duration: '20M',
+    timeOfDay: 'evening',
+    enabled: true,
+  },
+];
+
+type GeminiTaskJson = {
+  id: string;
+  title: string;
+  description: string;
+  completed?: boolean;
+};
+
+const ID_TIME: Record<string, Task['timeOfDay']> = {
+  morning: 'morning',
+  social: 'afternoon',
+  focus: 'afternoon',
+  evening: 'evening',
+};
+
+const ID_ICON: Record<string, string> = {
+  morning: 'sunny-outline',
+  social: 'people-outline',
+  focus: 'phone-portrait-outline',
+  evening: 'moon-outline',
+};
+
+export function mapGeminiJsonToTasks(raw: unknown): Task[] | null {
+  if (!Array.isArray(raw) || raw.length !== 4) return null;
+  const out: Task[] = [];
+  for (const item of raw) {
+    const o = item as GeminiTaskJson;
+    if (
+      typeof o?.id !== 'string' ||
+      typeof o?.title !== 'string' ||
+      typeof o?.description !== 'string'
+    ) {
+      return null;
+    }
+    const timeOfDay = ID_TIME[o.id] ?? 'morning';
+    out.push({
+      id: o.id,
+      icon: ID_ICON[o.id] ?? 'leaf-outline',
+      title: o.title,
+      subtitle: o.description,
+      timeOfDay,
+      enabled: true,
+    });
+  }
+  return out;
 }
 
 export const PERSIST_STORAGE_KEY = 'organic-sanctuary-storage';
@@ -34,6 +156,8 @@ interface AppState {
 
   tasks: Task[];
   todayCompletions: string[];
+
+  /** Legacy / teammate: session count & heatmap feed (optional Supabase tables). */
   totalSessionsCompleted: number;
   weeklyAvg: number;
   heatmapData: number[];
@@ -41,7 +165,11 @@ interface AppState {
 
   totalXP: number;
   level: number;
-  levelTitle: 'Rookie' | 'Regular' | 'Master' | 'Legend';
+  levelTitle: 'Seeker' | 'Explorer' | 'Architect' | 'Sanctuary Master';
+
+  lastLogicalDateKey: string | null;
+  dailyLogsByDate: Record<string, Partial<DailyLogFlags>>;
+  weeklyActiveDaysCount: number;
 
   privacyPreset: 'only_me' | 'circles' | 'global';
   permissions: {
@@ -55,9 +183,13 @@ interface AppState {
   reminderTime: '8am' | '10am' | 'off';
   theme: 'light' | 'dark' | 'forest';
 
+  onboardingDraft: OnboardingDraft;
+  setOnboardingDraft: (partial: Partial<OnboardingDraft>) => void;
+  clearOnboardingDraft: () => void;
+
   _hasHydrated: boolean;
   setHasHydrated: (v: boolean) => void;
-  completeTask: (taskId: string) => void;
+  completeTask: (taskId: string) => void | Promise<void>;
   addXP: (amount: number) => void;
   setPrivacyPreset: (preset: 'only_me' | 'circles' | 'global') => void;
   togglePermission: (key: 'vitals' | 'mindfulness' | 'location') => void;
@@ -74,9 +206,12 @@ interface AppState {
   setUserName: (name: string) => void;
   setAvatarImage: (uri: string | null) => void;
 
+  /** Aligns logical day, pulls `profiles` + `daily_logs`, then optional legacy heatmap/weekly tables. */
   syncUserStats: () => Promise<void>;
 
-  /** Clears persisted data and resets to defaults; signs out of Supabase when configured. */
+  refreshDashboardStatsFromRemote: () => Promise<void>;
+  ensureLogicalDayAligned: () => void;
+
   resetLocalSession: () => void;
 }
 
@@ -85,18 +220,20 @@ function getDaysInCurrentMonth(): number {
   return new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
 }
 
-function getLevelTitle(level: number): 'Rookie' | 'Regular' | 'Master' | 'Legend' {
-  if (level <= 10) return 'Rookie';
-  if (level <= 30) return 'Regular';
-  if (level <= 60) return 'Master';
-  return 'Legend';
+const PRUNE_LOG_DAYS = 21;
+
+function pruneDailyLogs(
+  map: Record<string, Partial<DailyLogFlags>>,
+  anchor: string
+): Record<string, Partial<DailyLogFlags>> {
+  const keep = new Set(getLogicalDateRange(anchor, PRUNE_LOG_DAYS));
+  const out: Record<string, Partial<DailyLogFlags>> = {};
+  for (const k of Object.keys(map)) {
+    if (keep.has(k)) out[k] = map[k];
+  }
+  return out;
 }
 
-function getLevelFromXP(xp: number): number {
-  return Math.floor(xp / 200) + 1;
-}
-
-/** Default app state after sign-out / delete-account (local-only). */
 function getDefaultSessionState(): Omit<
   AppState,
   | 'setHasHydrated'
@@ -115,6 +252,10 @@ function getDefaultSessionState(): Omit<
   | 'toggleTaskEnabled'
   | 'setUserName'
   | 'setAvatarImage'
+  | 'setOnboardingDraft'
+  | 'clearOnboardingDraft'
+  | 'refreshDashboardStatsFromRemote'
+  | 'ensureLogicalDayAligned'
   | 'resetLocalSession'
   | 'syncUserStats'
 > {
@@ -123,6 +264,7 @@ function getDefaultSessionState(): Omit<
     avatarImage: null,
     hasCompletedOnboarding: false,
     journeyMode: 'solo',
+    onboardingDraft: emptyOnboardingDraft(),
 
     currentStreak: 0,
     longestStreak: 0,
@@ -137,7 +279,11 @@ function getDefaultSessionState(): Omit<
 
     totalXP: 0,
     level: 1,
-    levelTitle: 'Rookie',
+    levelTitle: 'Seeker',
+
+    lastLogicalDateKey: null,
+    dailyLogsByDate: {},
+    weeklyActiveDaysCount: 0,
 
     privacyPreset: 'only_me',
     permissions: { vitals: false, mindfulness: true, location: false },
@@ -154,25 +300,29 @@ function getDefaultSessionState(): Omit<
 export const useAppStore = create<AppState>()(
   persist(
     (set, get) => ({
-      userName: 'Elena Mistwood',
+      userName: 'Guest',
       avatarImage: null,
       hasCompletedOnboarding: false,
       journeyMode: 'solo' as const,
 
-      currentStreak: 12,
-      longestStreak: 42,
+      currentStreak: 0,
+      longestStreak: 0,
       lastCompletedDate: null,
 
       tasks: defaultTasks,
-      todayCompletions: ['2'],
+      todayCompletions: [],
       totalSessionsCompleted: 0,
       weeklyAvg: 0,
       heatmapData: new Array(getDaysInCurrentMonth()).fill(0),
       activeDays90: 0,
 
-      totalXP: 2450,
-      level: 14,
-      levelTitle: 'Master' as const,
+      totalXP: 0,
+      level: 1,
+      levelTitle: 'Seeker' as const,
+
+      lastLogicalDateKey: null,
+      dailyLogsByDate: {},
+      weeklyActiveDaysCount: 0,
 
       privacyPreset: 'only_me' as const,
       permissions: { vitals: false, mindfulness: true, location: false },
@@ -182,40 +332,108 @@ export const useAppStore = create<AppState>()(
       reminderTime: '8am' as const,
       theme: 'light' as const,
 
+      onboardingDraft: emptyOnboardingDraft(),
+      setOnboardingDraft: (partial) =>
+        set((s) => ({
+          onboardingDraft: { ...s.onboardingDraft, ...partial },
+        })),
+      clearOnboardingDraft: () => set({ onboardingDraft: emptyOnboardingDraft() }),
+
       _hasHydrated: false,
       setHasHydrated: (v) => set({ _hasHydrated: v }),
 
       setUserName: (userName) => set({ userName }),
       setAvatarImage: (uri) => set({ avatarImage: uri }),
 
+      ensureLogicalDayAligned: () => {
+        const anchor = getLogicalDateString();
+        let { lastLogicalDateKey, todayCompletions, dailyLogsByDate, tasks } = get();
+        if (lastLogicalDateKey && lastLogicalDateKey !== anchor) {
+          const prevFlags = flagsFromTaskIds(todayCompletions, tasks);
+          dailyLogsByDate = pruneDailyLogs(
+            {
+              ...dailyLogsByDate,
+              [lastLogicalDateKey]: { ...dailyLogsByDate[lastLogicalDateKey], ...prevFlags },
+            },
+            anchor
+          );
+          const emptyFlags = flagsFromTaskIds([], tasks);
+          set({
+            lastLogicalDateKey: anchor,
+            todayCompletions: [],
+            dailyLogsByDate,
+            weeklyActiveDaysCount: computeWeeklyActiveDays(dailyLogsByDate, anchor, emptyFlags),
+            currentStreak: computeCurrentStreak(dailyLogsByDate, anchor, emptyFlags),
+          });
+        } else if (!lastLogicalDateKey) {
+          set({ lastLogicalDateKey: anchor });
+        }
+      },
+
+      refreshDashboardStatsFromRemote: async () => {
+        get().ensureLogicalDayAligned();
+        if (!isSupabaseConfigured) return;
+        const { data: auth } = await supabase.auth.getUser();
+        const user = auth.user;
+        if (!user) return;
+
+        const { profile, dailyLogsByDate: remoteLogs, error } = await fetchDashboardSnapshot(user.id);
+        if (error) return;
+
+        get().ensureLogicalDayAligned();
+        const anchor = getLogicalDateString();
+        const st = get();
+        const tasks = st.tasks;
+        const merged: Record<string, Partial<DailyLogFlags>> = { ...st.dailyLogsByDate, ...remoteLogs };
+        const dailyLogsByDate = pruneDailyLogs(merged, anchor);
+
+        const todayRow = dailyLogsByDate[anchor];
+        const fromFlags = (f: DailyLogFlags) => completionIdsFromFlags(f, tasks);
+        const serverToday = todayRow
+          ? fromFlags({
+              morning_done: Boolean(todayRow.morning_done),
+              social_done: Boolean(todayRow.social_done),
+              phone_free_done: Boolean(todayRow.phone_free_done),
+              evening_done: Boolean(todayRow.evening_done),
+            })
+          : [];
+        const todayCompletions = [...new Set([...st.todayCompletions, ...serverToday])];
+
+        const flags = flagsFromTaskIds(todayCompletions, tasks);
+        const weeklyActiveDaysCount = computeWeeklyActiveDays(dailyLogsByDate, anchor, flags);
+        const currentStreak = computeCurrentStreak(dailyLogsByDate, anchor, flags);
+
+        const totalXP = profile?.total_xp ?? st.totalXP;
+        const level = getLevelFromTotalXP(totalXP);
+
+        set({
+          dailyLogsByDate,
+          todayCompletions,
+          lastLogicalDateKey: anchor,
+          weeklyActiveDaysCount,
+          currentStreak,
+          totalXP,
+          level,
+          levelTitle: getGrowthTierTitle(level),
+        });
+      },
+
       syncUserStats: async () => {
+        get().ensureLogicalDayAligned();
+        await get().refreshDashboardStatsFromRemote();
+
         if (!isSupabaseConfigured) return;
         try {
-          const { data: { user } } = await supabase.auth.getUser();
+          const { data: auth } = await supabase.auth.getUser();
+          const user = auth.user;
           if (!user) return;
 
-          // Fetch Streak
-          const { data: streakData } = await supabase
-            .from('streaks')
-            .select('current_streak, longest_streak')
-            .eq('user_id', user.id)
-            .maybeSingle();
-
-          // Fetch Level
-          const { data: levelData } = await supabase
-            .from('levels')
-            .select('current_level, total_xp')
-            .eq('user_id', user.id)
-            .maybeSingle();
-
-          // Fetch completed tasks count
           const { count: sessionsCount } = await supabase
             .from('tasks')
             .select('*', { count: 'exact', head: true })
             .eq('user_id', user.id)
             .eq('completed', true);
 
-          // Fetch latest weekly avg from reports
           const { data: reportData } = await supabase
             .from('reports')
             .select('completion_rate')
@@ -225,11 +443,10 @@ export const useAppStore = create<AppState>()(
             .limit(1)
             .maybeSingle();
 
-          // Fetch heatmap data over current month
           const now = new Date();
           const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
           const currentMonthStr = firstDayOfMonth.toISOString();
-          
+
           const { data: activityData } = await supabase
             .from('tasks')
             .select('updated_at')
@@ -240,19 +457,17 @@ export const useAppStore = create<AppState>()(
           const daysInMonth = getDaysInCurrentMonth();
           const heatmapArray = new Array(daysInMonth).fill(0);
           if (activityData) {
-            activityData.forEach(row => {
+            activityData.forEach((row) => {
               if (row.updated_at) {
                 const date = new Date(row.updated_at);
                 if (date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear()) {
-                  // Index based on day of month (0-indexed)
                   const idx = date.getDate() - 1;
-                  heatmapArray[idx] = Math.min(1, heatmapArray[idx] + 0.34); 
+                  heatmapArray[idx] = Math.min(1, heatmapArray[idx] + 0.34);
                 }
               }
             });
           }
 
-          // Fetch active days in last 90 days
           const past90DaysStr = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000).toISOString();
           const { data: activity90 } = await supabase
             .from('tasks')
@@ -263,27 +478,18 @@ export const useAppStore = create<AppState>()(
 
           let fetchedActiveDays90 = 0;
           if (activity90) {
-            const uniqueDays = new Set(activity90.map(r => new Date(r.updated_at).toDateString()));
+            const uniqueDays = new Set(activity90.map((r) => new Date(r.updated_at).toDateString()));
             fetchedActiveDays90 = uniqueDays.size;
           }
 
-          set((state) => {
-            const newXP = Math.max(state.totalXP, levelData?.total_xp || 0);
-            const newLevel = Math.max(state.level, levelData?.current_level || 1);
-            return {
-              currentStreak: Math.max(state.currentStreak, streakData?.current_streak || 0),
-              longestStreak: Math.max(state.longestStreak, streakData?.longest_streak || 0),
-              level: newLevel,
-              totalXP: newXP,
-              totalSessionsCompleted: Math.max(state.totalSessionsCompleted, sessionsCount || 0),
-              weeklyAvg: reportData?.completion_rate != null ? Number(reportData.completion_rate) : state.weeklyAvg,
-              heatmapData: heatmapArray.some(v => v > 0) ? heatmapArray : state.heatmapData, // Avoid overwriting optimistic if fetch raced
-              activeDays90: Math.max(state.activeDays90, fetchedActiveDays90),
-              levelTitle: getLevelTitle(newLevel),
-            };
-          });
+          set((state) => ({
+            totalSessionsCompleted: Math.max(state.totalSessionsCompleted, sessionsCount || 0),
+            weeklyAvg: reportData?.completion_rate != null ? Number(reportData.completion_rate) : state.weeklyAvg,
+            heatmapData: heatmapArray.some((v) => v > 0) ? heatmapArray : state.heatmapData,
+            activeDays90: Math.max(state.activeDays90, fetchedActiveDays90),
+          }));
         } catch (e) {
-          console.log('Error syncing stats', e);
+          console.log('Legacy stats sync skipped', e);
         }
       },
 
@@ -297,22 +503,46 @@ export const useAppStore = create<AppState>()(
         });
       },
 
-      completeTask: async (taskId) => {
-        const { tasks, todayCompletions, totalXP, totalSessionsCompleted } = get();
+      completeTask: (taskId) => {
+        get().ensureLogicalDayAligned();
+        const st = get();
+        const anchor = getLogicalDateString();
+        let { todayCompletions, dailyLogsByDate, tasks, totalXP, longestStreak, totalSessionsCompleted, heatmapData, activeDays90 } = st;
+
         if (todayCompletions.includes(taskId)) return;
-
         const taskDef = tasks.find((t) => t.id === taskId);
-        if (!taskDef) return;
+        if (!taskDef || !resolveLogFlagKey(taskId, tasks)) return;
 
-        const newXP = totalXP + 50;
-        const newLevel = getLevelFromXP(newXP);
-        const newSessionsCount = totalSessionsCompleted + 1;
+        const beforeFlags = flagsFromTaskIds(todayCompletions, tasks);
+        const newCompletions = [...todayCompletions, taskId];
+        const afterFlags = flagsFromTaskIds(newCompletions, tasks);
+
+        let xpGain = XP_PER_TASK;
+        if (countTasksDone(beforeFlags) === 3 && countTasksDone(afterFlags) === 4) {
+          xpGain += XP_BONUS_ALL_FOUR;
+        }
+
+        const newXP = totalXP + xpGain;
+        const newLevel = getLevelFromTotalXP(newXP);
+
+        dailyLogsByDate = pruneDailyLogs(
+          {
+            ...dailyLogsByDate,
+            [anchor]: { ...dailyLogsByDate[anchor], ...afterFlags },
+          },
+          anchor
+        );
+
+        const weeklyActiveDaysCount = computeWeeklyActiveDays(dailyLogsByDate, anchor, afterFlags);
+        const currentStreak = computeCurrentStreak(dailyLogsByDate, anchor, afterFlags);
+        const longest = Math.max(longestStreak, currentStreak);
+
         const isNewActiveDay = todayCompletions.length === 0;
-        const newActiveDays90 = get().activeDays90 + (isNewActiveDay ? 1 : 0);
+        const newSessionsCount = totalSessionsCompleted + 1;
+        const newActiveDays90 = activeDays90 + (isNewActiveDay ? 1 : 0);
 
-        // Optimistic UI update instantly!
         const daysInMonth = getDaysInCurrentMonth();
-        let curHeatmap = [...(get().heatmapData || [])];
+        let curHeatmap = [...(heatmapData || [])];
         if (curHeatmap.length !== daysInMonth) {
           curHeatmap = new Array(daysInMonth).fill(0);
         }
@@ -322,48 +552,51 @@ export const useAppStore = create<AppState>()(
         }
 
         set({
-          todayCompletions: [...todayCompletions, taskId],
+          lastLogicalDateKey: anchor,
+          todayCompletions: newCompletions,
+          dailyLogsByDate,
           totalXP: newXP,
           level: newLevel,
-          levelTitle: getLevelTitle(newLevel),
+          levelTitle: getGrowthTierTitle(newLevel),
+          currentStreak,
+          longestStreak: longest,
+          lastCompletedDate: anchor,
+          weeklyActiveDaysCount,
           totalSessionsCompleted: newSessionsCount,
           heatmapData: curHeatmap,
           activeDays90: newActiveDays90,
         });
 
-        // Background Sync up to Supabase
-        if (isSupabaseConfigured) {
+        void (async () => {
+          if (!isSupabaseConfigured) return;
+          const { data: auth } = await supabase.auth.getUser();
+          const uid = auth.user?.id;
+          if (!uid) return;
+          await upsertDailyLogRemote(uid, anchor, afterFlags);
+          await updateProfileStatsRemote(uid, { total_xp: newXP, current_streak: currentStreak });
+
           try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (user) {
-              const nowISO = new Date().toISOString();
-
-              // 1. Log action in tasks history to feed the heatmap array!
-              await supabase.from('tasks').insert({
-                user_id: user.id,
-                title: taskDef.title,
-                completed: true,
-                updated_at: nowISO,
-              });
-
-              // 2. Overwrite total XP pool
-              await supabase.from('levels').upsert({
-                user_id: user.id,
-                total_xp: newXP,
-                current_level: newLevel,
-                updated_at: nowISO,
-              }, { onConflict: 'user_id' });
-            }
+            const nowISO = new Date().toISOString();
+            await supabase.from('tasks').insert({
+              user_id: uid,
+              title: taskDef.title,
+              completed: true,
+              updated_at: nowISO,
+            });
           } catch (e) {
-            console.log('Error pushing task to Supabase:', e);
+            console.log('Optional tasks row insert skipped', e);
           }
-        }
+        })();
       },
 
       addXP: (amount) => {
         const newXP = get().totalXP + amount;
-        const newLevel = getLevelFromXP(newXP);
-        set({ totalXP: newXP, level: newLevel, levelTitle: getLevelTitle(newLevel) });
+        const newLevel = getLevelFromTotalXP(newXP);
+        set({
+          totalXP: newXP,
+          level: newLevel,
+          levelTitle: getGrowthTierTitle(newLevel),
+        });
       },
 
       setPrivacyPreset: (preset) => set({ privacyPreset: preset }),
@@ -404,6 +637,9 @@ export const useAppStore = create<AppState>()(
         totalXP: state.totalXP,
         level: state.level,
         levelTitle: state.levelTitle,
+        lastLogicalDateKey: state.lastLogicalDateKey,
+        dailyLogsByDate: state.dailyLogsByDate,
+        weeklyActiveDaysCount: state.weeklyActiveDaysCount,
         privacyPreset: state.privacyPreset,
         permissions: state.permissions,
         stressMode: state.stressMode,
@@ -413,6 +649,9 @@ export const useAppStore = create<AppState>()(
       }),
       onRehydrateStorage: () => (state) => {
         state?.setHasHydrated(true);
+        queueMicrotask(() => {
+          useAppStore.getState().ensureLogicalDayAligned();
+        });
       },
     }
   )
