@@ -22,7 +22,7 @@ export function TrustSafetySection() {
         <RevealOnView delayMs={140}>
           <aside className="landing-callout section-glow">
             <p className="landing-callout-eyebrow">Clear boundaries</p>
-            <blockquote>Companion care today—clinical care when you need it.</blockquote>
+            <blockquote>Companion care today clinical care when you need it.</blockquote>
             <p className="landing-callout-note">
               Crisis pathways and honest limits are part of the product, not an afterthought.
             </p>
