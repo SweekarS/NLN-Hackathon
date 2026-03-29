@@ -26,7 +26,6 @@ import { router } from 'expo-router';
 import { colors, fonts, spacing, radii, shadow, botanicalGradient } from '../../theme';
 import { useAppStore } from '../../store/useAppStore';
 import type { Task } from '../../types/task';
-import { LightCard } from '../../components/ui/LightCard';
 import { Button } from '../../components/ui/Button';
 import { TaskCard } from '../../components/ui/TaskCard';
 import { ProgressRing } from '../../components/ui/ProgressRing';
@@ -109,7 +108,7 @@ export default function TasksScreen() {
                 <Ionicons name="person" size={20} color={colors.white} />
               </LinearGradient>
             )}
-            <Text style={styles.appTitle}>The Organic Sanctuary</Text>
+            <Text style={styles.appTitle}>AuraFarm</Text>
           </View>
           <Pressable onPress={() => router.push('/notifications')} hitSlop={8}>
             <View style={{ position: 'relative' }}>
@@ -185,31 +184,6 @@ export default function TasksScreen() {
             </Animated.View>
           ))}
         </View>
-
-        {/* Rest Cycle */}
-        <Animated.View entering={FadeInUp.delay(520).duration(500)}>
-          <LightCard style={styles.restCard}>
-            <View style={styles.restIconWrap}>
-              <LinearGradient
-                colors={['#E8F5EE', '#F6FBF7']}
-                style={styles.restIconBg}
-              >
-                <Ionicons name="moon-outline" size={28} color={colors.primary} />
-              </LinearGradient>
-            </View>
-            <Text style={styles.restTitle}>Rest Cycle</Text>
-            <Text style={styles.restSubtitle}>
-              Approaching a rest cycle? Listen to your body — rest is part of growth.
-            </Text>
-            <Button
-              title="Enable Rest Mode"
-              onPress={() => {}}
-              variant="ghost"
-              style={styles.restBtn}
-              textStyle={styles.restBtnText}
-            />
-          </LightCard>
-        </Animated.View>
 
         <View style={{ height: spacing['3xl'] }} />
       </ScrollView>
@@ -337,41 +311,5 @@ const styles = StyleSheet.create({
   taskList: {
     gap: spacing.sm,
     marginBottom: spacing.lg,
-  },
-  restCard: {
-    paddingVertical: spacing.xl,
-    paddingHorizontal: spacing.lg,
-    borderWidth: 1,
-    borderColor: colors.surfaceMid,
-  },
-  restIconWrap: {
-    marginBottom: spacing.sm,
-  },
-  restIconBg: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  restTitle: {
-    fontSize: 18,
-    fontFamily: fonts.headlineBold,
-    color: colors.onSurface,
-    marginBottom: spacing.xs,
-  },
-  restSubtitle: {
-    fontSize: 14,
-    fontFamily: fonts.bodyRegular,
-    color: colors.onSurfaceVariant,
-    textAlign: 'center',
-    lineHeight: 21,
-    marginBottom: spacing.sm,
-  },
-  restBtn: {
-    marginTop: spacing.xs,
-  },
-  restBtnText: {
-    color: colors.primary,
   },
 });

@@ -65,7 +65,7 @@ export async function scheduleDailyReminders(enabled: boolean, config: Notificat
     scheduledPayloads.push(
       { title: "Morning Moment ☀️", body: "Take a gentle breath and start your first mindfulness task for today.", time: getRandomTime(8, 11), skipIfDone: true },
       { title: "Afternoon Check-in 🌿", body: "A quick nudge to check your wellness and log an activity.", time: getRandomTime(13, 16), skipIfDone: true },
-      { title: "Evening Reflection 🌙", body: "Wind down gently and complete your daily sanctuary tasks.", time: getRandomTime(18, 20), skipIfDone: true }
+      { title: "Evening Reflection 🌙", body: "Wind down gently and complete your daily AuraFarm tasks.", time: getRandomTime(18, 20), skipIfDone: true }
     );
   }
 
@@ -74,7 +74,7 @@ export async function scheduleDailyReminders(enabled: boolean, config: Notificat
     const affirmations = [
       "Take a deep breath. You are doing great today.",
       "A gentle reminder that it's okay to rest.",
-      "Every small step nurtures your inner sanctuary.",
+      "Every small step nurtures your growth on AuraFarm.",
       "You are worthy of the peace you cultivate."
     ];
     const randomAffirmation = affirmations[Math.floor(Math.random() * affirmations.length)];

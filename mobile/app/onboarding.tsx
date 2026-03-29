@@ -184,7 +184,7 @@ function formatDraftForGemini(draft: OnboardingDraft): string {
  * not generic wellness filler.
  */
 const GEMINI_SYSTEM_PROMPT = [
-  'You are the ritual designer for **The Organic Sanctuary**, a mobile wellness app.',
+  'You are the ritual designer for **AuraFarm**, a mobile wellness app.',
   '',
   'What the app is:',
   '- A calm, nature-inspired daily companion: small, doable rituals (not overwhelming productivity hacks).',
@@ -405,8 +405,8 @@ function QuizOptionRow({
   );
 }
 
-/** Step 5 — light mint “Organic Sanctuary” loading (reference image 5): gradient, header, pulse logo, floating accents. */
-function Step5SanctuaryLoading({ phraseIndex }: { phraseIndex: number }) {
+/** Step 5 — light mint brand loading (reference image 5): gradient, header, pulse logo, floating accents. */
+function Step5BrandLoading({ phraseIndex }: { phraseIndex: number }) {
   const scale = useSharedValue(1);
   const drift = useSharedValue(0);
   const drift2 = useSharedValue(0);
@@ -472,7 +472,7 @@ function Step5SanctuaryLoading({ phraseIndex }: { phraseIndex: number }) {
   return (
     <View style={loading5.container}>
       <View style={loading5.topRow}>
-        <Text style={loading5.brandTitle}>The Organic Sanctuary</Text>
+        <Text style={loading5.brandTitle}>AuraFarm</Text>
         <Text style={loading5.stepCaps}>STEP 5 OF 5</Text>
       </View>
       <View style={loading5.progressTrack}>
@@ -494,7 +494,7 @@ function Step5SanctuaryLoading({ phraseIndex }: { phraseIndex: number }) {
       </View>
 
       <Text style={loading5.mainLine}>
-        Almost there. We are tailoring the sanctuary to match your unique rhythm.
+        Almost there. We are tailoring AuraFarm to match your unique rhythm.
       </Text>
       <Text style={loading5.cycleLine}>{cycle}</Text>
 
@@ -739,7 +739,7 @@ export default function OnboardingScreen() {
 
   const quizHeader = (
     <View style={obStyles.quizHeader}>
-      <Text style={obStyles.brandLine}>The Organic Sanctuary</Text>
+      <Text style={obStyles.brandLine}>AuraFarm</Text>
       {quizStep < 5 ? (
         <Text style={obStyles.stepOf}>Step {quizStep} of 5</Text>
       ) : (
@@ -887,7 +887,7 @@ export default function OnboardingScreen() {
           style={StyleSheet.absoluteFillObject}
         />
         <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom']}>
-          <Step5SanctuaryLoading phraseIndex={phraseIndex} />
+          <Step5BrandLoading phraseIndex={phraseIndex} />
         </SafeAreaView>
       </View>
     );
@@ -940,7 +940,7 @@ export default function OnboardingScreen() {
                       lineHeight: 32,
                     }}
                   >
-                    The Organic Sanctuary
+                    AuraFarm
                   </Text>
                 </Animated.View>
               </View>

@@ -219,7 +219,7 @@ function App() {
         <div className="brand">
           <span className="brand-dot" aria-hidden="true" />
           <div>
-            <p className="brand-title">StreakSync</p>
+            <p className="brand-title">AuraFarm</p>
             <p className="brand-subtitle">Mental wellness, gently paced</p>
           </div>
         </div>

@@ -24,8 +24,8 @@ export function getLevelFromTotalXP(totalXP: number): number {
 /** Growth tier label from level (not raw XP). */
 export function getGrowthTierTitle(
   level: number,
-): 'Seeker' | 'Explorer' | 'Architect' | 'Sanctuary Master' {
-  if (level >= 31) return 'Sanctuary Master';
+): 'Seeker' | 'Explorer' | 'Architect' | 'AuraFarm Master' {
+  if (level >= 31) return 'AuraFarm Master';
   if (level >= 16) return 'Architect';
   if (level >= 6) return 'Explorer';
   return 'Seeker';

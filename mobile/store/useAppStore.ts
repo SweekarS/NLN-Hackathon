@@ -189,7 +189,7 @@ export function mapGeminiJsonToTasks(raw: unknown): Task[] | null {
   return applySensibleTimerDurations(out);
 }
 
-export const PERSIST_STORAGE_KEY = 'organic-sanctuary-storage';
+export const PERSIST_STORAGE_KEY = 'aurafarm-storage';
 
 const defaultTasks: Task[] = [
   normalizeTask({
@@ -261,7 +261,7 @@ interface AppState {
 
   totalXP: number;
   level: number;
-  levelTitle: 'Seeker' | 'Explorer' | 'Architect' | 'Sanctuary Master';
+  levelTitle: 'Seeker' | 'Explorer' | 'Architect' | 'AuraFarm Master';
 
   lastLogicalDateKey: string | null;
   dailyLogsByDate: Record<string, Partial<DailyLogFlags>>;

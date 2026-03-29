@@ -122,7 +122,7 @@ export default function SettingsScreen() {
 
         <Animated.View entering={FadeIn.duration(500).delay(400)}>
           <Card style={styles.sectionCard}>
-            <Text style={styles.cardTitle}>Visual Sanctuary</Text>
+            <Text style={styles.cardTitle}>Appearance</Text>
             <Text style={styles.themeSubtitle}>Choose Your Theme</Text>
             <View style={styles.themeRow}>
               {themeOptions.map((opt) => {

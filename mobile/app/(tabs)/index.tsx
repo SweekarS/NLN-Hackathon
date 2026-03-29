@@ -97,7 +97,7 @@ export default function HomeScreen() {
                 <Ionicons name="person" size={20} color={colors.white} />
               </LinearGradient>
             )}
-            <Text style={styles.appTitle}>The Organic Sanctuary</Text>
+            <Text style={styles.appTitle}>AuraFarm</Text>
           </View>
           <Pressable onPress={() => router.push('/notifications')} hitSlop={8}>
             <View style={{ position: 'relative' }}>
@@ -126,7 +126,7 @@ export default function HomeScreen() {
                   Grow at your own pace today.
                 </Text>
                 <Text style={styles.heroSubtitle}>
-                  Every small step nurtures your sanctuary.
+                  Every small step nurtures your growth on AuraFarm.
                 </Text>
               </View>
               <LinearGradient

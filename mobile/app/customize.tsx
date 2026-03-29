@@ -120,7 +120,7 @@ export default function CustomizeScreen() {
   const confirmDelete = useCallback(
     (t: Task) => {
       if (tasks.length <= 1) {
-        Alert.alert('Keep one ritual', 'You need at least one task in your sanctuary.');
+        Alert.alert('Keep one ritual', 'You need at least one task in your ritual list.');
         return;
       }
       Alert.alert(
@@ -255,7 +255,7 @@ export default function CustomizeScreen() {
               </View>
 
               <Button
-                title="Add to Sanctuary"
+                title="Add to AuraFarm"
                 onPress={handleAdd}
                 variant="primary"
                 style={styles.addBtn}

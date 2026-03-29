@@ -43,7 +43,7 @@ export default function ProfileScreen() {
     { label: 'Seeker', completed: level > 5, current: levelTitle === 'Seeker' },
     { label: 'Explorer', completed: level > 15, current: levelTitle === 'Explorer' },
     { label: 'Architect', completed: level > 30, current: levelTitle === 'Architect' },
-    { label: 'Sanctuary Master', completed: level >= 31, current: levelTitle === 'Sanctuary Master' },
+    { label: 'AuraFarm Master', completed: level >= 31, current: levelTitle === 'AuraFarm Master' },
   ];
 
   const recentGrowth = [

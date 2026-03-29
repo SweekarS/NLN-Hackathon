@@ -43,7 +43,7 @@ export default function NotificationsScreen() {
 
           <Text style={styles.headline}>Notification Center</Text>
           <Text style={styles.subtitle}>
-            Tune your sanctuary's gentle reminders
+            Tune AuraFarm's gentle reminders
           </Text>
         </Animated.View>
 
@@ -51,7 +51,7 @@ export default function NotificationsScreen() {
           <GreenCard style={styles.masterCard}>
             <View style={styles.masterRow}>
               <Text style={styles.masterLabel}>
-                Enable all organic reminders
+                Enable all AuraFarm reminders
               </Text>
               <Toggle
                 value={notificationsEnabled}

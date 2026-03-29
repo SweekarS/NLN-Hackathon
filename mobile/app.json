@@ -1,12 +1,12 @@
 {
   "expo": {
-    "name": "The Organic Sanctuary",
-    "slug": "organic-sanctuary",
+    "name": "AuraFarm",
+    "slug": "aurafarm",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "scheme": "organic-sanctuary",
+    "scheme": "aurafarm",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
