@@ -167,7 +167,7 @@ export default function AccountPrivacyScreen() {
     }
   };
 
-  const confirmAndEnterAuraFarm = async () => {
+  const confirmAndEnterPhool = async () => {
     const trimmedName = name.trim();
     const trimmedEmail = email.trim();
     if (!trimmedEmail || !password) {
@@ -459,7 +459,7 @@ export default function AccountPrivacyScreen() {
                   ? 'Sign in to Phool'
                   : 'Create account on Phool'
             }
-            onPress={() => void confirmAndEnterAuraFarm()}
+            onPress={() => void confirmAndEnterPhool()}
             style={styles.consentButton}
             disabled={authLoading}
           />

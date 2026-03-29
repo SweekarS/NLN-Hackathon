@@ -870,7 +870,7 @@ export default function OnboardingScreen() {
 
   const quizHeader = (
     <View style={obStyles.quizHeader}>
-      <Text style={obStyles.brandLine}>AuraFarm</Text>
+      <Text style={obStyles.brandLine}>Phool</Text>
       {quizStep < 5 ? (
         <Text style={obStyles.stepOf}>Step {quizStep} of 5</Text>
       ) : (
@@ -1115,7 +1115,7 @@ export default function OnboardingScreen() {
                       lineHeight: 32,
                     }}
                   >
-                    AuraFarm
+                    Phool
                   </Text>
                 </Animated.View>
               </View>

@@ -22,7 +22,7 @@ const RANKS: RankInfo[] = [
   { title: 'Grove Keeper', levelRange: 'Levels 16–25', desc: 'Cultivating inner peace and nurturing your digital garden.', icon: 'rose-outline' },
   { title: 'Forest Sage', levelRange: 'Levels 26–35', desc: 'Deep wisdom from consistent, mindful rituals.', icon: 'moon-outline' },
   { title: 'Sanctuary Guardian', levelRange: 'Levels 36–45', desc: 'A protector of routine and balanced harmony.', icon: 'shield-checkmark-outline' },
-  { title: 'Eternal Blossom', levelRange: 'Level 46+', desc: 'Unshakeable peace. The highest state of Aura mastery.', icon: 'flower-outline' },
+  { title: 'Eternal Blossom', levelRange: 'Level 46+', desc: 'Unshakeable peace. The highest state of Phool mastery.', icon: 'flower-outline' },
 ];
 
 export default function RanksModal() {
