@@ -33,7 +33,12 @@ function formatClock(totalSeconds: number): string {
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
-export function TaskInteractionModal({ visible, task, onClose, onComplete }: Props) {
+export function TaskInteractionModal({
+  visible,
+  task,
+  onClose,
+  onComplete,
+}: Props) {
   const t = task ? normalizeTask(task) : null;
   const mode = t?.interaction_type ?? 'simple_check';
 
@@ -69,14 +74,18 @@ export function TaskInteractionModal({ visible, task, onClose, onComplete }: Pro
       onClose();
       return;
     }
-    if (t.interaction_type === 'timer' && remaining > 0 && remaining < totalSecRef.current) {
+    if (
+      t.interaction_type === 'timer' &&
+      remaining > 0 &&
+      remaining < totalSecRef.current
+    ) {
       Alert.alert(
         'Leave this ritual?',
         'Timer progress will be lost if you close now.',
         [
           { text: 'Stay', style: 'cancel' },
           { text: 'Leave', style: 'destructive', onPress: onClose },
-        ]
+        ],
       );
       return;
     }
@@ -86,7 +95,10 @@ export function TaskInteractionModal({ visible, task, onClose, onComplete }: Pro
   const pickImage = async () => {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) {
-      Alert.alert('Permission needed', 'Allow photo library access to attach an image.');
+      Alert.alert(
+        'Permission needed',
+        'Allow photo library access to attach an image.',
+      );
       return;
     }
     const res = await ImagePicker.launchImageLibraryAsync({
@@ -119,8 +131,10 @@ export function TaskInteractionModal({ visible, task, onClose, onComplete }: Pro
 
   if (!visible || !t) return null;
 
-  const total = totalSecRef.current || Math.max(60, (t.duration_minutes ?? 10) * 60);
-  const timerProgress = mode === 'timer' && total > 0 ? 1 - remaining / total : 0;
+  const total =
+    totalSecRef.current || Math.max(60, (t.duration_minutes ?? 10) * 60);
+  const timerProgress =
+    mode === 'timer' && total > 0 ? 1 - remaining / total : 0;
   const canCompletePhoto = mode === 'photo_upload' && !!photoUri;
   /** Timer can be completed anytime (early exit); photo still requires an image. */
   const markDoneDisabled = mode === 'photo_upload' && !canCompletePhoto;
@@ -134,7 +148,11 @@ export function TaskInteractionModal({ visible, task, onClose, onComplete }: Pro
     >
       <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
         <View style={styles.header}>
-          <Pressable onPress={handleCloseRequest} hitSlop={12} accessibilityLabel="Close">
+          <Pressable
+            onPress={handleCloseRequest}
+            hitSlop={12}
+            accessibilityLabel="Close"
+          >
             <Ionicons name="close" size={28} color={colors.onSurface} />
           </Pressable>
           <Text style={styles.headerTitle} numberOfLines={1}>
@@ -151,7 +169,12 @@ export function TaskInteractionModal({ visible, task, onClose, onComplete }: Pro
           {mode === 'simple_check' && (
             <View style={styles.section}>
               <Text style={styles.desc}>{t.subtitle}</Text>
-              <Button title="Mark as Done" onPress={handleMarkDone} variant="primary" style={styles.cta} />
+              <Button
+                title="Mark as Done"
+                onPress={handleMarkDone}
+                variant="primary"
+                style={styles.cta}
+              />
             </View>
           )}
 
@@ -170,7 +193,12 @@ export function TaskInteractionModal({ visible, task, onClose, onComplete }: Pro
                 </ProgressRing>
               </View>
               <View style={styles.progressBarTrack}>
-                <View style={[styles.progressBarFill, { width: `${Math.min(100, timerProgress * 100)}%` }]} />
+                <View
+                  style={[
+                    styles.progressBarFill,
+                    { width: `${Math.min(100, timerProgress * 100)}%` },
+                  ]}
+                />
               </View>
               <Button
                 title={paused ? 'Resume' : 'Pause'}
@@ -195,14 +223,30 @@ export function TaskInteractionModal({ visible, task, onClose, onComplete }: Pro
                   <Image source={{ uri: photoUri }} style={styles.photoImg} />
                 ) : (
                   <View style={styles.photoInner}>
-                    <Ionicons name="image-outline" size={48} color={colors.outline} />
-                    <Text style={styles.photoHint}>Tap to choose from library</Text>
+                    <Ionicons
+                      name="image-outline"
+                      size={48}
+                      color={colors.outline}
+                    />
+                    <Text style={styles.photoHint}>
+                      Tap to choose from library
+                    </Text>
                   </View>
                 )}
               </Pressable>
               <View style={styles.photoActions}>
-                <Button title="Photo library" onPress={pickImage} variant="light" style={styles.halfBtn} />
-                <Button title="Camera" onPress={takePhoto} variant="ghost" style={styles.halfBtn} />
+                <Button
+                  title="Photo library"
+                  onPress={pickImage}
+                  variant="light"
+                  style={styles.halfBtn}
+                />
+                <Button
+                  title="Camera"
+                  onPress={takePhoto}
+                  variant="ghost"
+                  style={styles.halfBtn}
+                />
               </View>
               <Text style={styles.captionLabel}>Add caption (optional)</Text>
               <TextInput
@@ -227,7 +271,6 @@ export function TaskInteractionModal({ visible, task, onClose, onComplete }: Pro
     </Modal>
   );
 }
-
 const styles = StyleSheet.create({
   safe: {
     flex: 1,

@@ -8,7 +8,11 @@ interface SectionTitleProps {
   onAction?: () => void;
 }
 
-export function SectionTitle({ title, actionLabel, onAction }: SectionTitleProps) {
+export function SectionTitle({
+  title,
+  actionLabel,
+  onAction,
+}: SectionTitleProps) {
   return (
     <View style={styles.row}>
       <Text style={styles.title}>{title}</Text>

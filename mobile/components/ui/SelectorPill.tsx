@@ -10,7 +10,12 @@ interface SelectorPillProps {
   iconName?: keyof typeof Ionicons.glyphMap;
 }
 
-export function SelectorPill({ label, selected, onPress, iconName }: SelectorPillProps) {
+export function SelectorPill({
+  label,
+  selected,
+  onPress,
+  iconName,
+}: SelectorPillProps) {
   return (
     <Pressable
       onPress={onPress}

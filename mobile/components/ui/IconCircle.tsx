@@ -26,12 +26,21 @@ export function IconCircle({
 }: IconCircleProps) {
   const d = dims[size];
   return (
-    <View style={[styles.circle, { width: d.box, height: d.box, borderRadius: d.box / 2, backgroundColor: bg }]}>
+    <View
+      style={[
+        styles.circle,
+        {
+          width: d.box,
+          height: d.box,
+          borderRadius: d.box / 2,
+          backgroundColor: bg,
+        },
+      ]}
+    >
       <Ionicons name={name} size={d.icon} color={color} />
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   circle: {
     alignItems: 'center',

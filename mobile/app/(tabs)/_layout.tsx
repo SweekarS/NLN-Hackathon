@@ -1,4 +1,5 @@
 import { Redirect, Tabs } from 'expo-router';
+import { Easing } from 'react-native';
 import { useAppStore } from '../../store/useAppStore';
 import { NavBar } from '../../components/ui/NavBar';
 
@@ -18,6 +19,14 @@ export default function TabLayout() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: { display: 'none' },
+        animation: 'fade',
+        transitionSpec: {
+          animation: 'timing',
+          config: {
+            duration: 260,
+            easing: Easing.bezier(0.33, 0, 0.2, 1),
+          },
+        },
       }}
     >
       <Tabs.Screen name="index" options={{ title: 'Home' }} />

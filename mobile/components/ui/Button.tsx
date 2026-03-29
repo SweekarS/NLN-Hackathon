@@ -1,5 +1,11 @@
 import React from 'react';
-import { Pressable, Text, StyleSheet, ViewStyle, TextStyle } from 'react-native';
+import {
+  Pressable,
+  Text,
+  StyleSheet,
+  ViewStyle,
+  TextStyle,
+} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, fonts, radii, spacing, botanicalGradient } from '../../theme';
 
@@ -14,13 +20,23 @@ interface ButtonProps {
   disabled?: boolean;
 }
 
-export function Button({ title, onPress, variant = 'primary', style, textStyle, disabled }: ButtonProps) {
+export function Button({
+  title,
+  onPress,
+  variant = 'primary',
+  style,
+  textStyle,
+  disabled,
+}: ButtonProps) {
   if (variant === 'primary') {
     return (
       <Pressable
         onPress={onPress}
         disabled={disabled}
-        style={({ pressed }) => [{ opacity: disabled ? 0.55 : pressed ? 0.85 : 1 }, style]}
+        style={({ pressed }) => [
+          { opacity: disabled ? 0.55 : pressed ? 0.85 : 1 },
+          style,
+        ]}
       >
         <LinearGradient
           colors={[...botanicalGradient.colors]}
@@ -44,7 +60,12 @@ export function Button({ title, onPress, variant = 'primary', style, textStyle, 
         style,
       ]}
     >
-      <Text style={[variant === 'ghost' ? styles.ghostText : styles.lightText, textStyle]}>
+      <Text
+        style={[
+          variant === 'ghost' ? styles.ghostText : styles.lightText,
+          textStyle,
+        ]}
+      >
         {title}
       </Text>
     </Pressable>

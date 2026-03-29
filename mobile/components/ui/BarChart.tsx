@@ -19,7 +19,11 @@ const defaultData = [
   { label: 'S', value: 90 },
 ];
 
-export function BarChart({ data = defaultData, maxValue = 100, height = 120 }: BarChartProps) {
+export function BarChart({
+  data = defaultData,
+  maxValue = 100,
+  height = 120,
+}: BarChartProps) {
   return (
     <View style={[styles.container, { height }]}>
       {data.map((item, i) => {
@@ -29,7 +33,14 @@ export function BarChart({ data = defaultData, maxValue = 100, height = 120 }: B
             <View style={{ flex: 1, justifyContent: 'flex-end' }}>
               <Animated.View
                 entering={FadeIn.delay(i * 60).duration(400)}
-                style={[styles.bar, { height: barH, backgroundColor: item.value >= 100 ? colors.primary : colors.primaryLight }]}
+                style={[
+                  styles.bar,
+                  {
+                    height: barH,
+                    backgroundColor:
+                      item.value >= 100 ? colors.primary : colors.primaryLight,
+                  },
+                ]}
               />
             </View>
             <Text style={styles.label}>{item.label}</Text>

@@ -17,7 +17,11 @@ const stressOptions: { label: string; value: 'low' | 'medium' | 'high' }[] = [
   { label: 'High', value: 'high' },
 ];
 
-const themeOptions: { iconName: keyof typeof Ionicons.glyphMap; label: string; value: 'light' | 'dark' | 'forest' }[] = [
+const themeOptions: {
+  iconName: keyof typeof Ionicons.glyphMap;
+  label: string;
+  value: 'light' | 'dark' | 'forest';
+}[] = [
   { iconName: 'sunny-outline', label: 'Light', value: 'light' },
   { iconName: 'moon-outline', label: 'Dark', value: 'dark' },
   { iconName: 'color-palette-outline', label: 'Forest', value: 'forest' },
@@ -56,9 +60,16 @@ export default function SettingsScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
+      >
         <Animated.View entering={FadeIn.duration(400)}>
-          <Pressable onPress={() => router.back()} style={styles.backRow} hitSlop={8}>
+          <Pressable
+            onPress={() => router.back()}
+            style={styles.backRow}
+            hitSlop={8}
+          >
             <Ionicons name="chevron-back" size={24} color={colors.onSurface} />
           </Pressable>
 
@@ -83,9 +94,18 @@ export default function SettingsScreen() {
 
         <Animated.View entering={FadeIn.duration(500).delay(200)}>
           <Card style={styles.sectionCard}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: spacing.md }}>
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 8,
+                marginBottom: spacing.md,
+              }}
+            >
               <IconCircle name="time-outline" size="sm" />
-              <Text style={[styles.cardTitle, { marginBottom: 0 }]}>Daily Window</Text>
+              <Text style={[styles.cardTitle, { marginBottom: 0 }]}>
+                Daily Window
+              </Text>
             </View>
             <View style={styles.windowRow}>
               <Text style={styles.windowLabel}>Start Time</Text>
@@ -107,16 +127,31 @@ export default function SettingsScreen() {
 
         <Animated.View entering={FadeIn.duration(500).delay(300)}>
           <Card style={styles.sectionCard}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: spacing.md }}>
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 8,
+                marginBottom: spacing.md,
+              }}
+            >
               <IconCircle name="globe-outline" size="sm" />
-              <Text style={[styles.cardTitle, { marginBottom: 0 }]}>Language</Text>
+              <Text style={[styles.cardTitle, { marginBottom: 0 }]}>
+                Language
+              </Text>
             </View>
             <Pressable style={styles.langRow}>
               <Text style={styles.flag}>🇬🇧</Text>
               <Text style={styles.langText}>English (UK)</Text>
-              <Ionicons name="chevron-forward" size={20} color={colors.onSurfaceVariant} />
+              <Ionicons
+                name="chevron-forward"
+                size={20}
+                color={colors.onSurfaceVariant}
+              />
             </Pressable>
-            <Text style={styles.langNote}>More languages coming in future updates</Text>
+            <Text style={styles.langNote}>
+              More languages coming in future updates
+            </Text>
           </Card>
         </Animated.View>
 
@@ -146,8 +181,15 @@ export default function SettingsScreen() {
                       selected && styles.themeSelected,
                     ]}
                   >
-                    <Ionicons name={opt.iconName} size={24} color={textColor} style={{ marginBottom: spacing.xs }} />
-                    <Text style={[styles.themeLabel, { color: textColor }]}>{opt.label}</Text>
+                    <Ionicons
+                      name={opt.iconName}
+                      size={24}
+                      color={textColor}
+                      style={{ marginBottom: spacing.xs }}
+                    />
+                    <Text style={[styles.themeLabel, { color: textColor }]}>
+                      {opt.label}
+                    </Text>
                   </Pressable>
                 );
               })}
@@ -171,7 +213,6 @@ export default function SettingsScreen() {
     </SafeAreaView>
   );
 }
-
 const styles = StyleSheet.create({
   safe: {
     flex: 1,

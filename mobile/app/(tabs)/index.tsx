@@ -5,7 +5,6 @@ import {
   ScrollView,
   StyleSheet,
   Pressable,
-  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -48,7 +47,6 @@ export default function HomeScreen() {
     todayCompletions,
     weeklyActiveDaysCount,
     levelTitle,
-    avatarImage,
     syncUserStats,
     dailyLogsByDate,
     lastLogicalDateKey,
@@ -82,22 +80,7 @@ export default function HomeScreen() {
         {/* TopBar */}
         <Animated.View entering={FadeIn.duration(400)} style={styles.topBar}>
           <View style={styles.topBarLeft}>
-            {avatarImage ? (
-              <Image
-                source={{ uri: avatarImage }}
-                style={[styles.avatar, { resizeMode: 'cover' }]}
-              />
-            ) : (
-              <LinearGradient
-                colors={[...botanicalGradient.colors]}
-                start={botanicalGradient.start}
-                end={botanicalGradient.end}
-                style={styles.avatar}
-              >
-                <Ionicons name="person" size={20} color={colors.white} />
-              </LinearGradient>
-            )}
-            <Text style={styles.appTitle}>AuraFarm</Text>
+            <Text style={styles.topTitle}>Home</Text>
           </View>
           <Pressable onPress={() => router.push('/notifications')} hitSlop={8}>
             <View style={{ position: 'relative' }}>
@@ -249,7 +232,6 @@ export default function HomeScreen() {
     </SafeAreaView>
   );
 }
-
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
@@ -271,19 +253,12 @@ const styles = StyleSheet.create({
   topBarLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
+    gap: spacing.md,
   },
-  avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  appTitle: {
-    fontSize: 18,
-    fontFamily: fonts.headlineBold,
-    color: colors.primary,
+  topTitle: {
+    fontSize: 20,
+    fontFamily: fonts.headlineExtraBold,
+    color: colors.onSurface,
   },
   heroCard: {
     marginBottom: spacing.lg,

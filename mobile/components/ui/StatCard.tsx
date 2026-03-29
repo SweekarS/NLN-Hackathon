@@ -14,9 +14,18 @@ interface StatCardProps {
   hint?: string;
 }
 
-export function StatCard({ iconName, value, label, delay = 0, hint }: StatCardProps) {
+export function StatCard({
+  iconName,
+  value,
+  label,
+  delay = 0,
+  hint,
+}: StatCardProps) {
   return (
-    <Animated.View entering={FadeInUp.delay(delay).duration(500).springify()} style={styles.card}>
+    <Animated.View
+      entering={FadeInUp.delay(delay).duration(500).springify()}
+      style={styles.card}
+    >
       <IconCircle name={iconName} size="sm" />
       <Text style={styles.value}>{value}</Text>
       <Text style={styles.label}>{label}</Text>

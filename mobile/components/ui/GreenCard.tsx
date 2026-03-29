@@ -20,7 +20,6 @@ export function GreenCard({ children, style }: GreenCardProps) {
     </LinearGradient>
   );
 }
-
 const styles = StyleSheet.create({
   card: {
     borderRadius: radii.card,

@@ -1,6 +1,9 @@
 import React from 'react';
 import { Pressable, StyleSheet } from 'react-native';
-import Animated, { useAnimatedStyle, withSpring } from 'react-native-reanimated';
+import Animated, {
+  useAnimatedStyle,
+  withSpring,
+} from 'react-native-reanimated';
 import { colors } from '../../theme';
 
 interface ToggleProps {
@@ -15,13 +18,23 @@ const PADDING = 3;
 
 export function Toggle({ value, onToggle }: ToggleProps) {
   const thumbStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: withSpring(value ? TRACK_W - THUMB - PADDING * 2 : 0, { damping: 15, stiffness: 200 }) }],
+    transform: [
+      {
+        translateX: withSpring(value ? TRACK_W - THUMB - PADDING * 2 : 0, {
+          damping: 15,
+          stiffness: 200,
+        }),
+      },
+    ],
   }));
 
   return (
     <Pressable
       onPress={onToggle}
-      style={[styles.track, { backgroundColor: value ? colors.primary : colors.surfaceMid }]}
+      style={[
+        styles.track,
+        { backgroundColor: value ? colors.primary : colors.surfaceMid },
+      ]}
       accessibilityRole="switch"
       accessibilityState={{ checked: value }}
     >

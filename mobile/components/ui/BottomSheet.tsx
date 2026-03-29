@@ -1,6 +1,18 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, Pressable, Dimensions, Modal } from 'react-native';
-import Animated, { useSharedValue, useAnimatedStyle, withSpring, runOnJS } from 'react-native-reanimated';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Pressable,
+  Dimensions,
+  Modal,
+} from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  runOnJS,
+} from 'react-native-reanimated';
 import { colors, radii, spacing, fonts } from '../../theme';
 
 const { height: SCREEN_H } = Dimensions.get('window');
@@ -12,11 +24,19 @@ interface BottomSheetProps {
   title?: string;
 }
 
-export function BottomSheet({ visible, onClose, children, title }: BottomSheetProps) {
+export function BottomSheet({
+  visible,
+  onClose,
+  children,
+  title,
+}: BottomSheetProps) {
   const translateY = useSharedValue(SCREEN_H);
 
   useEffect(() => {
-    translateY.value = withSpring(visible ? 0 : SCREEN_H, { damping: 20, stiffness: 150 });
+    translateY.value = withSpring(visible ? 0 : SCREEN_H, {
+      damping: 20,
+      stiffness: 150,
+    });
   }, [visible]);
 
   const sheetStyle = useAnimatedStyle(() => ({
@@ -26,7 +46,12 @@ export function BottomSheet({ visible, onClose, children, title }: BottomSheetPr
   if (!visible) return null;
 
   return (
-    <Modal transparent visible={visible} animationType="fade" onRequestClose={onClose}>
+    <Modal
+      transparent
+      visible={visible}
+      animationType="fade"
+      onRequestClose={onClose}
+    >
       <Pressable style={styles.overlay} onPress={onClose}>
         <Animated.View style={[styles.sheet, sheetStyle]}>
           <Pressable onPress={(e) => e.stopPropagation()}>

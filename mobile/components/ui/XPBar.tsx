@@ -1,6 +1,10 @@
 import React, { useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
-import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+} from 'react-native-reanimated';
 import { colors, radii } from '../../theme';
 
 interface XPBarProps {
@@ -10,7 +14,12 @@ interface XPBarProps {
   bgColor?: string;
 }
 
-export function XPBar({ progress, height = 10, color = colors.primary, bgColor = colors.surfaceLow }: XPBarProps) {
+export function XPBar({
+  progress,
+  height = 10,
+  color = colors.primary,
+  bgColor = colors.surfaceLow,
+}: XPBarProps) {
   const width = useSharedValue(0);
 
   useEffect(() => {
@@ -22,8 +31,19 @@ export function XPBar({ progress, height = 10, color = colors.primary, bgColor =
   }));
 
   return (
-    <View style={[styles.track, { height, backgroundColor: bgColor, borderRadius: height / 2 }]}>
-      <Animated.View style={[styles.fill, { backgroundColor: color, borderRadius: height / 2 }, barStyle]} />
+    <View
+      style={[
+        styles.track,
+        { height, backgroundColor: bgColor, borderRadius: height / 2 },
+      ]}
+    >
+      <Animated.View
+        style={[
+          styles.fill,
+          { backgroundColor: color, borderRadius: height / 2 },
+          barStyle,
+        ]}
+      />
     </View>
   );
 }

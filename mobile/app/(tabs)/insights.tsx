@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
 import { colors, fonts, spacing, radii } from '../../theme';
@@ -56,6 +57,7 @@ export default function InsightsScreen() {
     tasks,
     lastLogicalDateKey,
     userName,
+    unreadCount,
   } = useAppStore();
 
   const anchorDate = lastLogicalDateKey ?? getLogicalDateString();
@@ -87,6 +89,29 @@ export default function InsightsScreen() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
+        {/* TopBar */}
+        <Animated.View entering={FadeIn.duration(400)} style={styles.topBar}>
+          <View style={styles.topBarLeft}>
+            <Text style={styles.topTitle}>Insights</Text>
+          </View>
+          <Pressable onPress={() => router.push('/notifications')} hitSlop={8}>
+            <View style={{ position: 'relative' }}>
+              <Ionicons
+                name="notifications-outline"
+                size={24}
+                color={colors.onSurface}
+              />
+              {unreadCount > 0 && (
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </Text>
+                </View>
+              )}
+            </View>
+          </Pressable>
+        </Animated.View>
+
         {/* Streak Hero */}
         <Animated.View entering={FadeInUp.duration(500)}>
           <GreenCard>
@@ -295,8 +320,45 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    padding: spacing.lg,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.lg,
     gap: spacing.base,
+  },
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.lg,
+  },
+  topBarLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  topTitle: {
+    fontSize: 20,
+    fontFamily: fonts.headlineExtraBold,
+    color: colors.onSurface,
+  },
+  badge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    backgroundColor: colors.error,
+    borderRadius: 8,
+    minWidth: 16,
+    height: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 3,
+    borderWidth: 1.5,
+    borderColor: colors.surface,
+  },
+  badgeText: {
+    color: colors.white,
+    fontSize: 9,
+    fontFamily: fonts.bodyBold,
   },
   heroLabel: {
     color: colors.white,

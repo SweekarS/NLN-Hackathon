@@ -30,7 +30,11 @@ import {
   type RemoteNotification,
 } from '../lib/sync-dashboard-stats';
 import type { Task, CustomTask, InteractionType } from '../types/task';
-import { normalizeTask, formatDurationMinutesLabel, applySensibleTimerDurations } from '../lib/task-model';
+import {
+  normalizeTask,
+  formatDurationMinutesLabel,
+  applySensibleTimerDurations,
+} from '../lib/task-model';
 import { extractJsonArray } from '../lib/gemini-json';
 import { scheduleDailyReminders } from '../lib/notifications';
 
@@ -168,7 +172,9 @@ export function mapGeminiJsonToTasks(raw: unknown): Task[] | null {
       durationMinutes = dm;
     }
     const iconType =
-      typeof o.icon_type === 'string' && o.icon_type.trim().length > 0 ? o.icon_type.trim() : 'leaf';
+      typeof o.icon_type === 'string' && o.icon_type.trim().length > 0
+        ? o.icon_type.trim()
+        : 'leaf';
     const timeOfDay = ID_TIME[o.id] ?? 'morning';
     const baseIcon = ID_ICON[o.id] ?? 'leaf-outline';
     const task = normalizeTask({
@@ -992,7 +998,15 @@ export const useAppStore = create<AppState>()(
       setTheme: (t) => set({ theme: t }),
       updateTasks: (next) => set({ tasks: next.map((t) => normalizeTask(t)) }),
       addTask: (task) =>
-        set((s) => ({ tasks: [...s.tasks, normalizeTask({ ...task, interaction_type: task.interaction_type ?? 'simple_check' })] })),
+        set((s) => ({
+          tasks: [
+            ...s.tasks,
+            normalizeTask({
+              ...task,
+              interaction_type: task.interaction_type ?? 'simple_check',
+            }),
+          ],
+        })),
       toggleTaskEnabled: (taskId) =>
         set((s) => ({
           tasks: s.tasks.map((t) =>
@@ -1003,7 +1017,7 @@ export const useAppStore = create<AppState>()(
       updateTask: (taskId, patch) =>
         set((s) => ({
           tasks: s.tasks.map((t) =>
-            t.id === taskId ? normalizeTask({ ...t, ...patch }) : t
+            t.id === taskId ? normalizeTask({ ...t, ...patch }) : t,
           ),
         })),
 

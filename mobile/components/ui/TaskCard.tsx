@@ -38,17 +38,27 @@ export function TaskCard({ task, isDone, onOpen }: TaskCardProps) {
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       checkPop.value = withSequence(
         withSpring(1.18, { damping: 10, stiffness: 400 }),
-        withSpring(1, { damping: 14, stiffness: 320 })
+        withSpring(1, { damping: 14, stiffness: 320 }),
       );
     }
     wasDone.current = isDone;
   }, [isDone, doneProgress, checkPop]);
 
   const cardStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(doneProgress.value, [0, 1], [1, 0.72], Extrapolation.CLAMP),
+    opacity: interpolate(
+      doneProgress.value,
+      [0, 1],
+      [1, 0.72],
+      Extrapolation.CLAMP,
+    ),
     transform: [
       {
-        scale: interpolate(doneProgress.value, [0, 1], [1, 0.985], Extrapolation.CLAMP),
+        scale: interpolate(
+          doneProgress.value,
+          [0, 1],
+          [1, 0.985],
+          Extrapolation.CLAMP,
+        ),
       },
     ],
   }));
@@ -70,7 +80,11 @@ export function TaskCard({ task, isDone, onOpen }: TaskCardProps) {
       : undefined);
 
   return (
-    <Pressable onPress={handlePress} disabled={isDone} accessibilityRole="button">
+    <Pressable
+      onPress={handlePress}
+      disabled={isDone}
+      accessibilityRole="button"
+    >
       <Animated.View style={[styles.card, cardStyle]}>
         <View style={styles.left}>
           <IconCircle name={iconName} size="md" />
@@ -88,7 +102,9 @@ export function TaskCard({ task, isDone, onOpen }: TaskCardProps) {
               <Text style={styles.duration}>{durationLabel}</Text>
             </View>
           ) : null}
-          <Animated.View style={[styles.actionHint, isDone && styles.actionDone, checkStyle]}>
+          <Animated.View
+            style={[styles.actionHint, isDone && styles.actionDone, checkStyle]}
+          >
             <Ionicons
               name={isDone ? 'checkmark-circle' : 'chevron-forward'}
               size={26}
@@ -100,7 +116,6 @@ export function TaskCard({ task, isDone, onOpen }: TaskCardProps) {
     </Pressable>
   );
 }
-
 const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',

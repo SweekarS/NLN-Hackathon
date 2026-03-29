@@ -85,7 +85,6 @@ function padOrTrim(arr: number[], len: number): number[] {
   const padCount = len - arr.length;
   return [...Array(padCount).fill(0), ...arr];
 }
-
 const styles = StyleSheet.create({
   wrap: {
     gap: spacing.md,

@@ -14,9 +14,24 @@ type TabDef = {
 
 const tabs: TabDef[] = [
   { name: 'index', label: 'Home', icon: 'home', iconOutline: 'home-outline' },
-  { name: 'tasks', label: 'Tasks', icon: 'checkmark-circle', iconOutline: 'checkmark-circle-outline' },
-  { name: 'insights', label: 'Insights', icon: 'bar-chart', iconOutline: 'bar-chart-outline' },
-  { name: 'profile', label: 'Profile', icon: 'person', iconOutline: 'person-outline' },
+  {
+    name: 'tasks',
+    label: 'Tasks',
+    icon: 'checkmark-circle',
+    iconOutline: 'checkmark-circle-outline',
+  },
+  {
+    name: 'insights',
+    label: 'Insights',
+    icon: 'bar-chart',
+    iconOutline: 'bar-chart-outline',
+  },
+  {
+    name: 'profile',
+    label: 'Profile',
+    icon: 'person',
+    iconOutline: 'person-outline',
+  },
 ];
 
 interface NavBarProps {
@@ -36,14 +51,24 @@ export function NavBar({ state, descriptors, navigation }: NavBarProps) {
         if (!tab) return null;
 
         const onPress = () => {
-          const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
+          const event = navigation.emit({
+            type: 'tabPress',
+            target: route.key,
+            canPreventDefault: true,
+          });
           if (!isFocused && !event.defaultPrevented) {
             navigation.navigate(route.name);
           }
         };
 
         return (
-          <Pressable key={route.key} onPress={onPress} style={styles.tab} accessibilityRole="tab" accessibilityState={{ selected: isFocused }}>
+          <Pressable
+            key={route.key}
+            onPress={onPress}
+            style={styles.tab}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: isFocused }}
+          >
             {isFocused ? (
               <LinearGradient
                 colors={[...botanicalGradient.colors]}
@@ -55,7 +80,11 @@ export function NavBar({ state, descriptors, navigation }: NavBarProps) {
                 <Text style={styles.activeLabel}>{tab.label}</Text>
               </LinearGradient>
             ) : (
-              <Ionicons name={tab.iconOutline} size={22} color={colors.outlineVariant} />
+              <Ionicons
+                name={tab.iconOutline}
+                size={22}
+                color={colors.outlineVariant}
+              />
             )}
           </Pressable>
         );
@@ -63,7 +92,6 @@ export function NavBar({ state, descriptors, navigation }: NavBarProps) {
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',

@@ -5,7 +5,6 @@ import {
   ScrollView,
   StyleSheet,
   Pressable,
-  Image,
   LayoutAnimation,
   Platform,
   UIManager,
@@ -23,7 +22,14 @@ import Animated, {
 } from 'react-native-reanimated';
 import { router } from 'expo-router';
 
-import { colors, fonts, spacing, radii, shadow, botanicalGradient } from '../../theme';
+import {
+  colors,
+  fonts,
+  spacing,
+  radii,
+  shadow,
+  botanicalGradient,
+} from '../../theme';
 import { useAppStore } from '../../store/useAppStore';
 import type { Task } from '../../types/task';
 import { Button } from '../../components/ui/Button';
@@ -32,7 +38,7 @@ import { ProgressRing } from '../../components/ui/ProgressRing';
 import { TaskInteractionModal } from '../../components/tasks/TaskInteractionModal';
 
 export default function TasksScreen() {
-  const { tasks, todayCompletions, completeTask, avatarImage, unreadCount } =
+  const { tasks, todayCompletions, completeTask, unreadCount } =
     useAppStore();
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
@@ -40,7 +46,8 @@ export default function TasksScreen() {
   const enabledTasks = useMemo(() => tasks.filter((t) => t.enabled), [tasks]);
   const completionPct =
     enabledTasks.length > 0
-      ? (todayCompletions.filter((id) => enabledTasks.some((t) => t.id === id)).length /
+      ? (todayCompletions.filter((id) => enabledTasks.some((t) => t.id === id))
+          .length /
           enabledTasks.length) *
         100
       : 0;
@@ -51,14 +58,21 @@ export default function TasksScreen() {
   }, [completionPct, pctAnim]);
 
   useEffect(() => {
-    if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+    if (
+      Platform.OS === 'android' &&
+      UIManager.setLayoutAnimationEnabledExperimental
+    ) {
       UIManager.setLayoutAnimationEnabledExperimental(true);
     }
   }, []);
 
   useEffect(() => {
     LayoutAnimation.configureNext(
-      LayoutAnimation.create(260, LayoutAnimation.Types.easeInEaseOut, LayoutAnimation.Properties.opacity)
+      LayoutAnimation.create(
+        260,
+        LayoutAnimation.Types.easeInEaseOut,
+        LayoutAnimation.Properties.opacity,
+      ),
     );
   }, [completionPct]);
 
@@ -80,7 +94,7 @@ export default function TasksScreen() {
     (taskId: string) => {
       completeTask(taskId);
     },
-    [completeTask]
+    [completeTask],
   );
 
   return (
@@ -93,22 +107,7 @@ export default function TasksScreen() {
         {/* TopBar */}
         <Animated.View entering={FadeIn.duration(400)} style={styles.topBar}>
           <View style={styles.topBarLeft}>
-            {avatarImage ? (
-              <Image
-                source={{ uri: avatarImage }}
-                style={[styles.avatar, { resizeMode: 'cover' }]}
-              />
-            ) : (
-              <LinearGradient
-                colors={[...botanicalGradient.colors]}
-                start={botanicalGradient.start}
-                end={botanicalGradient.end}
-                style={styles.avatar}
-              >
-                <Ionicons name="person" size={20} color={colors.white} />
-              </LinearGradient>
-            )}
-            <Text style={styles.appTitle}>AuraFarm</Text>
+            <Text style={styles.topTitle}>Tasks</Text>
           </View>
           <Pressable onPress={() => router.push('/notifications')} hitSlop={8}>
             <View style={{ position: 'relative' }}>
@@ -129,7 +128,10 @@ export default function TasksScreen() {
         </Animated.View>
 
         {/* Title row */}
-        <Animated.View entering={FadeInUp.delay(80).duration(500)} style={styles.headerRow}>
+        <Animated.View
+          entering={FadeInUp.delay(80).duration(500)}
+          style={styles.headerRow}
+        >
           <Text style={styles.pageTitle}>Daily Rituals</Text>
           <Button
             title="Customize"
@@ -197,7 +199,6 @@ export default function TasksScreen() {
     </SafeAreaView>
   );
 }
-
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
@@ -219,19 +220,12 @@ const styles = StyleSheet.create({
   topBarLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
+    gap: spacing.md,
   },
-  avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  appTitle: {
-    fontSize: 18,
-    fontFamily: fonts.headlineBold,
-    color: colors.primary,
+  topTitle: {
+    fontSize: 20,
+    fontFamily: fonts.headlineExtraBold,
+    color: colors.onSurface,
   },
   badge: {
     position: 'absolute',

@@ -1,11 +1,26 @@
 import React, { useCallback } from 'react';
-import { View, Text, ScrollView, StyleSheet, Pressable, Alert, Image } from 'react-native';
+import {
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
+  Pressable,
+  Alert,
+  Image,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
 import { router, useFocusEffect } from 'expo-router';
-import { colors, fonts, spacing, radii, shadow, botanicalGradient } from '../../theme';
+import {
+  colors,
+  fonts,
+  spacing,
+  radii,
+  shadow,
+  botanicalGradient,
+} from '../../theme';
 import { useAppStore } from '../../store/useAppStore';
 import { xpProgressInCurrentLevel } from '../../lib/dashboard-stats';
 import { Card } from '../../components/ui/Card';
@@ -23,17 +38,32 @@ interface PathStep {
 }
 
 type AccountRow =
-  | { kind: 'link'; label: string; route: '/settings' | '/notification-settings' | '/safety'; color: string }
+  | {
+      kind: 'link';
+      label: string;
+      route: '/settings' | '/notification-settings' | '/safety';
+      color: string;
+    }
   | { kind: 'signOut'; label: string; color: string }
   | { kind: 'delete'; label: string; color: string };
 
 export default function ProfileScreen() {
-  const { userName, avatarImage, level, levelTitle, totalXP, currentStreak, totalSessionsCompleted, syncUserStats, resetLocalSession } = useAppStore();
+  const {
+    userName,
+    avatarImage,
+    level,
+    levelTitle,
+    totalXP,
+    currentStreak,
+    totalSessionsCompleted,
+    syncUserStats,
+    resetLocalSession,
+  } = useAppStore();
 
   useFocusEffect(
     useCallback(() => {
       syncUserStats();
-    }, [syncUserStats])
+    }, [syncUserStats]),
   );
 
   const { intoLevel, nextLevelTotal } = xpProgressInCurrentLevel(totalXP);
@@ -41,21 +71,52 @@ export default function ProfileScreen() {
 
   const pathSteps: PathStep[] = [
     { label: 'Seeker', completed: level > 5, current: levelTitle === 'Seeker' },
-    { label: 'Explorer', completed: level > 15, current: levelTitle === 'Explorer' },
-    { label: 'Architect', completed: level > 30, current: levelTitle === 'Architect' },
-    { label: 'AuraFarm Master', completed: level >= 31, current: levelTitle === 'AuraFarm Master' },
+    {
+      label: 'Explorer',
+      completed: level > 15,
+      current: levelTitle === 'Explorer',
+    },
+    {
+      label: 'Architect',
+      completed: level > 30,
+      current: levelTitle === 'Architect',
+    },
+    {
+      label: 'AuraFarm Master',
+      completed: level >= 31,
+      current: levelTitle === 'AuraFarm Master',
+    },
   ];
 
   const recentGrowth = [
     { iconName: 'body-outline' as const, title: 'Morning Meditation', xp: 150 },
-    { iconName: 'flame-outline' as const, title: 'Weekly Streak Bonus', xp: 500 },
+    {
+      iconName: 'flame-outline' as const,
+      title: 'Weekly Streak Bonus',
+      xp: 500,
+    },
     { iconName: 'leaf-outline' as const, title: 'Deep Breathing', xp: 50 },
   ];
 
   const accountRows: AccountRow[] = [
-    { kind: 'link', label: 'Settings', route: '/settings', color: colors.onSurface },
-    { kind: 'link', label: 'Notifications', route: '/notification-settings', color: colors.onSurface },
-    { kind: 'link', label: 'Safety Resources', route: '/safety', color: colors.onSurface },
+    {
+      kind: 'link',
+      label: 'Settings',
+      route: '/settings',
+      color: colors.onSurface,
+    },
+    {
+      kind: 'link',
+      label: 'Notifications',
+      route: '/notification-settings',
+      color: colors.onSurface,
+    },
+    {
+      kind: 'link',
+      label: 'Safety Resources',
+      route: '/safety',
+      color: colors.onSurface,
+    },
     { kind: 'signOut', label: 'Sign Out', color: colors.onSurfaceVariant },
     { kind: 'delete', label: 'Delete Account', color: colors.error },
   ];
@@ -73,7 +134,7 @@ export default function ProfileScreen() {
             router.replace('/onboarding');
           },
         },
-      ]
+      ],
     );
   };
 
@@ -91,7 +152,7 @@ export default function ProfileScreen() {
             router.replace('/onboarding');
           },
         },
-      ]
+      ],
     );
   };
 
@@ -105,22 +166,14 @@ export default function ProfileScreen() {
         {/* Top Bar */}
         <View style={styles.topBar}>
           <View style={styles.topBarLeft}>
-            {avatarImage ? (
-              <Image source={{ uri: avatarImage }} style={[styles.topAvatar, { resizeMode: 'cover' }]} />
-            ) : (
-              <LinearGradient
-                colors={[...botanicalGradient.colors]}
-                start={botanicalGradient.start}
-                end={botanicalGradient.end}
-                style={styles.topAvatar}
-              >
-                <Ionicons name="person" size={20} color={colors.white} />
-              </LinearGradient>
-            )}
             <Text style={styles.topTitle}>Profile</Text>
           </View>
           <Pressable onPress={() => router.push('/settings')} hitSlop={8}>
-            <Ionicons name="settings-outline" size={24} color={colors.onSurface} />
+            <Ionicons
+              name="settings-outline"
+              size={24}
+              color={colors.onSurface}
+            />
           </Pressable>
         </View>
 
@@ -134,7 +187,10 @@ export default function ProfileScreen() {
                 hitSlop={10}
               >
                 {avatarImage ? (
-                  <Image source={{ uri: avatarImage }} style={[styles.avatarBig, { resizeMode: 'cover' }]} />
+                  <Image
+                    source={{ uri: avatarImage }}
+                    style={[styles.avatarBig, { resizeMode: 'cover' }]}
+                  />
                 ) : (
                   <LinearGradient
                     colors={[...botanicalGradient.colors]}
@@ -163,7 +219,8 @@ export default function ProfileScreen() {
                 </View>
               </View>
               <Text style={styles.sessionsSub}>
-                {totalSessionsCompleted} session{totalSessionsCompleted === 1 ? '' : 's'} logged
+                {totalSessionsCompleted} session
+                {totalSessionsCompleted === 1 ? '' : 's'} logged
               </Text>
             </View>
           </Card>
@@ -191,7 +248,8 @@ export default function ProfileScreen() {
               </View>
             </View>
             <Text style={styles.levelRemaining}>
-              {nextLevelTotal - totalXP > 0 ? nextLevelTotal - totalXP : 0} XP until Level {level + 1}
+              {nextLevelTotal - totalXP > 0 ? nextLevelTotal - totalXP : 0} XP
+              until Level {level + 1}
             </Text>
           </Card>
         </Animated.View>
@@ -200,11 +258,23 @@ export default function ProfileScreen() {
         <Animated.View entering={FadeInUp.delay(200).duration(500)}>
           <GreenCard style={styles.cardGap}>
             <View style={styles.milestoneRow}>
-              <IconCircle name="star-outline" size="sm" color={colors.white} bg="rgba(255,255,255,0.25)" />
-              <Text style={styles.milestoneText}>Next Milestone: Nature Sage</Text>
+              <IconCircle
+                name="star-outline"
+                size="sm"
+                color={colors.white}
+                bg="rgba(255,255,255,0.25)"
+              />
+              <Text style={styles.milestoneText}>
+                Next Milestone: Nature Sage
+              </Text>
             </View>
             <View style={styles.milestoneBadge}>
-              <Ionicons name="lock-closed-outline" size={14} color={colors.white} style={{ marginRight: 4 }} />
+              <Ionicons
+                name="lock-closed-outline"
+                size={14}
+                color={colors.white}
+                style={{ marginRight: 4 }}
+              />
               <Text style={styles.milestoneBadgeText}>Level 15</Text>
             </View>
           </GreenCard>
@@ -212,9 +282,18 @@ export default function ProfileScreen() {
 
         {/* Daily Streak Mini */}
         <Card style={styles.cardGap}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: spacing.sm }}>
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 8,
+              marginBottom: spacing.sm,
+            }}
+          >
             <IconCircle name="flame-outline" size="sm" />
-            <Text style={[styles.streakTitle, { marginBottom: 0 }]}>{currentStreak} Days</Text>
+            <Text style={[styles.streakTitle, { marginBottom: 0 }]}>
+              {currentStreak} Days
+            </Text>
           </View>
           <XPBar progress={0.7} height={8} />
           <Text style={styles.streakSub}>+50 XP bonus in 3 days</Text>
@@ -228,7 +307,12 @@ export default function ProfileScreen() {
                 <View
                   style={[
                     styles.pathLine,
-                    { backgroundColor: step.completed || step.current ? colors.primary : colors.outlineVariant },
+                    {
+                      backgroundColor:
+                        step.completed || step.current
+                          ? colors.primary
+                          : colors.outlineVariant,
+                    },
                   ]}
                 />
               )}
@@ -246,7 +330,11 @@ export default function ProfileScreen() {
                   ) : step.current ? (
                     <View style={styles.pathDot} />
                   ) : (
-                    <Ionicons name="lock-closed" size={10} color={colors.outline} />
+                    <Ionicons
+                      name="lock-closed"
+                      size={10}
+                      color={colors.outline}
+                    />
                   )}
                 </View>
                 <Text
@@ -275,7 +363,6 @@ export default function ProfileScreen() {
           </Card>
         ))}
 
-
         {/* Account */}
         <SectionTitle title="Account" />
         <Card style={styles.cardGap}>
@@ -290,18 +377,40 @@ export default function ProfileScreen() {
             return (
               <Pressable
                 key={row.label}
-                style={[styles.accountRow, i < accountRows.length - 1 && styles.accountRowBorder]}
+                style={[
+                  styles.accountRow,
+                  i < accountRows.length - 1 && styles.accountRowBorder,
+                ]}
                 onPress={() => {
                   if (row.kind === 'link') router.push(row.route);
                   else if (row.kind === 'signOut') handleSignOut();
                   else handleDeleteAccount();
                 }}
               >
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
-                  <Ionicons name={iconMap[row.label] ?? 'ellipse-outline'} size={20} color={row.color} />
-                  <Text style={[styles.accountLabel, { color: row.color }]}>{row.label}</Text>
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 10,
+                    flex: 1,
+                  }}
+                >
+                  <Ionicons
+                    name={iconMap[row.label] ?? 'ellipse-outline'}
+                    size={20}
+                    color={row.color}
+                  />
+                  <Text style={[styles.accountLabel, { color: row.color }]}>
+                    {row.label}
+                  </Text>
                 </View>
-                {row.kind === 'link' && <Ionicons name="chevron-forward" size={20} color={colors.outline} />}
+                {row.kind === 'link' && (
+                  <Ionicons
+                    name="chevron-forward"
+                    size={20}
+                    color={colors.outline}
+                  />
+                )}
               </Pressable>
             );
           })}
@@ -309,7 +418,9 @@ export default function ProfileScreen() {
 
         {/* Footer */}
         <View style={styles.footer}>
-          <Text style={styles.footerLinks}>Privacy · Terms · What We Track</Text>
+          <Text style={styles.footerLinks}>
+            Privacy · Terms · What We Track
+          </Text>
           <Text style={styles.footerVersion}>v1.0.0</Text>
         </View>
 
@@ -341,13 +452,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-  },
-  topAvatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   topTitle: {
     fontSize: 20,

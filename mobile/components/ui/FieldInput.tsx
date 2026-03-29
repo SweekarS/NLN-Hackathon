@@ -19,7 +19,6 @@ export function FieldInput({ value, onChangeText, ...rest }: FieldInputProps) {
     />
   );
 }
-
 const styles = StyleSheet.create({
   input: {
     height: 48,
