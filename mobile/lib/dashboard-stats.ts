@@ -1,5 +1,9 @@
 import type { Task } from '../types/task';
-import { addLogicalDays, getLogicalDateRange, getLogicalDateString } from './logical-date';
+import {
+  addLogicalDays,
+  getLogicalDateRange,
+  getLogicalDateString,
+} from './logical-date';
 
 /** Matches Supabase daily_logs columns (phone_free_done ↔ focus task). */
 export type DailyLogFlags = {
@@ -18,7 +22,9 @@ export function getLevelFromTotalXP(totalXP: number): number {
 }
 
 /** Growth tier label from level (not raw XP). */
-export function getGrowthTierTitle(level: number): 'Seeker' | 'Explorer' | 'Architect' | 'Sanctuary Master' {
+export function getGrowthTierTitle(
+  level: number,
+): 'Seeker' | 'Explorer' | 'Architect' | 'Sanctuary Master' {
   if (level >= 31) return 'Sanctuary Master';
   if (level >= 16) return 'Architect';
   if (level >= 6) return 'Explorer';
@@ -26,7 +32,11 @@ export function getGrowthTierTitle(level: number): 'Seeker' | 'Explorer' | 'Arch
 }
 
 /** XP progress within the current level (0–499) toward the next level. */
-export function xpProgressInCurrentLevel(totalXP: number): { intoLevel: number; levelFloor: number; nextLevelTotal: number } {
+export function xpProgressInCurrentLevel(totalXP: number): {
+  intoLevel: number;
+  levelFloor: number;
+  nextLevelTotal: number;
+} {
   const level = getLevelFromTotalXP(totalXP);
   const levelFloor = (level - 1) * XP_PER_LEVEL;
   const nextLevelTotal = level * XP_PER_LEVEL;
@@ -50,19 +60,30 @@ export function taskIdToLogFlagKey(taskId: string): keyof DailyLogFlags | null {
 }
 
 /** Map legacy or custom task ids: known ids first, else slot index when exactly 4 tasks (0–3). */
-export function resolveLogFlagKey(taskId: string, tasks: Task[]): keyof DailyLogFlags | null {
+export function resolveLogFlagKey(
+  taskId: string,
+  tasks: Task[],
+): keyof DailyLogFlags | null {
   const direct = taskIdToLogFlagKey(taskId);
   if (direct) return direct;
   const idx = tasks.findIndex((t) => t.id === taskId);
   if (tasks.length === 4 && idx >= 0 && idx <= 3) {
-    const bySlot: (keyof DailyLogFlags)[] = ['morning_done', 'social_done', 'phone_free_done', 'evening_done'];
+    const bySlot: (keyof DailyLogFlags)[] = [
+      'morning_done',
+      'social_done',
+      'phone_free_done',
+      'evening_done',
+    ];
     return bySlot[idx]!;
   }
   return null;
 }
 
 /** Which tasks are done today, from boolean flags + current task list. */
-export function completionIdsFromFlags(flags: DailyLogFlags, tasks: Task[]): string[] {
+export function completionIdsFromFlags(
+  flags: DailyLogFlags,
+  tasks: Task[],
+): string[] {
   const out: string[] = [];
   for (const t of tasks) {
     const key = resolveLogFlagKey(t.id, tasks);
@@ -71,7 +92,10 @@ export function completionIdsFromFlags(flags: DailyLogFlags, tasks: Task[]): str
   return out;
 }
 
-export function flagsFromTaskIds(completedIds: string[], tasks: Task[]): DailyLogFlags {
+export function flagsFromTaskIds(
+  completedIds: string[],
+  tasks: Task[],
+): DailyLogFlags {
   const flags: DailyLogFlags = {
     morning_done: false,
     social_done: false,
@@ -86,18 +110,28 @@ export function flagsFromTaskIds(completedIds: string[], tasks: Task[]): DailyLo
 }
 
 export function hasAnyTaskDone(flags: DailyLogFlags): boolean {
-  return flags.morning_done || flags.social_done || flags.phone_free_done || flags.evening_done;
+  return (
+    flags.morning_done ||
+    flags.social_done ||
+    flags.phone_free_done ||
+    flags.evening_done
+  );
 }
 
 export function countTasksDone(flags: DailyLogFlags): number {
-  return [flags.morning_done, flags.social_done, flags.phone_free_done, flags.evening_done].filter(Boolean).length;
+  return [
+    flags.morning_done,
+    flags.social_done,
+    flags.phone_free_done,
+    flags.evening_done,
+  ].filter(Boolean).length;
 }
 
 export function getFlagsForLogicalDay(
   day: string,
   anchorDate: string,
   dailyLogsByDate: Record<string, Partial<DailyLogFlags>>,
-  todayFlags: DailyLogFlags
+  todayFlags: DailyLogFlags,
 ): DailyLogFlags {
   const base = dailyLogsByDate[day] ?? {};
   const raw = day === anchorDate ? { ...base, ...todayFlags } : base;
@@ -115,7 +149,7 @@ export function getFlagsForLogicalDay(
 export function computeCurrentStreak(
   dailyLogsByDate: Record<string, Partial<DailyLogFlags>>,
   anchorDate: string,
-  todayFlags: DailyLogFlags
+  todayFlags: DailyLogFlags,
 ): number {
   let streak = 0;
   let d = anchorDate;
@@ -132,12 +166,17 @@ export function computeCurrentStreak(
 export function computeWeeklyActiveDays(
   dailyLogsByDate: Record<string, Partial<DailyLogFlags>>,
   anchorDate: string,
-  todayFlags: DailyLogFlags
+  todayFlags: DailyLogFlags,
 ): number {
   const range = getLogicalDateRange(anchorDate, 7);
   let n = 0;
   for (const day of range) {
-    const f = getFlagsForLogicalDay(day, anchorDate, dailyLogsByDate, todayFlags);
+    const f = getFlagsForLogicalDay(
+      day,
+      anchorDate,
+      dailyLogsByDate,
+      todayFlags,
+    );
     if (hasAnyTaskDone(f)) n += 1;
   }
   return n;
@@ -151,7 +190,9 @@ export function formatWeeklyAverageLabel(activeDaysOutOf7: number): string {
  * Maps completed ritual count (0–4) to Mindfulness Flow grid intensity (0–3).
  * 0 → 0, 1 → 1, 2–3 → 2, 4 → 3.
  */
-export function tasksCompletedToMindfulnessIntensity(completed: number): 0 | 1 | 2 | 3 {
+export function tasksCompletedToMindfulnessIntensity(
+  completed: number,
+): 0 | 1 | 2 | 3 {
   if (completed <= 0) return 0;
   if (completed === 1) return 1;
   if (completed === 2 || completed === 3) return 2;
@@ -168,7 +209,7 @@ const FLOW_DAYS = 30;
 export function buildMindfulnessFlow30Day(
   dailyLogsByDate: Record<string, Partial<DailyLogFlags>>,
   anchorDate: string,
-  todayFlags?: DailyLogFlags
+  todayFlags?: DailyLogFlags,
 ): number[] {
   const dates = getLogicalDateRange(anchorDate, FLOW_DAYS);
   return dates.map((day) => {
@@ -184,6 +225,56 @@ export function buildMindfulnessFlow30Day(
     const n = countTasksDone(flags);
     return tasksCompletedToMindfulnessIntensity(n);
   });
+}
+
+/**
+ * Finds the end date of the longest streak by scanning all historical logs.
+ * Returns the logical date string (YYYY-MM-DD) when the longest streak ended.
+ * If no streaks exist, returns the current date.
+ */
+export function computeLongestStreakEndDate(
+  dailyLogsByDate: Record<string, Partial<DailyLogFlags>>,
+  anchorDate: string,
+): string {
+  const allDates = Object.keys(dailyLogsByDate).sort().reverse();
+
+  if (allDates.length === 0) return anchorDate;
+
+  let maxStreakLength = 0;
+  let maxStreakEndDate = anchorDate;
+  let currentStreakLength = 0;
+  let currentStreakEndDate = '';
+
+  for (const dateStr of allDates) {
+    const raw = dailyLogsByDate[dateStr];
+    const flags: DailyLogFlags = {
+      morning_done: Boolean(raw?.morning_done),
+      social_done: Boolean(raw?.social_done),
+      phone_free_done: Boolean(raw?.phone_free_done),
+      evening_done: Boolean(raw?.evening_done),
+    };
+    if (raw && hasAnyTaskDone(flags)) {
+      if (currentStreakLength === 0) {
+        currentStreakEndDate = dateStr;
+      }
+      currentStreakLength += 1;
+    } else {
+      if (currentStreakLength > maxStreakLength) {
+        maxStreakLength = currentStreakLength;
+        maxStreakEndDate = currentStreakEndDate;
+      }
+      currentStreakLength = 0;
+      currentStreakEndDate = '';
+    }
+  }
+
+  // Check if the last streak (which hasn't been broken) is the longest
+  if (currentStreakLength > maxStreakLength) {
+    maxStreakLength = currentStreakLength;
+    maxStreakEndDate = currentStreakEndDate;
+  }
+
+  return maxStreakEndDate;
 }
 
 export { getLogicalDateString, getLogicalDateRange, addLogicalDays };

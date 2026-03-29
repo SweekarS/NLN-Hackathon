@@ -16,7 +16,8 @@ import { ProgressRing } from '../../components/ui/ProgressRing';
 import { TaskInteractionModal } from '../../components/tasks/TaskInteractionModal';
 
 export default function TasksScreen() {
-  const { tasks, todayCompletions, completeTask, avatarImage } = useAppStore();
+  const { tasks, todayCompletions, completeTask, avatarImage, unreadCount } =
+    useAppStore();
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
 
@@ -56,7 +57,10 @@ export default function TasksScreen() {
         <Animated.View entering={FadeIn.duration(400)} style={styles.topBar}>
           <View style={styles.topBarLeft}>
             {avatarImage ? (
-              <Image source={{ uri: avatarImage }} style={[styles.avatar, { resizeMode: 'cover' }]} />
+              <Image
+                source={{ uri: avatarImage }}
+                style={[styles.avatar, { resizeMode: 'cover' }]}
+              />
             ) : (
               <LinearGradient
                 colors={[...botanicalGradient.colors]}
@@ -70,7 +74,20 @@ export default function TasksScreen() {
             <Text style={styles.appTitle}>The Organic Sanctuary</Text>
           </View>
           <Pressable onPress={() => router.push('/notifications')} hitSlop={8}>
-            <Ionicons name="notifications-outline" size={24} color={colors.onSurface} />
+            <View style={{ position: 'relative' }}>
+              <Ionicons
+                name="notifications-outline"
+                size={24}
+                color={colors.onSurface}
+              />
+              {unreadCount > 0 && (
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </Text>
+                </View>
+              )}
+            </View>
           </Pressable>
         </Animated.View>
 
@@ -200,6 +217,25 @@ const styles = StyleSheet.create({
     fontFamily: fonts.headlineBold,
     color: colors.primary,
   },
+  badge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    backgroundColor: colors.error,
+    borderRadius: 8,
+    minWidth: 16,
+    height: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 3,
+    borderWidth: 1.5,
+    borderColor: colors.surface,
+  },
+  badgeText: {
+    color: colors.white,
+    fontSize: 9,
+    fontFamily: fonts.bodyBold,
+  },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -261,7 +297,6 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   restCard: {
-    alignItems: 'center',
     paddingVertical: spacing.xl,
     paddingHorizontal: spacing.lg,
     borderWidth: 1,

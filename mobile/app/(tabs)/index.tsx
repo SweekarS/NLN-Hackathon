@@ -1,12 +1,26 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { View, Text, ScrollView, StyleSheet, Pressable, Image } from 'react-native';
+import {
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
+  Pressable,
+  Image,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
 import { router, useFocusEffect } from 'expo-router';
 
-import { colors, fonts, spacing, radii, shadow, botanicalGradient } from '../../theme';
+import {
+  colors,
+  fonts,
+  spacing,
+  radii,
+  shadow,
+  botanicalGradient,
+} from '../../theme';
 import { useAppStore } from '../../store/useAppStore';
 import {
   buildMindfulnessFlow30Day,
@@ -38,23 +52,25 @@ export default function HomeScreen() {
     syncUserStats,
     dailyLogsByDate,
     lastLogicalDateKey,
+    unreadCount,
   } = useAppStore();
   const [achievementVisible, setAchievementVisible] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
       syncUserStats();
-    }, [syncUserStats])
+    }, [syncUserStats]),
   );
 
   const anchorDate = lastLogicalDateKey ?? getLogicalDateString();
   const todayFlags = flagsFromTaskIds(todayCompletions, tasks);
   const mindfulnessFlow30 = useMemo(
     () => buildMindfulnessFlow30Day(dailyLogsByDate, anchorDate, todayFlags),
-    [dailyLogsByDate, anchorDate, todayCompletions, tasks]
+    [dailyLogsByDate, anchorDate, todayCompletions, tasks],
   );
 
-  const progress = tasks.length > 0 ? todayCompletions.length / tasks.length : 0;
+  const progress =
+    tasks.length > 0 ? todayCompletions.length / tasks.length : 0;
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -67,7 +83,10 @@ export default function HomeScreen() {
         <Animated.View entering={FadeIn.duration(400)} style={styles.topBar}>
           <View style={styles.topBarLeft}>
             {avatarImage ? (
-              <Image source={{ uri: avatarImage }} style={[styles.avatar, { resizeMode: 'cover' }]} />
+              <Image
+                source={{ uri: avatarImage }}
+                style={[styles.avatar, { resizeMode: 'cover' }]}
+              />
             ) : (
               <LinearGradient
                 colors={[...botanicalGradient.colors]}
@@ -81,7 +100,20 @@ export default function HomeScreen() {
             <Text style={styles.appTitle}>The Organic Sanctuary</Text>
           </View>
           <Pressable onPress={() => router.push('/notifications')} hitSlop={8}>
-            <Ionicons name="notifications-outline" size={24} color={colors.onSurface} />
+            <View style={{ position: 'relative' }}>
+              <Ionicons
+                name="notifications-outline"
+                size={24}
+                color={colors.onSurface}
+              />
+              {unreadCount > 0 && (
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </Text>
+                </View>
+              )}
+            </View>
           </Pressable>
         </Animated.View>
 
@@ -90,7 +122,9 @@ export default function HomeScreen() {
           <LightCard style={styles.heroCard}>
             <View style={styles.heroRow}>
               <View style={styles.heroText}>
-                <Text style={styles.heroTitle}>Grow at your own pace today.</Text>
+                <Text style={styles.heroTitle}>
+                  Grow at your own pace today.
+                </Text>
                 <Text style={styles.heroSubtitle}>
                   Every small step nurtures your sanctuary.
                 </Text>
@@ -132,7 +166,12 @@ export default function HomeScreen() {
               delay={200}
               hint={`Level ${level}`}
             />
-            <StatCard iconName="trending-up-outline" value={String(totalXP)} label="TOTAL XP" delay={300} />
+            <StatCard
+              iconName="trending-up-outline"
+              value={String(totalXP)}
+              label="TOTAL XP"
+              delay={300}
+            />
           </View>
         </View>
 
@@ -163,30 +202,13 @@ export default function HomeScreen() {
                     {todayCompletions.length} of {tasks.length} rituals complete
                   </Text>
                 </View>
-                <Ionicons name="chevron-forward" size={20} color={colors.white} />
+                <Ionicons
+                  name="chevron-forward"
+                  size={20}
+                  color={colors.white}
+                />
               </View>
             </GreenCard>
-          </Pressable>
-        </Animated.View>
-
-        {/* Recent Milestones */}
-        <SectionTitle
-          title="Recent Milestones"
-          actionLabel="View all"
-          onAction={() => {}}
-        />
-        <Animated.View entering={FadeInUp.delay(550).duration(500)}>
-          <Pressable onPress={() => setAchievementVisible(true)}>
-            <Card style={styles.milestoneCard}>
-              <View style={styles.milestoneRow}>
-                <IconCircle name="trophy-outline" size="md" />
-                <View style={styles.milestoneText}>
-                  <Text style={styles.milestoneTitle}>7-Day Streak</Text>
-                  <Text style={styles.milestoneLabel}>Consistency badge</Text>
-                </View>
-                <Ionicons name="chevron-forward" size={20} color={colors.outline} />
-              </View>
-            </Card>
           </Pressable>
         </Animated.View>
 
@@ -335,28 +357,7 @@ const styles = StyleSheet.create({
     color: colors.primaryLight,
     marginTop: 2,
   },
-  milestoneCard: {
-    marginBottom: spacing.xs,
-  },
-  milestoneRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-  },
-  milestoneText: {
-    flex: 1,
-  },
-  milestoneTitle: {
-    fontSize: 15,
-    fontFamily: fonts.bodySemiBold,
-    color: colors.onSurface,
-  },
-  milestoneLabel: {
-    fontSize: 12,
-    fontFamily: fonts.bodyRegular,
-    color: colors.onSurfaceVariant,
-    marginTop: 2,
-  },
+
   sheetContent: {
     alignItems: 'center',
     paddingVertical: spacing.base,
@@ -399,5 +400,24 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bodyMedium,
     color: colors.outline,
     marginTop: spacing.xs,
+  },
+  badge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    backgroundColor: colors.error,
+    borderRadius: 8,
+    minWidth: 16,
+    height: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 3,
+    borderWidth: 1.5,
+    borderColor: colors.surface,
+  },
+  badgeText: {
+    color: colors.white,
+    fontSize: 9,
+    fontFamily: fonts.bodyBold || fonts.headlineBold,
   },
 });

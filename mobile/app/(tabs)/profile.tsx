@@ -23,7 +23,7 @@ interface PathStep {
 }
 
 type AccountRow =
-  | { kind: 'link'; label: string; route: '/settings' | '/notifications' | '/safety'; color: string }
+  | { kind: 'link'; label: string; route: '/settings' | '/notification-settings' | '/safety'; color: string }
   | { kind: 'signOut'; label: string; color: string }
   | { kind: 'delete'; label: string; color: string };
 
@@ -54,7 +54,7 @@ export default function ProfileScreen() {
 
   const accountRows: AccountRow[] = [
     { kind: 'link', label: 'Settings', route: '/settings', color: colors.onSurface },
-    { kind: 'link', label: 'Notifications', route: '/notifications', color: colors.onSurface },
+    { kind: 'link', label: 'Notifications', route: '/notification-settings', color: colors.onSurface },
     { kind: 'link', label: 'Safety Resources', route: '/safety', color: colors.onSurface },
     { kind: 'signOut', label: 'Sign Out', color: colors.onSurfaceVariant },
     { kind: 'delete', label: 'Delete Account', color: colors.error },
