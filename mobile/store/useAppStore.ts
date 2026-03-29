@@ -37,6 +37,7 @@ interface AppState {
   totalSessionsCompleted: number;
   weeklyAvg: number;
   heatmapData: number[];
+  activeDays90: number;
 
   totalXP: number;
   level: number;
@@ -132,6 +133,7 @@ function getDefaultSessionState(): Omit<
     totalSessionsCompleted: 0,
     weeklyAvg: 0,
     heatmapData: new Array(getDaysInCurrentMonth()).fill(0),
+    activeDays90: 0,
 
     totalXP: 0,
     level: 1,
@@ -166,6 +168,7 @@ export const useAppStore = create<AppState>()(
       totalSessionsCompleted: 0,
       weeklyAvg: 0,
       heatmapData: new Array(getDaysInCurrentMonth()).fill(0),
+      activeDays90: 0,
 
       totalXP: 2450,
       level: 14,
@@ -249,6 +252,21 @@ export const useAppStore = create<AppState>()(
             });
           }
 
+          // Fetch active days in last 90 days
+          const past90DaysStr = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000).toISOString();
+          const { data: activity90 } = await supabase
+            .from('tasks')
+            .select('updated_at')
+            .eq('user_id', user.id)
+            .eq('completed', true)
+            .gte('updated_at', past90DaysStr);
+
+          let fetchedActiveDays90 = 0;
+          if (activity90) {
+            const uniqueDays = new Set(activity90.map(r => new Date(r.updated_at).toDateString()));
+            fetchedActiveDays90 = uniqueDays.size;
+          }
+
           set((state) => {
             const newXP = Math.max(state.totalXP, levelData?.total_xp || 0);
             const newLevel = Math.max(state.level, levelData?.current_level || 1);
@@ -260,6 +278,7 @@ export const useAppStore = create<AppState>()(
               totalSessionsCompleted: Math.max(state.totalSessionsCompleted, sessionsCount || 0),
               weeklyAvg: reportData?.completion_rate != null ? Number(reportData.completion_rate) : state.weeklyAvg,
               heatmapData: heatmapArray.some(v => v > 0) ? heatmapArray : state.heatmapData, // Avoid overwriting optimistic if fetch raced
+              activeDays90: Math.max(state.activeDays90, fetchedActiveDays90),
               levelTitle: getLevelTitle(newLevel),
             };
           });
@@ -288,6 +307,8 @@ export const useAppStore = create<AppState>()(
         const newXP = totalXP + 50;
         const newLevel = getLevelFromXP(newXP);
         const newSessionsCount = totalSessionsCompleted + 1;
+        const isNewActiveDay = todayCompletions.length === 0;
+        const newActiveDays90 = get().activeDays90 + (isNewActiveDay ? 1 : 0);
 
         // Optimistic UI update instantly!
         const daysInMonth = getDaysInCurrentMonth();
@@ -307,6 +328,7 @@ export const useAppStore = create<AppState>()(
           levelTitle: getLevelTitle(newLevel),
           totalSessionsCompleted: newSessionsCount,
           heatmapData: curHeatmap,
+          activeDays90: newActiveDays90,
         });
 
         // Background Sync up to Supabase
@@ -378,6 +400,7 @@ export const useAppStore = create<AppState>()(
         totalSessionsCompleted: state.totalSessionsCompleted,
         weeklyAvg: state.weeklyAvg,
         heatmapData: state.heatmapData,
+        activeDays90: state.activeDays90,
         totalXP: state.totalXP,
         level: state.level,
         levelTitle: state.levelTitle,

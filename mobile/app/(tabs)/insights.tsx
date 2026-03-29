@@ -18,7 +18,7 @@ import { IconCircle } from '../../components/ui/IconCircle';
 type MetricsTab = 'overview' | 'details';
 
 export default function InsightsScreen() {
-  const { currentStreak, longestStreak } = useAppStore();
+  const { currentStreak, longestStreak, activeDays90 } = useAppStore();
   const [activeTab, setActiveTab] = useState<MetricsTab>('overview');
 
   return (
@@ -110,12 +110,12 @@ export default function InsightsScreen() {
 
           <Text style={styles.metricLabel}>Last 90 Days</Text>
           <View style={styles.ninetyRow}>
-            <ProgressRing progress={0.72} size={60} strokeWidth={7}>
-              <Text style={styles.ringPercent}>72%</Text>
+            <ProgressRing progress={activeDays90 / 90} size={60} strokeWidth={7}>
+              <Text style={styles.ringPercent}>{Math.round((activeDays90 / 90) * 100)}%</Text>
             </ProgressRing>
             <View style={styles.ninetyText}>
-              <Text style={styles.ninetyBig}>72%</Text>
-              <Text style={styles.ninetySub}>Active: 65 days · Rest: 25 days</Text>
+              <Text style={styles.ninetyBig}>{Math.round((activeDays90 / 90) * 100)}%</Text>
+              <Text style={styles.ninetySub}>Active: {activeDays90} days · Rest: {90 - activeDays90} days</Text>
             </View>
           </View>
         </Card>
