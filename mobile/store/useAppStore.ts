@@ -393,9 +393,11 @@ export const useAppStore = create<AppState>()(
           return;
         }
         let uid = userIdOverride;
+        let authMeta: Record<string, any> | undefined = undefined;
         if (!uid) {
           const { data: auth } = await supabase.auth.getUser();
           uid = auth.user?.id;
+          authMeta = auth.user?.user_metadata;
         }
         if (!uid) {
           set({ _remoteProfileReady: true });
@@ -446,6 +448,8 @@ export const useAppStore = create<AppState>()(
         const totalXP = profile?.total_xp ?? st.totalXP;
         const level = getLevelFromTotalXP(totalXP);
         const longestStreak = Math.max(st.longestStreak, currentStreak);
+        const userName = profile?.full_name ?? authMeta?.full_name ?? st.userName;
+        const avatarImage = profile?.avatar_url ?? authMeta?.avatar_url ?? st.avatarImage;
 
         set({
           tasks,
@@ -459,6 +463,8 @@ export const useAppStore = create<AppState>()(
           totalXP,
           level,
           levelTitle: getGrowthTierTitle(level),
+          userName,
+          avatarImage,
           _remoteProfileReady: true,
         });
       },

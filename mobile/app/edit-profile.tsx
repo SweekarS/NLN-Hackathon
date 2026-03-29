@@ -83,10 +83,19 @@ export default function EditProfileScreen() {
       }
 
       // 3. Update database
-      const { error: dbError } = await supabase
-        .from('users')
-        .update({ name: trimmed, avatar_url: finalAvatarUrl })
+      let { error: dbError } = await supabase
+        .from('profiles')
+        .update({ full_name: trimmed, avatar_url: finalAvatarUrl })
         .eq('id', user.id);
+
+      // Fallback if avatar_url column does not exist
+      if (dbError && dbError.message.includes('avatar_url')) {
+        const fallback = await supabase
+          .from('profiles')
+          .update({ full_name: trimmed })
+          .eq('id', user.id);
+        dbError = fallback.error;
+      }
 
       if (dbError) {
         throw new Error('Failed to update database: ' + dbError.message);

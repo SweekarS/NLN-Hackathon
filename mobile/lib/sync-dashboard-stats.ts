@@ -11,6 +11,7 @@ type ProfileRow = {
   last_active_date: string | null;
   has_completed_onboarding?: boolean | null;
   tasks_json?: unknown | null;
+  avatar_url?: string | null;
 };
 
 type DailyLogRow = {
@@ -124,9 +125,10 @@ async function fetchProfileRowFlexible(userId: string): Promise<{
   profile: ProfileRow | null;
   error: Error | null;
 }> {
+  // Try 1: Everything including avatar_url
   const full = await supabase
     .from('profiles')
-    .select('id, full_name, total_xp, current_streak, last_active_date, has_completed_onboarding, tasks_json')
+    .select('id, full_name, avatar_url, total_xp, current_streak, last_active_date, has_completed_onboarding, tasks_json')
     .eq('id', userId)
     .maybeSingle();
 
@@ -134,6 +136,18 @@ async function fetchProfileRowFlexible(userId: string): Promise<{
     return { profile: (full.data as ProfileRow) ?? null, error: null };
   }
 
+  // Try 2: Everything except avatar_url
+  const noAvatar = await supabase
+    .from('profiles')
+    .select('id, full_name, total_xp, current_streak, last_active_date, has_completed_onboarding, tasks_json')
+    .eq('id', userId)
+    .maybeSingle();
+    
+  if (!noAvatar.error) {
+    return { profile: (noAvatar.data as ProfileRow) ?? null, error: null };
+  }
+
+  // Try 3: Minimal legacy format
   const minimal = await supabase
     .from('profiles')
     .select('id, full_name, total_xp, current_streak, last_active_date')
