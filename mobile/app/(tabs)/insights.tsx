@@ -1,11 +1,14 @@
-import React, { useState, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
 import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
 import { colors, fonts, spacing, radii } from '../../theme';
 import { useAppStore } from '../../store/useAppStore';
 import {
   buildMindfulnessFlow30Day,
+  buildMindfulnessFlow7Day,
+  calculateHarmonyScore,
   flagsFromTaskIds,
   getLogicalDateString,
 } from '../../lib/dashboard-stats';
@@ -15,12 +18,9 @@ import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { XPBar } from '../../components/ui/XPBar';
 import { ProgressRing } from '../../components/ui/ProgressRing';
-import { BarChart } from '../../components/ui/BarChart';
 import { Heatmap } from '../../components/ui/Heatmap';
 import { SectionTitle } from '../../components/ui/SectionTitle';
 import { IconCircle } from '../../components/ui/IconCircle';
-
-type MetricsTab = 'overview' | 'details';
 
 function formatStreakDate(dateStr: string | null): string {
   if (!dateStr) return 'Unknown date';
@@ -55,14 +55,24 @@ export default function InsightsScreen() {
     todayCompletions,
     tasks,
     lastLogicalDateKey,
+    userName,
   } = useAppStore();
-  const [activeTab, setActiveTab] = useState<MetricsTab>('overview');
 
   const anchorDate = lastLogicalDateKey ?? getLogicalDateString();
   const todayFlags = flagsFromTaskIds(todayCompletions, tasks);
   const mindfulnessFlow30 = useMemo(
     () => buildMindfulnessFlow30Day(dailyLogsByDate, anchorDate, todayFlags),
     [dailyLogsByDate, anchorDate, todayCompletions, tasks],
+  );
+
+  const mindfulnessFlow7 = useMemo(
+    () => buildMindfulnessFlow7Day(dailyLogsByDate, anchorDate, todayFlags),
+    [dailyLogsByDate, anchorDate, todayCompletions, tasks],
+  );
+
+  const harmonyScore = useMemo(
+    () => calculateHarmonyScore(dailyLogsByDate, anchorDate),
+    [dailyLogsByDate, anchorDate],
   );
 
   const { progress: streakProgress, percentage: streakPercentage } = useMemo(
@@ -90,7 +100,7 @@ export default function InsightsScreen() {
             </Text>
             <Button
               title="Log Today's Reflection"
-              onPress={() => {}}
+              onPress={() => router.push('/journal')}
               variant="light"
               style={{ marginTop: spacing.base }}
             />
@@ -121,58 +131,12 @@ export default function InsightsScreen() {
           </Card>
         </Animated.View>
 
-        {/* Embracing the Pause */}
-        <Animated.View entering={FadeInUp.delay(200).duration(500)}>
-          <LightCard style={styles.pauseCard}>
-            <Text style={styles.pauseHeadline}>Embracing the Pause</Text>
-            <Text style={styles.pauseQuote}>
-              "Rest is how nature renews itself. Your pause is part of your
-              growth story."
-            </Text>
-            <Text style={styles.pauseLink}>Gentle Reminders for Healing</Text>
-          </LightCard>
-        </Animated.View>
-
         {/* Consistency Metrics */}
         <SectionTitle title="Consistency Metrics" />
 
-        <View style={styles.tabRow}>
-          <Pressable
-            style={[styles.tab, activeTab === 'overview' && styles.tabActive]}
-            onPress={() => setActiveTab('overview')}
-          >
-            <Text
-              style={[
-                styles.tabText,
-                activeTab === 'overview' && styles.tabTextActive,
-              ]}
-            >
-              Overview
-            </Text>
-          </Pressable>
-          <Pressable
-            style={[styles.tab, activeTab === 'details' && styles.tabActive]}
-            onPress={() => setActiveTab('details')}
-          >
-            <Text
-              style={[
-                styles.tabText,
-                activeTab === 'details' && styles.tabTextActive,
-              ]}
-            >
-              Details
-            </Text>
-          </Pressable>
-        </View>
-
         <Card style={styles.cardGap}>
           <Text style={styles.metricLabel}>Last 7 Days</Text>
-          <BarChart />
-
-          <View style={styles.divider} />
-
-          <Text style={styles.metricLabel}>Last 30 Days</Text>
-          <Heatmap intensities={mindfulnessFlow30} />
+          <Heatmap intensities={mindfulnessFlow7} days={7} />
 
           <View style={styles.divider} />
 
@@ -215,14 +179,18 @@ export default function InsightsScreen() {
         <SectionTitle title="Monthly Summary" />
         <Animated.View entering={FadeIn.delay(400).duration(500)}>
           <GreenCard>
-            <Text style={styles.monthlySalutation}>Hello, friend</Text>
+            <Text style={styles.monthlySalutation}>
+              Hello, {userName || 'friend'}
+            </Text>
             <Text style={styles.monthlyBody}>
               Your March journey shows beautiful consistency. Keep nurturing
               your growth.
             </Text>
             <View style={styles.harmonyRow}>
-              <ProgressRing progress={0.88} size={64} strokeWidth={7}>
-                <Text style={styles.harmonyPercent}>88%</Text>
+              <ProgressRing progress={harmonyScore} size={64} strokeWidth={7}>
+                <Text style={styles.harmonyPercent}>
+                  {Math.round(harmonyScore * 100)}%
+                </Text>
               </ProgressRing>
               <View style={{ flex: 1, marginLeft: spacing.base }}>
                 <Text style={styles.harmonyLabel}>Harmony Score</Text>

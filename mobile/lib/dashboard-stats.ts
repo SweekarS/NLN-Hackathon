@@ -228,6 +228,31 @@ export function buildMindfulnessFlow30Day(
 }
 
 /**
+ * 7 sequential logical days: index 0 = 7 days ago, index 6 = `anchorDate` (today).
+ * Used for the weekly heatmap view.
+ */
+export function buildMindfulnessFlow7Day(
+  dailyLogsByDate: Record<string, Partial<DailyLogFlags>>,
+  anchorDate: string,
+  todayFlags?: DailyLogFlags,
+): number[] {
+  const dates = getLogicalDateRange(anchorDate, 7);
+  return dates.map((day) => {
+    const base = dailyLogsByDate[day] ?? {};
+    const raw =
+      todayFlags && day === anchorDate ? { ...base, ...todayFlags } : base;
+    const flags: DailyLogFlags = {
+      morning_done: Boolean(raw.morning_done),
+      social_done: Boolean(raw.social_done),
+      phone_free_done: Boolean(raw.phone_free_done),
+      evening_done: Boolean(raw.evening_done),
+    };
+    const n = countTasksDone(flags);
+    return tasksCompletedToMindfulnessIntensity(n);
+  });
+}
+
+/**
  * Finds the end date of the longest streak by scanning all historical logs.
  * Returns the logical date string (YYYY-MM-DD) when the longest streak ended.
  * If no streaks exist, returns the current date.
@@ -275,6 +300,66 @@ export function computeLongestStreakEndDate(
   }
 
   return maxStreakEndDate;
+}
+
+/**
+ * Calculates the harmony score based on consistency, variety, and rest balance.
+ * Returns a value between 0 and 1 (intended for display as 0-100%).
+ *
+ * - Consistency: % of days active in current month
+ * - Variety: diversity of task types completed in current month (0-1)
+ * - Rest Balance: balance of active vs rest days (peaks at 50/50)
+ */
+export function calculateHarmonyScore(
+  dailyLogsByDate: Record<string, Partial<DailyLogFlags>>,
+  anchorDate: string,
+): number {
+  const [year, month] = anchorDate.split('-').slice(0, 2).map(Number);
+  const daysInMonth = new Date(year, month, 0).getDate();
+
+  // Get all dates in current month
+  const monthStart = `${year}-${String(month).padStart(2, '0')}-01`;
+  const dates = getLogicalDateRange(monthStart, daysInMonth);
+
+  // Count active days and track which task types were done
+  let activeDays = 0;
+  const taskTypesDone = new Set<keyof DailyLogFlags>();
+
+  for (const date of dates) {
+    const log = dailyLogsByDate[date];
+    if (log) {
+      const flags: DailyLogFlags = {
+        morning_done: Boolean(log.morning_done),
+        social_done: Boolean(log.social_done),
+        phone_free_done: Boolean(log.phone_free_done),
+        evening_done: Boolean(log.evening_done),
+      };
+
+      if (hasAnyTaskDone(flags)) {
+        activeDays += 1;
+        if (flags.morning_done) taskTypesDone.add('morning_done');
+        if (flags.social_done) taskTypesDone.add('social_done');
+        if (flags.phone_free_done) taskTypesDone.add('phone_free_done');
+        if (flags.evening_done) taskTypesDone.add('evening_done');
+      }
+    }
+  }
+
+  // Calculate three components
+  // 1. Consistency: % of active days (0-1)
+  const consistency = activeDays / daysInMonth;
+
+  // 2. Variety: diversity of task types (0-1, where 1 = all 4 types done)
+  const variety = taskTypesDone.size / 4;
+
+  // 3. Rest Balance: balance between active and rest days (peaks at 0.5 active ratio)
+  const restRatio = 1 - activeDays / daysInMonth;
+  const restBalance = 1 - Math.abs(0.5 - activeDays / daysInMonth) * 2;
+
+  // Average the three components
+  const harmonyScore = (consistency + variety + restBalance) / 3;
+
+  return Math.max(0, Math.min(1, harmonyScore));
 }
 
 export { getLogicalDateString, getLogicalDateRange, addLogicalDays };

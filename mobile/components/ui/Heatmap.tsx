@@ -8,9 +8,11 @@ const TOTAL = 30;
 
 /** Intensity 0–3 from `buildMindfulnessFlow30Day`. */
 interface HeatmapProps {
-  /** Exactly 30 values; index 0 = oldest day, 29 = today. */
+  /** Array of intensity values; index 0 = oldest day, last = today. */
   intensities: number[];
   cols?: number;
+  /** Total days to display. Defaults to 30 if not specified. */
+  days?: number;
 }
 
 const LEVEL_BG: readonly string[] = [
@@ -20,13 +22,20 @@ const LEVEL_BG: readonly string[] = [
   colors.primary,
 ];
 
-export function Heatmap({ intensities, cols = COLS }: HeatmapProps) {
+export function Heatmap({
+  intensities,
+  cols = COLS,
+  days = TOTAL,
+}: HeatmapProps) {
   const data = useMemo(() => {
-    const src = intensities.length === TOTAL ? intensities : padOrTrim(intensities, TOTAL);
-    return src.map((v) => Math.max(0, Math.min(3, Math.round(v))) as 0 | 1 | 2 | 3);
-  }, [intensities]);
+    const src =
+      intensities.length === days ? intensities : padOrTrim(intensities, days);
+    return src.map(
+      (v) => Math.max(0, Math.min(3, Math.round(v))) as 0 | 1 | 2 | 3,
+    );
+  }, [intensities, days]);
 
-  const rows = Math.ceil(TOTAL / cols);
+  const rows = Math.ceil(days / cols);
 
   return (
     <View style={styles.wrap}>
@@ -46,8 +55,13 @@ export function Heatmap({ intensities, cols = COLS }: HeatmapProps) {
           <View key={rowIdx} style={styles.row}>
             {Array.from({ length: cols }).map((__, colIdx) => {
               const idx = rowIdx * cols + colIdx;
-              if (idx >= TOTAL) {
-                return <View key={`pad-${rowIdx}-${colIdx}`} style={styles.cellSpacer} />;
+              if (idx >= days) {
+                return (
+                  <View
+                    key={`pad-${rowIdx}-${colIdx}`}
+                    style={styles.cellSpacer}
+                  />
+                );
               }
               const level = data[idx];
               const backgroundColor = LEVEL_BG[level];

@@ -37,7 +37,7 @@ type DailyLogRow = {
 export async function upsertDailyLogRemote(
   userId: string,
   logDate: string,
-  flags: DailyLogFlags
+  flags: DailyLogFlags,
 ): Promise<{ error: Error | null }> {
   if (!isSupabaseConfigured) return { error: null };
   const { error } = await supabase.from('daily_logs').upsert(
@@ -49,14 +49,14 @@ export async function upsertDailyLogRemote(
       phone_free_done: flags.phone_free_done,
       evening_done: flags.evening_done,
     },
-    { onConflict: 'user_id,log_date' }
+    { onConflict: 'user_id,log_date' },
   );
   return { error: error ? new Error(error.message) : null };
 }
 
 export async function updateProfileStatsRemote(
   userId: string,
-  patch: { total_xp: number; current_streak: number }
+  patch: { total_xp: number; current_streak: number },
 ): Promise<{ error: Error | null }> {
   if (!isSupabaseConfigured) return { error: null };
   const { error } = await supabase
@@ -70,7 +70,9 @@ export async function updateProfileStatsRemote(
   return { error: error ? new Error(error.message) : null };
 }
 
-export async function fetchRemoteNotifications(userId: string): Promise<{ data: RemoteNotification[]; error: Error | null }> {
+export async function fetchRemoteNotifications(
+  userId: string,
+): Promise<{ data: RemoteNotification[]; error: Error | null }> {
   if (!isSupabaseConfigured) return { data: [], error: null };
   const { data, error } = await supabase
     .from('notifications')
@@ -90,7 +92,7 @@ export async function fetchRemoteNotifications(userId: string): Promise<{ data: 
 }
 
 export async function markNotificationReadRemote(
-  notificationId: string
+  notificationId: string,
 ): Promise<{ error: Error | null }> {
   if (!isSupabaseConfigured) return { error: null };
   const { error } = await supabase
@@ -107,7 +109,7 @@ export async function saveOnboardingCompleteToProfile(
     tasks: Task[];
     total_xp: number;
     current_streak: number;
-  }
+  },
 ): Promise<{ error: Error | null }> {
   if (!isSupabaseConfigured) return { error: null };
   const { error } = await supabase.from('profiles').upsert(
@@ -119,7 +121,7 @@ export async function saveOnboardingCompleteToProfile(
       current_streak: payload.current_streak,
       last_active_date: new Date().toISOString(),
     },
-    { onConflict: 'id' }
+    { onConflict: 'id' },
   );
   return { error: error ? new Error(error.message) : null };
 }
@@ -127,7 +129,7 @@ export async function saveOnboardingCompleteToProfile(
 /** Persist ritual definitions after Customize (edit/delete). */
 export async function updateProfileTasksJsonRemote(
   userId: string,
-  tasks: Task[]
+  tasks: Task[],
 ): Promise<{ error: Error | null }> {
   if (!isSupabaseConfigured) return { error: null };
   const { error } = await supabase
@@ -145,7 +147,7 @@ function isTaskArray(raw: unknown): raw is Task[] {
       typeof t === 'object' &&
       typeof (t as Task).id === 'string' &&
       typeof (t as Task).title === 'string' &&
-      typeof (t as Task).subtitle === 'string'
+      typeof (t as Task).subtitle === 'string',
   );
 }
 
@@ -157,12 +159,16 @@ export function parseTasksFromProfileJson(raw: unknown): Task[] | null {
 /** When DB column is missing or false, infer from activity (legacy users). */
 export function inferHasCompletedOnboarding(
   profile: ProfileRow | null,
-  dailyLogRowCount: number
+  dailyLogRowCount: number,
 ): boolean {
   if (!profile) return false;
   if (profile.has_completed_onboarding === true) return true;
   if (profile.has_completed_onboarding === false) {
-    return (profile.total_xp ?? 0) > 0 || (profile.current_streak ?? 0) > 0 || dailyLogRowCount > 0;
+    return (
+      (profile.total_xp ?? 0) > 0 ||
+      (profile.current_streak ?? 0) > 0 ||
+      dailyLogRowCount > 0
+    );
   }
   return (
     (profile.total_xp ?? 0) > 0 ||
@@ -180,7 +186,9 @@ async function fetchProfileRowFlexible(userId: string): Promise<{
   // Try 1: Everything including avatar_url
   const full = await supabase
     .from('profiles')
-    .select('id, full_name, avatar_url, total_xp, current_streak, last_active_date, has_completed_onboarding, tasks_json')
+    .select(
+      'id, full_name, avatar_url, total_xp, current_streak, last_active_date, has_completed_onboarding, tasks_json',
+    )
     .eq('id', userId)
     .maybeSingle();
 
@@ -191,10 +199,12 @@ async function fetchProfileRowFlexible(userId: string): Promise<{
   // Try 2: Everything except avatar_url
   const noAvatar = await supabase
     .from('profiles')
-    .select('id, full_name, total_xp, current_streak, last_active_date, has_completed_onboarding, tasks_json')
+    .select(
+      'id, full_name, total_xp, current_streak, last_active_date, has_completed_onboarding, tasks_json',
+    )
     .eq('id', userId)
     .maybeSingle();
-    
+
   if (!noAvatar.error) {
     return { profile: (noAvatar.data as ProfileRow) ?? null, error: null };
   }
@@ -219,7 +229,12 @@ export async function fetchDashboardSnapshot(userId: string): Promise<{
   error: Error | null;
 }> {
   if (!isSupabaseConfigured) {
-    return { profile: null, dailyLogsByDate: {}, dailyLogRowCount: 0, error: null };
+    return {
+      profile: null,
+      dailyLogsByDate: {},
+      dailyLogRowCount: 0,
+      error: null,
+    };
   }
 
   const anchor = getLogicalDateString();
@@ -229,7 +244,9 @@ export async function fetchDashboardSnapshot(userId: string): Promise<{
     fetchProfileRowFlexible(userId),
     supabase
       .from('daily_logs')
-      .select('log_date, morning_done, social_done, phone_free_done, evening_done')
+      .select(
+        'log_date, morning_done, social_done, phone_free_done, evening_done',
+      )
       .eq('user_id', userId)
       .gte('log_date', minDate)
       .order('log_date', { ascending: true }),
@@ -260,4 +277,87 @@ export async function fetchDashboardSnapshot(userId: string): Promise<{
     dailyLogRowCount,
     error: profileResult.error,
   };
+}
+
+export async function saveJournalEntryRemote(
+  content: string,
+  logDate?: string | null,
+): Promise<{ error: Error | null }> {
+  if (!isSupabaseConfigured) {
+    return { error: new Error('Supabase not configured') };
+  }
+
+  const session = await supabase.auth.getSession();
+  const userId = session.data.session?.user?.id;
+
+  if (!userId) {
+    return { error: new Error('User not authenticated') };
+  }
+
+  const date = logDate || getLogicalDateString();
+
+  const { error } = await supabase.from('journal_entries').insert({
+    user_id: userId,
+    log_date: date,
+    content: content,
+    created_at: new Date().toISOString(),
+  });
+
+  if (error) {
+    console.error('Supabase journal insert error:', error);
+    // Check if table doesn't exist
+    if (
+      error.message.includes('relation "journal_entries" does not exist') ||
+      error.message.includes('42P01')
+    ) {
+      return {
+        error: new Error(
+          'Journal feature is not set up yet. Please contact support.',
+        ),
+      };
+    }
+    return { error: new Error(error.message) };
+  }
+
+  return { error: null };
+}
+
+export interface JournalEntry {
+  id: string;
+  user_id: string;
+  log_date: string;
+  content: string;
+  created_at: string;
+}
+
+export async function fetchJournalEntriesRemote(): Promise<{
+  data: JournalEntry[];
+  error: Error | null;
+}> {
+  if (!isSupabaseConfigured) {
+    return { data: [], error: null };
+  }
+
+  const session = await supabase.auth.getSession();
+  const userId = session.data.session?.user?.id;
+
+  if (!userId) {
+    return { data: [], error: new Error('User not authenticated') };
+  }
+
+  const { data, error } = await supabase
+    .from('journal_entries')
+    .select('*')
+    .eq('user_id', userId)
+    .order('log_date', { ascending: false })
+    .limit(50);
+
+  if (error) {
+    if (error.message.includes('relation "journal_entries" does not exist')) {
+      return { data: [], error: null };
+    }
+    return { data: [], error: new Error(error.message) };
+  }
+
+  return { data: (data as JournalEntry[]) || [], error: null };
 }
