@@ -34,6 +34,9 @@ interface AppState {
 
   tasks: Task[];
   todayCompletions: string[];
+  totalSessionsCompleted: number;
+  weeklyAvg: number;
+  heatmapData: number[];
 
   totalXP: number;
   level: number;
@@ -70,8 +73,15 @@ interface AppState {
   setUserName: (name: string) => void;
   setAvatarImage: (uri: string | null) => void;
 
+  syncUserStats: () => Promise<void>;
+
   /** Clears persisted data and resets to defaults; signs out of Supabase when configured. */
   resetLocalSession: () => void;
+}
+
+function getDaysInCurrentMonth(): number {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
 }
 
 function getLevelTitle(level: number): 'Rookie' | 'Regular' | 'Master' | 'Legend' {
@@ -105,6 +115,7 @@ function getDefaultSessionState(): Omit<
   | 'setUserName'
   | 'setAvatarImage'
   | 'resetLocalSession'
+  | 'syncUserStats'
 > {
   return {
     userName: 'Guest',
@@ -118,6 +129,9 @@ function getDefaultSessionState(): Omit<
 
     tasks: defaultTasks.map((t) => ({ ...t })),
     todayCompletions: [],
+    totalSessionsCompleted: 0,
+    weeklyAvg: 0,
+    heatmapData: new Array(getDaysInCurrentMonth()).fill(0),
 
     totalXP: 0,
     level: 1,
@@ -149,6 +163,9 @@ export const useAppStore = create<AppState>()(
 
       tasks: defaultTasks,
       todayCompletions: ['2'],
+      totalSessionsCompleted: 0,
+      weeklyAvg: 0,
+      heatmapData: new Array(getDaysInCurrentMonth()).fill(0),
 
       totalXP: 2450,
       level: 14,
@@ -168,6 +185,89 @@ export const useAppStore = create<AppState>()(
       setUserName: (userName) => set({ userName }),
       setAvatarImage: (uri) => set({ avatarImage: uri }),
 
+      syncUserStats: async () => {
+        if (!isSupabaseConfigured) return;
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) return;
+
+          // Fetch Streak
+          const { data: streakData } = await supabase
+            .from('streaks')
+            .select('current_streak, longest_streak')
+            .eq('user_id', user.id)
+            .maybeSingle();
+
+          // Fetch Level
+          const { data: levelData } = await supabase
+            .from('levels')
+            .select('current_level, total_xp')
+            .eq('user_id', user.id)
+            .maybeSingle();
+
+          // Fetch completed tasks count
+          const { count: sessionsCount } = await supabase
+            .from('tasks')
+            .select('*', { count: 'exact', head: true })
+            .eq('user_id', user.id)
+            .eq('completed', true);
+
+          // Fetch latest weekly avg from reports
+          const { data: reportData } = await supabase
+            .from('reports')
+            .select('completion_rate')
+            .eq('user_id', user.id)
+            .eq('type', 'weekly')
+            .order('generated_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          // Fetch heatmap data over current month
+          const now = new Date();
+          const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+          const currentMonthStr = firstDayOfMonth.toISOString();
+          
+          const { data: activityData } = await supabase
+            .from('tasks')
+            .select('updated_at')
+            .eq('user_id', user.id)
+            .eq('completed', true)
+            .gte('updated_at', currentMonthStr);
+
+          const daysInMonth = getDaysInCurrentMonth();
+          const heatmapArray = new Array(daysInMonth).fill(0);
+          if (activityData) {
+            activityData.forEach(row => {
+              if (row.updated_at) {
+                const date = new Date(row.updated_at);
+                if (date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear()) {
+                  // Index based on day of month (0-indexed)
+                  const idx = date.getDate() - 1;
+                  heatmapArray[idx] = Math.min(1, heatmapArray[idx] + 0.34); 
+                }
+              }
+            });
+          }
+
+          set((state) => {
+            const newXP = Math.max(state.totalXP, levelData?.total_xp || 0);
+            const newLevel = Math.max(state.level, levelData?.current_level || 1);
+            return {
+              currentStreak: Math.max(state.currentStreak, streakData?.current_streak || 0),
+              longestStreak: Math.max(state.longestStreak, streakData?.longest_streak || 0),
+              level: newLevel,
+              totalXP: newXP,
+              totalSessionsCompleted: Math.max(state.totalSessionsCompleted, sessionsCount || 0),
+              weeklyAvg: reportData?.completion_rate != null ? Number(reportData.completion_rate) : state.weeklyAvg,
+              heatmapData: heatmapArray.some(v => v > 0) ? heatmapArray : state.heatmapData, // Avoid overwriting optimistic if fetch raced
+              levelTitle: getLevelTitle(newLevel),
+            };
+          });
+        } catch (e) {
+          console.log('Error syncing stats', e);
+        }
+      },
+
       resetLocalSession: () => {
         if (isSupabaseConfigured) {
           void supabase.auth.signOut();
@@ -178,17 +278,64 @@ export const useAppStore = create<AppState>()(
         });
       },
 
-      completeTask: (taskId) => {
-        const { todayCompletions, totalXP } = get();
+      completeTask: async (taskId) => {
+        const { tasks, todayCompletions, totalXP, totalSessionsCompleted } = get();
         if (todayCompletions.includes(taskId)) return;
+
+        const taskDef = tasks.find((t) => t.id === taskId);
+        if (!taskDef) return;
+
         const newXP = totalXP + 50;
         const newLevel = getLevelFromXP(newXP);
+        const newSessionsCount = totalSessionsCompleted + 1;
+
+        // Optimistic UI update instantly!
+        const daysInMonth = getDaysInCurrentMonth();
+        let curHeatmap = [...(get().heatmapData || [])];
+        if (curHeatmap.length !== daysInMonth) {
+          curHeatmap = new Array(daysInMonth).fill(0);
+        }
+        const todayIdx = new Date().getDate() - 1;
+        if (todayIdx >= 0 && todayIdx < curHeatmap.length) {
+          curHeatmap[todayIdx] = Math.min(1, curHeatmap[todayIdx] + 0.34);
+        }
+
         set({
           todayCompletions: [...todayCompletions, taskId],
           totalXP: newXP,
           level: newLevel,
           levelTitle: getLevelTitle(newLevel),
+          totalSessionsCompleted: newSessionsCount,
+          heatmapData: curHeatmap,
         });
+
+        // Background Sync up to Supabase
+        if (isSupabaseConfigured) {
+          try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+              const nowISO = new Date().toISOString();
+
+              // 1. Log action in tasks history to feed the heatmap array!
+              await supabase.from('tasks').insert({
+                user_id: user.id,
+                title: taskDef.title,
+                completed: true,
+                updated_at: nowISO,
+              });
+
+              // 2. Overwrite total XP pool
+              await supabase.from('levels').upsert({
+                user_id: user.id,
+                total_xp: newXP,
+                current_level: newLevel,
+                updated_at: nowISO,
+              }, { onConflict: 'user_id' });
+            }
+          } catch (e) {
+            console.log('Error pushing task to Supabase:', e);
+          }
+        }
       },
 
       addXP: (amount) => {
@@ -228,6 +375,9 @@ export const useAppStore = create<AppState>()(
         lastCompletedDate: state.lastCompletedDate,
         tasks: state.tasks,
         todayCompletions: state.todayCompletions,
+        totalSessionsCompleted: state.totalSessionsCompleted,
+        weeklyAvg: state.weeklyAvg,
+        heatmapData: state.heatmapData,
         totalXP: state.totalXP,
         level: state.level,
         levelTitle: state.levelTitle,

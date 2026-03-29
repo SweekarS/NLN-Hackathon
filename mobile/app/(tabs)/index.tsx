@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, ScrollView, StyleSheet, Pressable, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 
 import { colors, fonts, spacing, radii, shadow, botanicalGradient } from '../../theme';
 import { useAppStore } from '../../store/useAppStore';
@@ -20,8 +20,14 @@ import { Heatmap } from '../../components/ui/Heatmap';
 import { BottomSheet } from '../../components/ui/BottomSheet';
 
 export default function HomeScreen() {
-  const { currentStreak, level, totalXP, tasks, todayCompletions, avatarImage } = useAppStore();
+  const { currentStreak, level, totalXP, tasks, todayCompletions, avatarImage, syncUserStats, weeklyAvg, heatmapData } = useAppStore();
   const [achievementVisible, setAchievementVisible] = useState(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      syncUserStats();
+    }, [syncUserStats])
+  );
 
   const progress = tasks.length > 0 ? todayCompletions.length / tasks.length : 0;
 
@@ -80,7 +86,7 @@ export default function HomeScreen() {
         <View style={styles.statsGrid}>
           <View style={styles.statsRow}>
             <StatCard iconName="flame-outline" value={String(currentStreak)} label="CURRENT STREAK" delay={0} />
-            <StatCard iconName="checkmark-circle-outline" value="85%" label="WEEKLY AVG" delay={100} />
+            <StatCard iconName="checkmark-circle-outline" value={`${Math.round(weeklyAvg)}%`} label="WEEKLY AVG" delay={100} />
           </View>
           <View style={styles.statsRow}>
             <StatCard iconName="sparkles-outline" value={`Lvl ${level}`} label="GROWTH TIER" delay={200} />
@@ -92,7 +98,7 @@ export default function HomeScreen() {
         <SectionTitle title="Mindfulness Flow" />
         <Animated.View entering={FadeInUp.delay(350).duration(500)}>
           <Card>
-            <Heatmap />
+            <Heatmap data={heatmapData} />
             <Text style={styles.heatmapQuote}>
               Your consistency is the foundation of your inner peace.
             </Text>

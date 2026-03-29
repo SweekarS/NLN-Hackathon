@@ -70,12 +70,6 @@ export default function TasksScreen() {
               <Text style={styles.progressText}>
                 TODAY'S PROGRESS {Math.round(completionPct)}%
               </Text>
-              <Button
-                title="Complete all"
-                onPress={() => tasks.forEach((t) => completeTask(t.id))}
-                variant="light"
-                style={styles.completeAllBtn}
-              />
             </View>
             <View style={styles.progressBarTrack}>
               <View

@@ -1,10 +1,10 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { View, Text, ScrollView, StyleSheet, Pressable, Alert, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { colors, fonts, spacing, radii, shadow, botanicalGradient } from '../../theme';
 import { useAppStore } from '../../store/useAppStore';
 import { Card } from '../../components/ui/Card';
@@ -27,7 +27,13 @@ type AccountRow =
   | { kind: 'delete'; label: string; color: string };
 
 export default function ProfileScreen() {
-  const { userName, avatarImage, level, levelTitle, totalXP, currentStreak, resetLocalSession } = useAppStore();
+  const { userName, avatarImage, level, levelTitle, totalXP, currentStreak, totalSessionsCompleted, syncUserStats, resetLocalSession } = useAppStore();
+
+  useFocusEffect(
+    useCallback(() => {
+      syncUserStats();
+    }, [syncUserStats])
+  );
 
   const nextLevelXP = level * NEXT_LEVEL_XP_STEP;
   const xpProgress = Math.min(totalXP / nextLevelXP, 1);
@@ -146,12 +152,12 @@ export default function ProfileScreen() {
               <Text style={styles.userRole}>Mindfulness Practitioner</Text>
               <View style={styles.statsRow}>
                 <View style={styles.statItem}>
-                  <Text style={styles.statValue}>12 Days</Text>
+                  <Text style={styles.statValue}>{currentStreak} Days</Text>
                   <Text style={styles.statLabel}>Streak</Text>
                 </View>
                 <View style={styles.statDivider} />
                 <View style={styles.statItem}>
-                  <Text style={styles.statValue}>48 Sessions</Text>
+                  <Text style={styles.statValue}>{totalSessionsCompleted} Sessions</Text>
                   <Text style={styles.statLabel}>Completed</Text>
                 </View>
               </View>

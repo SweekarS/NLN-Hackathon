@@ -8,23 +8,32 @@ interface HeatmapProps {
   cols?: number;
 }
 
-const defaultData = Array.from({ length: 30 }, () => Math.random());
+const defaultData = Array.from({ length: 31 }, () => 0);
 
-export function Heatmap({ data = defaultData, cols = 10 }: HeatmapProps) {
+export function Heatmap({ data = defaultData, cols = 7 }: HeatmapProps) {
   const rows = Math.ceil(data.length / cols);
 
   return (
     <View style={styles.container}>
       {Array.from({ length: rows }).map((_, rowIdx) => (
         <View key={rowIdx} style={styles.row}>
-          {data.slice(rowIdx * cols, (rowIdx + 1) * cols).map((val, colIdx) => {
+          {Array.from({ length: cols }).map((_, colIdx) => {
             const idx = rowIdx * cols + colIdx;
-            const opacity = 0.15 + val * 0.85;
+            
+            if (idx >= data.length) {
+              return <View key={`empty-${idx}`} style={[styles.cell, { opacity: 0 }]} />;
+            }
+            
+            const val = data[idx];
+            const hasActivity = val > 0;
+            const opacity = hasActivity ? 0.3 + val * 0.7 : 1;
+            const backgroundColor = hasActivity ? colors.primary : colors.surfaceHigh;
+            
             return (
               <Animated.View
                 key={idx}
                 entering={FadeIn.delay(idx * 20).duration(300)}
-                style={[styles.cell, { backgroundColor: colors.primary, opacity }]}
+                style={[styles.cell, { backgroundColor, opacity }]}
               />
             );
           })}
