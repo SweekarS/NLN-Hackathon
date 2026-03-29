@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet, Pressable, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -8,7 +8,12 @@ import { router, useFocusEffect } from 'expo-router';
 
 import { colors, fonts, spacing, radii, shadow, botanicalGradient } from '../../theme';
 import { useAppStore } from '../../store/useAppStore';
-import { formatWeeklyAverageLabel } from '../../lib/dashboard-stats';
+import {
+  buildMindfulnessFlow30Day,
+  flagsFromTaskIds,
+  formatWeeklyAverageLabel,
+  getLogicalDateString,
+} from '../../lib/dashboard-stats';
 import { Card } from '../../components/ui/Card';
 import { GreenCard } from '../../components/ui/GreenCard';
 import { LightCard } from '../../components/ui/LightCard';
@@ -31,7 +36,8 @@ export default function HomeScreen() {
     levelTitle,
     avatarImage,
     syncUserStats,
-    heatmapData,
+    dailyLogsByDate,
+    lastLogicalDateKey,
   } = useAppStore();
   const [achievementVisible, setAchievementVisible] = useState(false);
 
@@ -39,6 +45,13 @@ export default function HomeScreen() {
     useCallback(() => {
       syncUserStats();
     }, [syncUserStats])
+  );
+
+  const anchorDate = lastLogicalDateKey ?? getLogicalDateString();
+  const todayFlags = flagsFromTaskIds(todayCompletions, tasks);
+  const mindfulnessFlow30 = useMemo(
+    () => buildMindfulnessFlow30Day(dailyLogsByDate, anchorDate, todayFlags),
+    [dailyLogsByDate, anchorDate, todayCompletions, tasks]
   );
 
   const progress = tasks.length > 0 ? todayCompletions.length / tasks.length : 0;
@@ -127,7 +140,7 @@ export default function HomeScreen() {
         <SectionTitle title="Mindfulness Flow" />
         <Animated.View entering={FadeInUp.delay(350).duration(500)}>
           <Card>
-            <Heatmap data={heatmapData} />
+            <Heatmap intensities={mindfulnessFlow30} />
             <Text style={styles.heatmapQuote}>
               Your consistency is the foundation of your inner peace.
             </Text>

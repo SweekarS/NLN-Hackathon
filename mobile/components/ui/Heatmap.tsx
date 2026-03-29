@@ -1,49 +1,97 @@
-import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import React, { useMemo } from 'react';
+import { View, Text, StyleSheet } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
-import { colors, spacing } from '../../theme';
+import { colors, fonts, spacing } from '../../theme';
 
+const COLS = 7;
+const TOTAL = 30;
+
+/** Intensity 0–3 from `buildMindfulnessFlow30Day`. */
 interface HeatmapProps {
-  data?: number[];
+  /** Exactly 30 values; index 0 = oldest day, 29 = today. */
+  intensities: number[];
   cols?: number;
 }
 
-const defaultData = Array.from({ length: 31 }, () => 0);
+const LEVEL_BG: readonly string[] = [
+  colors.surfaceHigh,
+  colors.primaryLighter,
+  colors.primaryMid,
+  colors.primary,
+];
 
-export function Heatmap({ data = defaultData, cols = 7 }: HeatmapProps) {
-  const rows = Math.ceil(data.length / cols);
+export function Heatmap({ intensities, cols = COLS }: HeatmapProps) {
+  const data = useMemo(() => {
+    const src = intensities.length === TOTAL ? intensities : padOrTrim(intensities, TOTAL);
+    return src.map((v) => Math.max(0, Math.min(3, Math.round(v))) as 0 | 1 | 2 | 3);
+  }, [intensities]);
+
+  const rows = Math.ceil(TOTAL / cols);
 
   return (
-    <View style={styles.container}>
-      {Array.from({ length: rows }).map((_, rowIdx) => (
-        <View key={rowIdx} style={styles.row}>
-          {Array.from({ length: cols }).map((_, colIdx) => {
-            const idx = rowIdx * cols + colIdx;
-            
-            if (idx >= data.length) {
-              return <View key={`empty-${idx}`} style={[styles.cell, { opacity: 0 }]} />;
-            }
-            
-            const val = data[idx];
-            const hasActivity = val > 0;
-            const opacity = hasActivity ? 0.3 + val * 0.7 : 1;
-            const backgroundColor = hasActivity ? colors.primary : colors.surfaceHigh;
-            
-            return (
-              <Animated.View
-                key={idx}
-                entering={FadeIn.delay(idx * 20).duration(300)}
-                style={[styles.cell, { backgroundColor, opacity }]}
-              />
-            );
-          })}
-        </View>
-      ))}
+    <View style={styles.wrap}>
+      <View style={styles.legendRow}>
+        <Text style={styles.legendLabel}>LESS</Text>
+        {([0, 1, 2, 3] as const).map((level) => (
+          <View
+            key={level}
+            style={[styles.legendSwatch, { backgroundColor: LEVEL_BG[level] }]}
+          />
+        ))}
+        <Text style={styles.legendLabel}>MORE</Text>
+      </View>
+
+      <View style={styles.container}>
+        {Array.from({ length: rows }).map((_, rowIdx) => (
+          <View key={rowIdx} style={styles.row}>
+            {Array.from({ length: cols }).map((__, colIdx) => {
+              const idx = rowIdx * cols + colIdx;
+              if (idx >= TOTAL) {
+                return <View key={`pad-${rowIdx}-${colIdx}`} style={styles.cellSpacer} />;
+              }
+              const level = data[idx];
+              const backgroundColor = LEVEL_BG[level];
+              return (
+                <Animated.View
+                  key={idx}
+                  entering={FadeIn.delay(Math.min(idx, 20) * 15).duration(280)}
+                  style={[styles.cell, { backgroundColor }]}
+                />
+              );
+            })}
+          </View>
+        ))}
+      </View>
     </View>
   );
 }
 
+function padOrTrim(arr: number[], len: number): number[] {
+  if (arr.length >= len) return arr.slice(arr.length - len);
+  const padCount = len - arr.length;
+  return [...Array(padCount).fill(0), ...arr];
+}
+
 const styles = StyleSheet.create({
+  wrap: {
+    gap: spacing.md,
+  },
+  legendRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: 6,
+  },
+  legendLabel: {
+    fontSize: 11,
+    fontFamily: fonts.bodySemiBold,
+    color: colors.onSurfaceVariant,
+  },
+  legendSwatch: {
+    width: 12,
+    height: 12,
+    borderRadius: 3,
+  },
   container: {
     gap: 4,
   },
@@ -55,5 +103,12 @@ const styles = StyleSheet.create({
     flex: 1,
     aspectRatio: 1,
     borderRadius: 4,
+    minWidth: 0,
+  },
+  cellSpacer: {
+    flex: 1,
+    aspectRatio: 1,
+    minWidth: 0,
+    opacity: 0,
   },
 });

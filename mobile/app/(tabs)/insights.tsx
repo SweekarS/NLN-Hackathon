@@ -1,9 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
 import { colors, fonts, spacing, radii } from '../../theme';
 import { useAppStore } from '../../store/useAppStore';
+import {
+  buildMindfulnessFlow30Day,
+  flagsFromTaskIds,
+  getLogicalDateString,
+} from '../../lib/dashboard-stats';
 import { GreenCard } from '../../components/ui/GreenCard';
 import { LightCard } from '../../components/ui/LightCard';
 import { Card } from '../../components/ui/Card';
@@ -18,8 +23,23 @@ import { IconCircle } from '../../components/ui/IconCircle';
 type MetricsTab = 'overview' | 'details';
 
 export default function InsightsScreen() {
-  const { currentStreak, longestStreak, activeDays90 } = useAppStore();
+  const {
+    currentStreak,
+    longestStreak,
+    activeDays90,
+    dailyLogsByDate,
+    todayCompletions,
+    tasks,
+    lastLogicalDateKey,
+  } = useAppStore();
   const [activeTab, setActiveTab] = useState<MetricsTab>('overview');
+
+  const anchorDate = lastLogicalDateKey ?? getLogicalDateString();
+  const todayFlags = flagsFromTaskIds(todayCompletions, tasks);
+  const mindfulnessFlow30 = useMemo(
+    () => buildMindfulnessFlow30Day(dailyLogsByDate, anchorDate, todayFlags),
+    [dailyLogsByDate, anchorDate, todayCompletions, tasks]
+  );
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -104,7 +124,7 @@ export default function InsightsScreen() {
           <View style={styles.divider} />
 
           <Text style={styles.metricLabel}>Last 30 Days</Text>
-          <Heatmap />
+          <Heatmap intensities={mindfulnessFlow30} />
 
           <View style={styles.divider} />
 

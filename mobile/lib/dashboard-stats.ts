@@ -147,4 +147,43 @@ export function formatWeeklyAverageLabel(activeDaysOutOf7: number): string {
   return `${activeDaysOutOf7}/7 Days`;
 }
 
+/**
+ * Maps completed ritual count (0–4) to Mindfulness Flow grid intensity (0–3).
+ * 0 → 0, 1 → 1, 2–3 → 2, 4 → 3.
+ */
+export function tasksCompletedToMindfulnessIntensity(completed: number): 0 | 1 | 2 | 3 {
+  if (completed <= 0) return 0;
+  if (completed === 1) return 1;
+  if (completed === 2 || completed === 3) return 2;
+  return 3;
+}
+
+const FLOW_DAYS = 30;
+
+/**
+ * 30 sequential logical days: index 0 = 30 days ago, index 29 = `anchorDate` (today).
+ * Missing days in `dailyLogsByDate` count as 0 tasks (padding at the start of a user’s history
+ * is implicit—early slots are empty until logs exist).
+ */
+export function buildMindfulnessFlow30Day(
+  dailyLogsByDate: Record<string, Partial<DailyLogFlags>>,
+  anchorDate: string,
+  todayFlags?: DailyLogFlags
+): number[] {
+  const dates = getLogicalDateRange(anchorDate, FLOW_DAYS);
+  return dates.map((day) => {
+    const base = dailyLogsByDate[day] ?? {};
+    const raw =
+      todayFlags && day === anchorDate ? { ...base, ...todayFlags } : base;
+    const flags: DailyLogFlags = {
+      morning_done: Boolean(raw.morning_done),
+      social_done: Boolean(raw.social_done),
+      phone_free_done: Boolean(raw.phone_free_done),
+      evening_done: Boolean(raw.evening_done),
+    };
+    const n = countTasksDone(flags);
+    return tasksCompletedToMindfulnessIntensity(n);
+  });
+}
+
 export { getLogicalDateString, getLogicalDateRange, addLogicalDays };
