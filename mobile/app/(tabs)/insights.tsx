@@ -4,10 +4,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
+import { useShallow } from 'zustand/react/shallow';
 import { colors, fonts, spacing, radii } from '../../theme';
 import { useAppStore } from '../../store/useAppStore';
 import {
-  buildMindfulnessFlow30Day,
   buildMindfulnessFlow7Day,
   calculateHarmonyScore,
   flagsFromTaskIds,
@@ -58,14 +58,23 @@ export default function InsightsScreen() {
     lastLogicalDateKey,
     userName,
     unreadCount,
-  } = useAppStore();
+  } = useAppStore(
+    useShallow((s) => ({
+      currentStreak: s.currentStreak,
+      longestStreak: s.longestStreak,
+      longestStreakEndDate: s.longestStreakEndDate,
+      activeDays90: s.activeDays90,
+      dailyLogsByDate: s.dailyLogsByDate,
+      todayCompletions: s.todayCompletions,
+      tasks: s.tasks,
+      lastLogicalDateKey: s.lastLogicalDateKey,
+      userName: s.userName,
+      unreadCount: s.unreadCount,
+    })),
+  );
 
   const anchorDate = lastLogicalDateKey ?? getLogicalDateString();
   const todayFlags = flagsFromTaskIds(todayCompletions, tasks);
-  const mindfulnessFlow30 = useMemo(
-    () => buildMindfulnessFlow30Day(dailyLogsByDate, anchorDate, todayFlags),
-    [dailyLogsByDate, anchorDate, todayCompletions, tasks],
-  );
 
   const mindfulnessFlow7 = useMemo(
     () => buildMindfulnessFlow7Day(dailyLogsByDate, anchorDate, todayFlags),
@@ -88,6 +97,7 @@ export default function InsightsScreen() {
         style={styles.scroll}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
+        nestedScrollEnabled
       >
         {/* TopBar */}
         <Animated.View entering={FadeIn.duration(400)} style={styles.topBar}>
@@ -318,6 +328,7 @@ const styles = StyleSheet.create({
   },
   scroll: {
     flex: 1,
+    backgroundColor: colors.surface,
   },
   content: {
     paddingHorizontal: spacing.lg,

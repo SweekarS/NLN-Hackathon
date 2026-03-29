@@ -2,6 +2,7 @@ import { Redirect, Tabs } from 'expo-router';
 import { Easing } from 'react-native';
 import { useAppStore } from '../../store/useAppStore';
 import { NavBar } from '../../components/ui/NavBar';
+import { colors } from '../../theme';
 
 export default function TabLayout() {
   const hasCompletedOnboarding = useAppStore((s) => s.hasCompletedOnboarding);
@@ -19,6 +20,8 @@ export default function TabLayout() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: { display: 'none' },
+        /* Avoid white flash during tab cross-fade (scene must match app surface). */
+        sceneStyle: { backgroundColor: colors.surface },
         animation: 'fade',
         transitionSpec: {
           animation: 'timing',

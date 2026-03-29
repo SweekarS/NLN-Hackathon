@@ -1,13 +1,33 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Pressable, Image, KeyboardAvoidingView, Platform, ScrollView, Alert } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Pressable,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Alert,
+} from 'react-native';
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { supabase } from '../lib/supabase';
-import { colors, fonts, spacing, radii, shadow, botanicalGradient } from '../theme';
+import {
+  colors,
+  fonts,
+  spacing,
+  radii,
+  shadow,
+  botanicalGradient,
+} from '../theme';
 import { useAppStore } from '../store/useAppStore';
 import { Button } from '../components/ui/Button';
 import { FieldInput } from '../components/ui/FieldInput';
@@ -15,17 +35,28 @@ import { FieldLabel } from '../components/ui/FieldLabel';
 
 export default function EditProfileScreen() {
   const insets = useSafeAreaInsets();
-  const { userName: storeUserName, avatarImage: storeAvatarImage, setUserName, setAvatarImage } = useAppStore();
+  const {
+    userName: storeUserName,
+    avatarImage: storeAvatarImage,
+    setUserName,
+    setAvatarImage,
+  } = useAppStore();
 
   const [name, setName] = useState(storeUserName);
-  const [localAvatar, setLocalAvatar] = useState<string | null>(storeAvatarImage);
+  const [localAvatar, setLocalAvatar] = useState<string | null>(
+    storeAvatarImage,
+  );
   const [saving, setSaving] = useState(false);
 
   const handlePickImage = async () => {
-    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    
+    const permissionResult =
+      await ImagePicker.requestMediaLibraryPermissionsAsync();
+
     if (!permissionResult.granted) {
-      Alert.alert('Permission needed', 'Please grant photo gallery access to choose an avatar.');
+      Alert.alert(
+        'Permission needed',
+        'Please grant photo gallery access to choose an avatar.',
+      );
       return;
     }
 
@@ -47,27 +78,33 @@ export default function EditProfileScreen() {
       Alert.alert('Invalid Name', 'Your name cannot be empty.');
       return;
     }
-    
+
     setSaving(true);
     let finalAvatarUrl = storeAvatarImage;
 
     try {
       // 1. Get the authenticated user
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
       if (userError || !user) {
         throw new Error('You must be logged in to update your profile.');
       }
 
       // 2. Upload new image if changed
       if (localAvatar && localAvatar !== storeAvatarImage) {
-        const ext = localAvatar.split('.').pop()?.toLowerCase() === 'png' ? 'png' : 'jpeg';
+        const ext =
+          localAvatar.split('.').pop()?.toLowerCase() === 'png'
+            ? 'png'
+            : 'jpeg';
         const path = `${user.id}/${Date.now()}.${ext}`;
 
         const formData = new FormData();
         formData.append('file', {
           uri: localAvatar,
           type: `image/${ext}`,
-          name: `avatar.${ext}`
+          name: `avatar.${ext}`,
         } as any);
 
         const { error: uploadError } = await supabase.storage
@@ -78,7 +115,9 @@ export default function EditProfileScreen() {
           throw new Error('Failed to upload image: ' + uploadError.message);
         }
 
-        const { data: publicUrlData } = supabase.storage.from('avatars').getPublicUrl(path);
+        const { data: publicUrlData } = supabase.storage
+          .from('avatars')
+          .getPublicUrl(path);
         finalAvatarUrl = publicUrlData.publicUrl;
       }
 
@@ -103,16 +142,18 @@ export default function EditProfileScreen() {
 
       // 4. Update auth metadata just in case
       await supabase.auth.updateUser({
-        data: { full_name: trimmed, avatar_url: finalAvatarUrl }
+        data: { full_name: trimmed, avatar_url: finalAvatarUrl },
       });
 
       // 5. Update global store
       setUserName(trimmed);
       setAvatarImage(finalAvatarUrl);
       router.back();
-
     } catch (e: any) {
-      Alert.alert('Error', e.message || 'Something went wrong saving your profile.');
+      Alert.alert(
+        'Error',
+        e.message || 'Something went wrong saving your profile.',
+      );
     } finally {
       setSaving(false);
     }
@@ -120,21 +161,29 @@ export default function EditProfileScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-      <KeyboardAvoidingView 
-        style={styles.kav} 
+      <KeyboardAvoidingView
+        style={styles.kav}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top : 0}
       >
-        <ScrollView 
-          contentContainerStyle={styles.scroll} 
+        <ScrollView
+          contentContainerStyle={styles.scroll}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
         >
           {/* Header */}
           <View style={styles.header}>
-            <Pressable onPress={() => router.back()} hitSlop={12} style={styles.backButton}>
-              <Ionicons name="chevron-back" size={24} color={colors.onSurface} />
+            <Pressable
+              onPress={() => router.back()}
+              hitSlop={12}
+              style={styles.backButton}
+            >
+              <Ionicons
+                name="chevron-back"
+                size={24}
+                color={colors.onSurface}
+              />
               <Text style={styles.backLabel}>Back</Text>
             </Pressable>
             <Text style={styles.headerTitle}>Edit Profile</Text>
@@ -145,7 +194,10 @@ export default function EditProfileScreen() {
           <View style={styles.avatarSection}>
             <Pressable style={styles.avatarWrap} onPress={handlePickImage}>
               {localAvatar ? (
-                <Image source={{ uri: localAvatar }} style={[styles.avatarBig, { resizeMode: 'cover' }]} />
+                <Image
+                  source={{ uri: localAvatar }}
+                  style={[styles.avatarBig, { resizeMode: 'cover' }]}
+                />
               ) : (
                 <LinearGradient
                   colors={[...botanicalGradient.colors]}
@@ -156,12 +208,12 @@ export default function EditProfileScreen() {
                   <Ionicons name="person" size={50} color={colors.white} />
                 </LinearGradient>
               )}
-              
+
               <View style={styles.editBadge}>
                 <Ionicons name="camera" size={16} color={colors.white} />
               </View>
             </Pressable>
-            
+
             <Text style={styles.helperText}>Tap to change photo</Text>
           </View>
 
@@ -178,9 +230,9 @@ export default function EditProfileScreen() {
             </View>
 
             <View style={styles.buttonWrap}>
-              <Button 
-                title={saving ? "Saving..." : "Save Changes"} 
-                onPress={handleSave} 
+              <Button
+                title={saving ? 'Saving...' : 'Save Changes'}
+                onPress={handleSave}
                 disabled={saving}
               />
             </View>

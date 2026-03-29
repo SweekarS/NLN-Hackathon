@@ -11,7 +11,10 @@ import {
   KeyboardAvoidingView,
   TextInput,
 } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from 'react-native-safe-area-context';
 import Animated, {
   FadeIn,
   FadeInUp,
@@ -46,7 +49,10 @@ import { colors, fonts, spacing, radii, shadow } from '../theme';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { saveOnboardingCompleteToProfile } from '../lib/sync-dashboard-stats';
 
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+if (
+  Platform.OS === 'android' &&
+  UIManager.setLayoutAnimationEnabledExperimental
+) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
@@ -72,43 +78,113 @@ const LOADING_PHRASES = [
 ] as const;
 
 const journeyOptions = [
-  { key: 'solo' as const, iconName: 'body-outline' as const, title: 'Solo Journey', desc: 'Private self-tracking with no social requirement.' },
-  { key: 'friend' as const, iconName: 'people-outline' as const, title: 'Friend Mode', desc: 'Optional sharing with trusted people only.' },
-  { key: 'anonymous' as const, iconName: 'globe-outline' as const, title: 'Anonymous Community', desc: 'Minimal identity and community support.' },
+  {
+    key: 'solo' as const,
+    iconName: 'body-outline' as const,
+    title: 'Solo Journey',
+    desc: 'Private self-tracking with no social requirement.',
+  },
+  {
+    key: 'friend' as const,
+    iconName: 'people-outline' as const,
+    title: 'Friend Mode',
+    desc: 'Optional sharing with trusted people only.',
+  },
+  {
+    key: 'anonymous' as const,
+    iconName: 'globe-outline' as const,
+    title: 'Anonymous Community',
+    desc: 'Minimal identity and community support.',
+  },
 ];
 
-type QuizOption = { id: 1 | 2 | 3; title: string; subtitle: string; icon: keyof typeof Ionicons.glyphMap };
+type QuizOption = {
+  id: 1 | 2 | 3;
+  title: string;
+  subtitle: string;
+  icon: keyof typeof Ionicons.glyphMap;
+};
 
 const MORNING_OPTIONS: QuizOption[] = [
-  { id: 1, title: 'Gentle movement', subtitle: 'Stretch or light mobility to wake your body.', icon: 'body-outline' },
-  { id: 2, title: 'Mindful breath', subtitle: 'A few minutes of calm, centered breathing.', icon: 'leaf-outline' },
-  { id: 3, title: 'Creative spark', subtitle: 'Journaling, music, or something that inspires you.', icon: 'color-palette-outline' },
+  {
+    id: 1,
+    title: 'Gentle movement',
+    subtitle: 'Stretch or light mobility to wake your body.',
+    icon: 'body-outline',
+  },
+  {
+    id: 2,
+    title: 'Mindful breath',
+    subtitle: 'A few minutes of calm, centered breathing.',
+    icon: 'leaf-outline',
+  },
+  {
+    id: 3,
+    title: 'Creative spark',
+    subtitle: 'Journaling, music, or something that inspires you.',
+    icon: 'color-palette-outline',
+  },
 ];
 
 const SOCIAL_OPTIONS: QuizOption[] = [
-  { id: 1, title: 'Deep one-to-one', subtitle: 'Quality time with someone you trust.', icon: 'heart-outline' },
-  { id: 2, title: 'Light group energy', subtitle: 'Casual chats or shared activities.', icon: 'chatbubbles-outline' },
-  { id: 3, title: 'Solo with optional touch-in', subtitle: 'Mostly alone, with gentle connection when you want it.', icon: 'person-outline' },
+  {
+    id: 1,
+    title: 'Deep one-to-one',
+    subtitle: 'Quality time with someone you trust.',
+    icon: 'heart-outline',
+  },
+  {
+    id: 2,
+    title: 'Light group energy',
+    subtitle: 'Casual chats or shared activities.',
+    icon: 'chatbubbles-outline',
+  },
+  {
+    id: 3,
+    title: 'Solo with optional touch-in',
+    subtitle: 'Mostly alone, with gentle connection when you want it.',
+    icon: 'person-outline',
+  },
 ];
 
 const RECHARGE_OPTIONS: QuizOption[] = [
-  { id: 1, title: 'Nature & outdoors', subtitle: 'Air, light, and green space.', icon: 'leaf-outline' },
-  { id: 2, title: 'Quiet indoor calm', subtitle: 'Low stimulation and cozy stillness.', icon: 'home-outline' },
-  { id: 3, title: 'Music or movement', subtitle: 'Rhythm, dance, or sound to reset.', icon: 'musical-notes-outline' },
+  {
+    id: 1,
+    title: 'Nature & outdoors',
+    subtitle: 'Air, light, and green space.',
+    icon: 'leaf-outline',
+  },
+  {
+    id: 2,
+    title: 'Quiet indoor calm',
+    subtitle: 'Low stimulation and cozy stillness.',
+    icon: 'home-outline',
+  },
+  {
+    id: 3,
+    title: 'Music or movement',
+    subtitle: 'Rhythm, dance, or sound to reset.',
+    icon: 'musical-notes-outline',
+  },
 ];
 
-function phaseFromParams(params: { phase?: string | string[] }): string | undefined {
+function phaseFromParams(params: {
+  phase?: string | string[];
+}): string | undefined {
   const p = params.phase;
   return Array.isArray(p) ? p[0] : p;
 }
 
 function resolveGeminiApiKey(): string {
-  const extra = Constants.expoConfig?.extra as { geminiApiKey?: string } | undefined;
+  const extra = Constants.expoConfig?.extra as
+    | { geminiApiKey?: string }
+    | undefined;
   const fromEnv =
     typeof process.env.EXPO_PUBLIC_GEMINI_API_KEY === 'string'
       ? process.env.EXPO_PUBLIC_GEMINI_API_KEY.trim()
       : '';
-  const fromExtra = typeof extra?.geminiApiKey === 'string' ? extra.geminiApiKey.trim() : '';
+  const fromExtra =
+    typeof extra?.geminiApiKey === 'string' ? extra.geminiApiKey.trim() : '';
   const raw = fromEnv || fromExtra;
   if (!raw.length) return '';
   return raw.replace(/^["']|["']$/g, '');
@@ -123,7 +199,9 @@ function stripJsonFence(text: string): string {
 }
 
 /** Models may return multiple parts (e.g. thoughts + JSON); prefer the segment that looks like JSON. */
-function extractJsonTextFromParts(parts: { text?: string }[] | undefined): string | null {
+function extractJsonTextFromParts(
+  parts: { text?: string }[] | undefined,
+): string | null {
   if (!parts?.length) return null;
   const texts = parts
     .map((p) => (typeof p.text === 'string' ? p.text : ''))
@@ -144,15 +222,23 @@ function isValidDob(s: string): boolean {
   const mm = parseInt(m[1], 10);
   const dd = parseInt(m[2], 10);
   const yyyy = parseInt(m[3], 10);
-  if (mm < 1 || mm > 12 || dd < 1 || dd > 31 || yyyy < 1900 || yyyy > 2100) return false;
+  if (mm < 1 || mm > 12 || dd < 1 || dd > 31 || yyyy < 1900 || yyyy > 2100)
+    return false;
   const d = new Date(yyyy, mm - 1, dd);
-  return d.getFullYear() === yyyy && d.getMonth() === mm - 1 && d.getDate() === dd;
+  return (
+    d.getFullYear() === yyyy && d.getMonth() === mm - 1 && d.getDate() === dd
+  );
 }
 
 function isValidGeminiTaskArray(tasks: Task[]): boolean {
   if (tasks.length !== 4) return false;
   const ids = new Set(tasks.map((t) => t.id));
-  if (!ids.has('morning') || !ids.has('social') || !ids.has('focus') || !ids.has('evening')) {
+  if (
+    !ids.has('morning') ||
+    !ids.has('social') ||
+    !ids.has('focus') ||
+    !ids.has('evening')
+  ) {
     return false;
   }
   return tasks.every((t) => {
@@ -162,7 +248,10 @@ function isValidGeminiTaskArray(tasks: Task[]): boolean {
   });
 }
 
-function optionLabel(options: QuizOption[], choice: 1 | 2 | 3 | null | undefined): string {
+function optionLabel(
+  options: QuizOption[],
+  choice: 1 | 2 | 3 | null | undefined,
+): string {
   if (choice == null) return 'Not specified';
   const o = options.find((x) => x.id === choice);
   return o ? `${o.title} (${o.subtitle})` : String(choice);
@@ -265,7 +354,7 @@ async function tryGenerateWithModel(
   userPrompt: string,
   apiKey: string,
   signal: AbortSignal,
-  useJsonMime: boolean
+  useJsonMime: boolean,
 ): Promise<Task[] | null> {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`;
   const body = geminiRequestBody(userPrompt, useJsonMime);
@@ -291,7 +380,10 @@ async function tryGenerateWithModel(
   if (!res.ok) {
     if (__DEV__) {
       const errText = await res.text().catch(() => '');
-      console.warn(`[Gemini] ${model} HTTP ${res.status}`, errText.slice(0, 500));
+      console.warn(
+        `[Gemini] ${model} HTTP ${res.status}`,
+        errText.slice(0, 500),
+      );
     }
     return null;
   }
@@ -306,12 +398,14 @@ async function tryGenerateWithModel(
   };
 
   if (data.error) {
-    if (__DEV__) console.warn('[Gemini] error field', data.error.message ?? data.error);
+    if (__DEV__)
+      console.warn('[Gemini] error field', data.error.message ?? data.error);
     return null;
   }
 
   if (data.promptFeedback?.blockReason) {
-    if (__DEV__) console.warn('[Gemini] prompt blocked', data.promptFeedback.blockReason);
+    if (__DEV__)
+      console.warn('[Gemini] prompt blocked', data.promptFeedback.blockReason);
     return null;
   }
 
@@ -340,7 +434,10 @@ async function tryGenerateWithModel(
   return mapped;
 }
 
-async function fetchGeminiTasks(draft: OnboardingDraft, apiKey: string): Promise<Task[]> {
+async function fetchGeminiTasks(
+  draft: OnboardingDraft,
+  apiKey: string,
+): Promise<Task[]> {
   const fallback = FALLBACK_GEMINI_TASKS.map((t) => ({ ...t }));
   if (!apiKey) return fallback;
 
@@ -359,7 +456,7 @@ async function fetchGeminiTasks(draft: OnboardingDraft, apiKey: string): Promise
             userPrompt,
             apiKey,
             controller.signal,
-            useJsonMime
+            useJsonMime,
           );
           if (tasks) return tasks;
         } catch {
@@ -391,7 +488,12 @@ function QuizOptionRow({
         { opacity: pressed ? 0.92 : 1 },
       ]}
     >
-      <IconCircle name={option.icon} size="lg" color={ob.accent} bg={ob.iconBg} />
+      <IconCircle
+        name={option.icon}
+        size="lg"
+        color={ob.accent}
+        bg={ob.iconBg}
+      />
       <View style={{ flex: 1 }}>
         <Text style={obStyles.optionTitle}>{option.title}</Text>
         <Text style={obStyles.optionSubtitle}>{option.subtitle}</Text>
@@ -416,31 +518,35 @@ function Step5BrandLoading({ phraseIndex }: { phraseIndex: number }) {
     scale.value = withRepeat(
       withSequence(
         withTiming(1.07, { duration: 1100, easing: Easing.inOut(Easing.ease) }),
-        withTiming(1, { duration: 1100, easing: Easing.inOut(Easing.ease) })
+        withTiming(1, { duration: 1100, easing: Easing.inOut(Easing.ease) }),
       ),
       -1,
-      true
+      true,
     );
     drift.value = withRepeat(
       withSequence(
         withTiming(1, { duration: 2600, easing: Easing.inOut(Easing.sin) }),
-        withTiming(0, { duration: 2600, easing: Easing.inOut(Easing.sin) })
+        withTiming(0, { duration: 2600, easing: Easing.inOut(Easing.sin) }),
       ),
       -1,
-      false
+      false,
     );
     drift2.value = withDelay(
       700,
       withRepeat(
         withSequence(
           withTiming(1, { duration: 3000, easing: Easing.inOut(Easing.sin) }),
-          withTiming(0, { duration: 3000, easing: Easing.inOut(Easing.sin) })
+          withTiming(0, { duration: 3000, easing: Easing.inOut(Easing.sin) }),
         ),
         -1,
-        false
-      )
+        false,
+      ),
     );
-    spin.value = withRepeat(withTiming(360, { duration: 14000, easing: Easing.linear }), -1, false);
+    spin.value = withRepeat(
+      withTiming(360, { duration: 14000, easing: Easing.linear }),
+      -1,
+      false,
+    );
   }, [scale, drift, drift2, spin]);
 
   const logoAnimated = useAnimatedStyle(() => ({
@@ -480,15 +586,29 @@ function Step5BrandLoading({ phraseIndex }: { phraseIndex: number }) {
       </View>
 
       <View style={loading5.heroWrap}>
-        <Animated.View style={[loading5.decoLeaf, leafFloater]} pointerEvents="none">
+        <Animated.View
+          style={[loading5.decoLeaf, leafFloater]}
+          pointerEvents="none"
+        >
           <Ionicons name="leaf-outline" size={28} color="#1B4D3E" />
         </Animated.View>
-        <Animated.View style={[loading5.decoFlower, flowerFloater]} pointerEvents="none">
+        <Animated.View
+          style={[loading5.decoFlower, flowerFloater]}
+          pointerEvents="none"
+        >
           <Ionicons name="flower-outline" size={26} color="#2E7D5B" />
         </Animated.View>
 
-        <Animated.View style={[loading5.ring, slowRotate]} pointerEvents="none" />
-        <Animated.View style={[logoAnimated, { alignItems: 'center', justifyContent: 'center' }]}>
+        <Animated.View
+          style={[loading5.ring, slowRotate]}
+          pointerEvents="none"
+        />
+        <Animated.View
+          style={[
+            logoAnimated,
+            { alignItems: 'center', justifyContent: 'center' },
+          ]}
+        >
           <Logo size={148} />
         </Animated.View>
       </View>
@@ -612,7 +732,7 @@ export default function OnboardingScreen() {
   const [welcomeStep, setWelcomeStep] = useState<'intro' | 'journey'>('intro');
   /** Welcome (intro/journey) vs quiz (steps 1–5). */
   const [mainFlow, setMainFlow] = useState<'welcome' | 'quiz'>(() =>
-    phaseFromParams(params) === 'quiz' ? 'quiz' : 'welcome'
+    phaseFromParams(params) === 'quiz' ? 'quiz' : 'welcome',
   );
   const [quizStep, setQuizStep] = useState(1);
   const [email, setEmail] = useState('');
@@ -682,7 +802,13 @@ export default function OnboardingScreen() {
     return () => {
       cancelled = true;
     };
-  }, [mainFlow, quizStep, updateTasks, clearOnboardingDraft, setOnboardingComplete]);
+  }, [
+    mainFlow,
+    quizStep,
+    updateTasks,
+    clearOnboardingDraft,
+    setOnboardingComplete,
+  ]);
 
   const setUserName = useAppStore((s) => s.setUserName);
 
@@ -710,10 +836,13 @@ export default function OnboardingScreen() {
       }
 
       if (data.user) {
-        const metaName = data.user.user_metadata?.name || data.user.user_metadata?.full_name;
+        const metaName =
+          data.user.user_metadata?.name || data.user.user_metadata?.full_name;
         const displayName = metaName || trimmedEmail.split('@')[0];
         setUserName(displayName);
-        await useAppStore.getState().refreshDashboardStatsFromRemote(data.user.id);
+        await useAppStore
+          .getState()
+          .refreshDashboardStatsFromRemote(data.user.id);
         if (useAppStore.getState().hasCompletedOnboarding) {
           router.replace('/(tabs)');
         } else {
@@ -730,7 +859,8 @@ export default function OnboardingScreen() {
   };
 
   const step1Valid =
-    onboardingDraft.firstName.trim().length > 0 && isValidDob(onboardingDraft.dateOfBirth);
+    onboardingDraft.firstName.trim().length > 0 &&
+    isValidDob(onboardingDraft.dateOfBirth);
   const step2Valid = onboardingDraft.morningKickstart != null;
   const step3Valid = onboardingDraft.socialConnection != null;
   const step4Valid = onboardingDraft.recharge != null;
@@ -746,7 +876,12 @@ export default function OnboardingScreen() {
         <Text style={obStyles.stepOf}>Almost there</Text>
       )}
       <View style={obStyles.progressTrack}>
-        <View style={[obStyles.progressFill, { width: `${Math.round(quizProgress * 100)}%` }]} />
+        <View
+          style={[
+            obStyles.progressFill,
+            { width: `${Math.round(quizProgress * 100)}%` },
+          ]}
+        />
       </View>
     </View>
   );
@@ -758,7 +893,10 @@ export default function OnboardingScreen() {
       keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top : 0}
     >
       <ScrollView
-        contentContainerStyle={[obStyles.scroll, { paddingBottom: insets.bottom + spacing['2xl'] }]}
+        contentContainerStyle={[
+          obStyles.scroll,
+          { paddingBottom: insets.bottom + spacing['2xl'] },
+        ]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
@@ -768,7 +906,9 @@ export default function OnboardingScreen() {
         {quizStep === 1 && (
           <Animated.View entering={FadeIn.duration(350)} style={obStyles.card}>
             <Text style={obStyles.cardTitle}>Let’s get to know you</Text>
-            <Text style={obStyles.cardHint}>We’ll use this to shape gentle, realistic routines.</Text>
+            <Text style={obStyles.cardHint}>
+              We’ll use this to shape gentle, realistic routines.
+            </Text>
 
             <View style={{ marginBottom: spacing.md }}>
               <Text style={obStyles.fieldLabel}>First name</Text>
@@ -806,21 +946,34 @@ export default function OnboardingScreen() {
 
         {quizStep === 2 && (
           <Animated.View entering={FadeIn.duration(350)} style={obStyles.card}>
-            <Text style={obStyles.cardTitle}>How do you like to start your morning?</Text>
+            <Text style={obStyles.cardTitle}>
+              How do you like to start your morning?
+            </Text>
             <View style={{ gap: spacing.md, marginBottom: spacing.lg }}>
               {MORNING_OPTIONS.map((opt) => (
                 <QuizOptionRow
                   key={opt.id}
                   option={opt}
                   selected={onboardingDraft.morningKickstart === opt.id}
-                  onSelect={() => setOnboardingDraft({ morningKickstart: opt.id })}
+                  onSelect={() =>
+                    setOnboardingDraft({ morningKickstart: opt.id })
+                  }
                 />
               ))}
             </View>
             <View style={obStyles.rowButtons}>
-              <Button title="Back" variant="ghost" onPress={() => setQuizStep(1)} textStyle={{ color: ob.text }} />
+              <Button
+                title="Back"
+                variant="ghost"
+                onPress={() => setQuizStep(1)}
+                textStyle={{ color: ob.text }}
+              />
               <View style={{ flex: 1 }}>
-                <Button title="Continue" onPress={() => setQuizStep(3)} disabled={!step2Valid} />
+                <Button
+                  title="Continue"
+                  onPress={() => setQuizStep(3)}
+                  disabled={!step2Valid}
+                />
               </View>
             </View>
           </Animated.View>
@@ -828,21 +981,34 @@ export default function OnboardingScreen() {
 
         {quizStep === 3 && (
           <Animated.View entering={FadeIn.duration(350)} style={obStyles.card}>
-            <Text style={obStyles.cardTitle}>What kind of connection nourishes you?</Text>
+            <Text style={obStyles.cardTitle}>
+              What kind of connection nourishes you?
+            </Text>
             <View style={{ gap: spacing.md, marginBottom: spacing.lg }}>
               {SOCIAL_OPTIONS.map((opt) => (
                 <QuizOptionRow
                   key={opt.id}
                   option={opt}
                   selected={onboardingDraft.socialConnection === opt.id}
-                  onSelect={() => setOnboardingDraft({ socialConnection: opt.id })}
+                  onSelect={() =>
+                    setOnboardingDraft({ socialConnection: opt.id })
+                  }
                 />
               ))}
             </View>
             <View style={obStyles.rowButtons}>
-              <Button title="Back" variant="ghost" onPress={() => setQuizStep(2)} textStyle={{ color: ob.text }} />
+              <Button
+                title="Back"
+                variant="ghost"
+                onPress={() => setQuizStep(2)}
+                textStyle={{ color: ob.text }}
+              />
               <View style={{ flex: 1 }}>
-                <Button title="Continue" onPress={() => setQuizStep(4)} disabled={!step3Valid} />
+                <Button
+                  title="Continue"
+                  onPress={() => setQuizStep(4)}
+                  disabled={!step3Valid}
+                />
               </View>
             </View>
           </Animated.View>
@@ -862,7 +1028,12 @@ export default function OnboardingScreen() {
               ))}
             </View>
             <View style={obStyles.rowButtons}>
-              <Button title="Back" variant="ghost" onPress={() => setQuizStep(3)} textStyle={{ color: ob.text }} />
+              <Button
+                title="Back"
+                variant="ghost"
+                onPress={() => setQuizStep(3)}
+                textStyle={{ color: ob.text }}
+              />
               <View style={{ flex: 1 }}>
                 <Button
                   title="Continue"
@@ -873,7 +1044,6 @@ export default function OnboardingScreen() {
             </View>
           </Animated.View>
         )}
-
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -915,7 +1085,11 @@ export default function OnboardingScreen() {
           keyboardDismissMode="on-drag"
         >
           {welcomeStep === 'intro' && (
-            <Animated.View entering={FadeIn.duration(400)} exiting={FadeOut.duration(400)} style={{ flex: 1 }}>
+            <Animated.View
+              entering={FadeIn.duration(400)}
+              exiting={FadeOut.duration(400)}
+              style={{ flex: 1 }}
+            >
               <View
                 style={{
                   flex: 1,
@@ -945,14 +1119,33 @@ export default function OnboardingScreen() {
                 </Animated.View>
               </View>
 
-              <Animated.View layout={LinearTransition.duration(600)} style={{ marginTop: 'auto', paddingTop: spacing.xl }}>
+              <Animated.View
+                layout={LinearTransition.duration(600)}
+                style={{ marginTop: 'auto', paddingTop: spacing.xl }}
+              >
                 {!showLoginFields ? (
-                  <Animated.View key="buttons" entering={FadeIn.duration(500).delay(200)} exiting={FadeOut.duration(300)} style={styles.buttonWrap}>
-                    <Button title="Sign Up" onPress={() => setWelcomeStep('journey')} />
-                    <Button title="Sign In" variant="ghost" onPress={() => setShowLoginFields(true)} />
+                  <Animated.View
+                    key="buttons"
+                    entering={FadeIn.duration(500).delay(200)}
+                    exiting={FadeOut.duration(300)}
+                    style={styles.buttonWrap}
+                  >
+                    <Button
+                      title="Sign Up"
+                      onPress={() => setWelcomeStep('journey')}
+                    />
+                    <Button
+                      title="Sign In"
+                      variant="ghost"
+                      onPress={() => setShowLoginFields(true)}
+                    />
                   </Animated.View>
                 ) : (
-                  <Animated.View key="fields" entering={FadeInUp.duration(600).delay(250)} exiting={FadeOut.duration(300)}>
+                  <Animated.View
+                    key="fields"
+                    entering={FadeInUp.duration(600).delay(250)}
+                    exiting={FadeOut.duration(300)}
+                  >
                     <View style={{ marginBottom: spacing.md }}>
                       <FieldLabel label="Email" />
                       <FieldInput
@@ -975,8 +1168,17 @@ export default function OnboardingScreen() {
                     </View>
 
                     <View style={styles.buttonWrap}>
-                      <Button title={authLoading ? 'Signing in...' : 'Login'} onPress={handleLogin} disabled={authLoading} />
-                      <Button title="Back" variant="ghost" onPress={() => setShowLoginFields(false)} disabled={authLoading} />
+                      <Button
+                        title={authLoading ? 'Signing in...' : 'Login'}
+                        onPress={handleLogin}
+                        disabled={authLoading}
+                      />
+                      <Button
+                        title="Back"
+                        variant="ghost"
+                        onPress={() => setShowLoginFields(false)}
+                        disabled={authLoading}
+                      />
                     </View>
                   </Animated.View>
                 )}
@@ -985,8 +1187,15 @@ export default function OnboardingScreen() {
           )}
 
           {welcomeStep === 'journey' && (
-            <Animated.View entering={FadeIn.duration(400)} exiting={FadeOut.duration(400)} style={{ flex: 1 }}>
-              <Animated.View entering={FadeInUp.duration(500).delay(100)} style={{ flex: 1, justifyContent: 'center' }}>
+            <Animated.View
+              entering={FadeIn.duration(400)}
+              exiting={FadeOut.duration(400)}
+              style={{ flex: 1 }}
+            >
+              <Animated.View
+                entering={FadeInUp.duration(500).delay(100)}
+                style={{ flex: 1, justifyContent: 'center' }}
+              >
                 <Text style={styles.stepLabel}>Step 1 of 2</Text>
                 <Text style={styles.sectionTitle}>Choose Your Journey</Text>
 
@@ -997,7 +1206,10 @@ export default function OnboardingScreen() {
                       <Pressable
                         key={opt.key}
                         onPress={() => setJourneyMode(opt.key)}
-                        style={[styles.journeyCard, selected && styles.journeyCardSelected]}
+                        style={[
+                          styles.journeyCard,
+                          selected && styles.journeyCardSelected,
+                        ]}
                       >
                         <IconCircle name={opt.iconName} size="md" />
                         <View style={{ flex: 1 }}>
@@ -1006,7 +1218,11 @@ export default function OnboardingScreen() {
                         </View>
                         {selected && (
                           <View style={styles.checkBadge}>
-                            <Ionicons name="checkmark" size={14} color={colors.white} />
+                            <Ionicons
+                              name="checkmark"
+                              size={14}
+                              color={colors.white}
+                            />
                           </View>
                         )}
                       </Pressable>
@@ -1015,9 +1231,21 @@ export default function OnboardingScreen() {
                 </View>
               </Animated.View>
 
-              <View style={[styles.buttonWrap, { marginTop: 'auto', paddingTop: spacing.xl }]}>
-                <Button title="Start My Journey" onPress={() => router.push('/account-privacy')} />
-                <Button title="Back" variant="ghost" onPress={() => setWelcomeStep('intro')} />
+              <View
+                style={[
+                  styles.buttonWrap,
+                  { marginTop: 'auto', paddingTop: spacing.xl },
+                ]}
+              >
+                <Button
+                  title="Start My Journey"
+                  onPress={() => router.push('/account-privacy')}
+                />
+                <Button
+                  title="Back"
+                  variant="ghost"
+                  onPress={() => setWelcomeStep('intro')}
+                />
               </View>
             </Animated.View>
           )}

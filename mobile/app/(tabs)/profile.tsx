@@ -88,16 +88,6 @@ export default function ProfileScreen() {
     },
   ];
 
-  const recentGrowth = [
-    { iconName: 'body-outline' as const, title: 'Morning Meditation', xp: 150 },
-    {
-      iconName: 'flame-outline' as const,
-      title: 'Weekly Streak Bonus',
-      xp: 500,
-    },
-    { iconName: 'leaf-outline' as const, title: 'Deep Breathing', xp: 50 },
-  ];
-
   const accountRows: AccountRow[] = [
     {
       kind: 'link',
@@ -350,18 +340,6 @@ export default function ProfileScreen() {
             </React.Fragment>
           ))}
         </View>
-
-        {/* Recent Growth */}
-        <SectionTitle title="Recent Growth" />
-        {recentGrowth.map((item) => (
-          <Card key={item.title} style={styles.growthCard}>
-            <View style={styles.growthRow}>
-              <IconCircle name={item.iconName} size="sm" />
-              <Text style={styles.growthTitle}>{item.title}</Text>
-              <Text style={styles.growthXP}>+{item.xp} XP</Text>
-            </View>
-          </Card>
-        ))}
 
         {/* Account */}
         <SectionTitle title="Account" />
@@ -665,25 +643,6 @@ const styles = StyleSheet.create({
   },
   pathLabelLocked: {
     color: colors.outline,
-  },
-  growthCard: {
-    marginTop: spacing.sm,
-  },
-  growthRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-  },
-  growthTitle: {
-    flex: 1,
-    fontSize: 15,
-    fontFamily: fonts.bodySemiBold,
-    color: colors.onSurface,
-  },
-  growthXP: {
-    fontSize: 14,
-    fontFamily: fonts.headlineBold,
-    color: colors.primary,
   },
 
   accountRow: {

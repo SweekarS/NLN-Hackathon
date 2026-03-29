@@ -1,6 +1,5 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import Animated, { FadeIn } from 'react-native-reanimated';
 import { colors, fonts, spacing } from '../../theme';
 
 const COLS = 7;
@@ -66,9 +65,8 @@ export function Heatmap({
               const level = data[idx];
               const backgroundColor = LEVEL_BG[level];
               return (
-                <Animated.View
+                <View
                   key={idx}
-                  entering={FadeIn.delay(Math.min(idx, 20) * 15).duration(280)}
                   style={[styles.cell, { backgroundColor }]}
                 />
               );
