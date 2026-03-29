@@ -20,17 +20,13 @@ import {
   fetchDashboardSnapshot,
   upsertDailyLogRemote,
   updateProfileStatsRemote,
+  saveOnboardingCompleteToProfile,
+  parseTasksFromProfileJson,
+  inferHasCompletedOnboarding,
 } from '../lib/sync-dashboard-stats';
+import type { Task } from '../types/task';
 
-export interface Task {
-  id: string;
-  icon: string;
-  title: string;
-  subtitle: string;
-  duration?: string;
-  timeOfDay: 'morning' | 'afternoon' | 'evening';
-  enabled: boolean;
-}
+export type { Task };
 
 export interface OnboardingDraft {
   firstName: string;
@@ -189,6 +185,9 @@ interface AppState {
 
   _hasHydrated: boolean;
   setHasHydrated: (v: boolean) => void;
+  /** False until first remote profile sync finishes (or no Supabase / no session). Avoid onboarding flash for returning users. */
+  _remoteProfileReady: boolean;
+  bootstrapSessionFromSupabase: () => Promise<void>;
   completeTask: (taskId: string) => void | Promise<void>;
   addXP: (amount: number) => void;
   setPrivacyPreset: (preset: 'only_me' | 'circles' | 'global') => void;
@@ -209,7 +208,8 @@ interface AppState {
   /** Aligns logical day, pulls `profiles` + `daily_logs`, then optional legacy heatmap/weekly tables. */
   syncUserStats: () => Promise<void>;
 
-  refreshDashboardStatsFromRemote: () => Promise<void>;
+  /** Pass `userId` right after sign-in so the session is not read before it is persisted (avoids skipping the sync). */
+  refreshDashboardStatsFromRemote: (userId?: string) => Promise<void>;
   ensureLogicalDayAligned: () => void;
 
   resetLocalSession: () => void;
@@ -255,6 +255,7 @@ function getDefaultSessionState(): Omit<
   | 'setOnboardingDraft'
   | 'clearOnboardingDraft'
   | 'refreshDashboardStatsFromRemote'
+  | 'bootstrapSessionFromSupabase'
   | 'ensureLogicalDayAligned'
   | 'resetLocalSession'
   | 'syncUserStats'
@@ -294,6 +295,7 @@ function getDefaultSessionState(): Omit<
     theme: 'light',
 
     _hasHydrated: true,
+    _remoteProfileReady: true,
   };
 }
 
@@ -341,6 +343,20 @@ export const useAppStore = create<AppState>()(
 
       _hasHydrated: false,
       setHasHydrated: (v) => set({ _hasHydrated: v }),
+      _remoteProfileReady: false,
+
+      bootstrapSessionFromSupabase: async () => {
+        if (!isSupabaseConfigured) {
+          set({ _remoteProfileReady: true });
+          return;
+        }
+        const { data: sessionData } = await supabase.auth.getSession();
+        if (!sessionData.session) {
+          set({ _remoteProfileReady: true });
+          return;
+        }
+        await get().refreshDashboardStatsFromRemote();
+      },
 
       setUserName: (userName) => set({ userName }),
       setAvatarImage: (uri) => set({ avatarImage: uri }),
@@ -370,20 +386,39 @@ export const useAppStore = create<AppState>()(
         }
       },
 
-      refreshDashboardStatsFromRemote: async () => {
+      refreshDashboardStatsFromRemote: async (userIdOverride?: string) => {
         get().ensureLogicalDayAligned();
-        if (!isSupabaseConfigured) return;
-        const { data: auth } = await supabase.auth.getUser();
-        const user = auth.user;
-        if (!user) return;
+        if (!isSupabaseConfigured) {
+          set({ _remoteProfileReady: true });
+          return;
+        }
+        let uid = userIdOverride;
+        if (!uid) {
+          const { data: auth } = await supabase.auth.getUser();
+          uid = auth.user?.id;
+        }
+        if (!uid) {
+          set({ _remoteProfileReady: true });
+          return;
+        }
 
-        const { profile, dailyLogsByDate: remoteLogs, error } = await fetchDashboardSnapshot(user.id);
-        if (error) return;
+        const { profile, dailyLogsByDate: remoteLogs, dailyLogRowCount, error } = await fetchDashboardSnapshot(uid);
+        if (error) {
+          set({ _remoteProfileReady: true });
+          return;
+        }
 
         get().ensureLogicalDayAligned();
         const anchor = getLogicalDateString();
         const st = get();
-        const tasks = st.tasks;
+
+        const remoteDone = inferHasCompletedOnboarding(profile, dailyLogRowCount);
+        const parsedTasks = parseTasksFromProfileJson(profile?.tasks_json);
+        let tasks = st.tasks;
+        if (parsedTasks && parsedTasks.length > 0) {
+          tasks = parsedTasks;
+        }
+
         const merged: Record<string, Partial<DailyLogFlags>> = { ...st.dailyLogsByDate, ...remoteLogs };
         const dailyLogsByDate = pruneDailyLogs(merged, anchor);
 
@@ -397,24 +432,34 @@ export const useAppStore = create<AppState>()(
               evening_done: Boolean(todayRow.evening_done),
             })
           : [];
-        const todayCompletions = [...new Set([...st.todayCompletions, ...serverToday])];
+        const validIds = new Set(tasks.map((t) => t.id));
+        const todayCompletions = [...new Set([...st.todayCompletions.filter((id) => validIds.has(id)), ...serverToday])].filter(
+          (id) => validIds.has(id)
+        );
 
         const flags = flagsFromTaskIds(todayCompletions, tasks);
         const weeklyActiveDaysCount = computeWeeklyActiveDays(dailyLogsByDate, anchor, flags);
-        const currentStreak = computeCurrentStreak(dailyLogsByDate, anchor, flags);
+        const computedStreak = computeCurrentStreak(dailyLogsByDate, anchor, flags);
+        const profileStreak = profile?.current_streak ?? 0;
+        const currentStreak = Math.max(computedStreak, profileStreak);
 
         const totalXP = profile?.total_xp ?? st.totalXP;
         const level = getLevelFromTotalXP(totalXP);
+        const longestStreak = Math.max(st.longestStreak, currentStreak);
 
         set({
+          tasks,
+          hasCompletedOnboarding: remoteDone || st.hasCompletedOnboarding,
           dailyLogsByDate,
           todayCompletions,
           lastLogicalDateKey: anchor,
           weeklyActiveDaysCount,
           currentStreak,
+          longestStreak,
           totalXP,
           level,
           levelTitle: getGrowthTierTitle(level),
+          _remoteProfileReady: true,
         });
       },
 
@@ -651,6 +696,7 @@ export const useAppStore = create<AppState>()(
         state?.setHasHydrated(true);
         queueMicrotask(() => {
           useAppStore.getState().ensureLogicalDayAligned();
+          void useAppStore.getState().bootstrapSessionFromSupabase();
         });
       },
     }

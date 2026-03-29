@@ -44,6 +44,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { IconCircle } from '../components/ui/IconCircle';
 import { colors, fonts, spacing, radii, shadow } from '../theme';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { saveOnboardingCompleteToProfile } from '../lib/sync-dashboard-stats';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -522,6 +523,13 @@ export default function OnboardingScreen() {
     }
   }, [phaseParam]);
 
+  const remoteProfileReady = useAppStore((s) => s._remoteProfileReady);
+  const hasCompletedOnboarding = useAppStore((s) => s.hasCompletedOnboarding);
+  useEffect(() => {
+    if (!remoteProfileReady || !hasCompletedOnboarding) return;
+    router.replace('/(tabs)');
+  }, [remoteProfileReady, hasCompletedOnboarding]);
+
   useEffect(() => {
     if (mainFlow === 'quiz' && quizStep === 5) {
       const id = setInterval(() => {
@@ -549,6 +557,20 @@ export default function OnboardingScreen() {
       useAppStore.setState({ todayCompletions: [] });
       clearOnboardingDraft();
       setOnboardingComplete();
+
+      if (isSupabaseConfigured) {
+        const { data: userData } = await supabase.auth.getUser();
+        const uid = userData.user?.id;
+        if (uid) {
+          const st = useAppStore.getState();
+          await saveOnboardingCompleteToProfile(uid, {
+            tasks,
+            total_xp: st.totalXP,
+            current_streak: st.currentStreak,
+          });
+        }
+      }
+
       router.replace('/(tabs)');
     })();
 
@@ -586,12 +608,13 @@ export default function OnboardingScreen() {
         const metaName = data.user.user_metadata?.name || data.user.user_metadata?.full_name;
         const displayName = metaName || trimmedEmail.split('@')[0];
         setUserName(displayName);
+        await useAppStore.getState().refreshDashboardStatsFromRemote(data.user.id);
         if (useAppStore.getState().hasCompletedOnboarding) {
           router.replace('/(tabs)');
-          return;
+        } else {
+          setMainFlow('quiz');
+          setQuizStep(1);
         }
-        setMainFlow('quiz');
-        setQuizStep(1);
       }
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Something went wrong';

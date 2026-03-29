@@ -5,8 +5,11 @@ import { NavBar } from '../../components/ui/NavBar';
 export default function TabLayout() {
   const hasCompletedOnboarding = useAppStore((s) => s.hasCompletedOnboarding);
   const hasHydrated = useAppStore((s) => s._hasHydrated);
+  const remoteProfileReady = useAppStore((s) => s._remoteProfileReady);
 
   if (!hasHydrated) return null;
+  if (!remoteProfileReady) return null;
+  /* Incomplete onboarding → welcome (Sign Up / Sign In). Quiz is only opened after signup or explicit phase=quiz. */
   if (!hasCompletedOnboarding) return <Redirect href="/onboarding" />;
 
   return (

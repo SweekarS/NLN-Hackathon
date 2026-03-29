@@ -102,9 +102,16 @@ export default function AccountPrivacyScreen() {
   const togglePermission = useAppStore((s) => s.togglePermission);
   const setUserName = useAppStore((s) => s.setUserName);
 
+  /**
+   * After auth: sync Supabase profile, then dashboard if onboarding is already done (sign-in returners),
+   * otherwise go straight to the onboarding quiz (new signups).
+   */
   const persistProfileAndEnter = async (user: User, displayName: string) => {
     setUserName(displayName);
     const { stressMode, notificationsEnabled, theme } = useAppStore.getState();
+
+    await useAppStore.getState().refreshDashboardStatsFromRemote(user.id);
+
     await supabase
       .from('users')
       .update({
@@ -117,7 +124,12 @@ export default function AccountPrivacyScreen() {
       })
       .eq('id', user.id);
     setShowConsent(false);
-    router.replace({ pathname: '/onboarding', params: { phase: 'quiz' } });
+
+    if (useAppStore.getState().hasCompletedOnboarding) {
+      router.replace('/(tabs)');
+    } else {
+      router.replace({ pathname: '/onboarding', params: { phase: 'quiz' } });
+    }
   };
 
   const handleGoogleAuth = async () => {

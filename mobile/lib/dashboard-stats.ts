@@ -1,4 +1,4 @@
-import type { Task } from '../store/useAppStore';
+import type { Task } from '../types/task';
 import { addLogicalDays, getLogicalDateRange, getLogicalDateString } from './logical-date';
 
 /** Matches Supabase daily_logs columns (phone_free_done ↔ focus task). */
