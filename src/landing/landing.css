@@ -1,5 +1,6 @@
 .landing-page {
   color: var(--text);
+  overflow-x: clip;
 }
 
 .landing-container {
@@ -13,7 +14,10 @@
   left: 0;
   right: 0;
   z-index: 50;
-  padding: 1rem 0;
+  padding-top: calc(1rem + env(safe-area-inset-top, 0px));
+  padding-bottom: 1rem;
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
   pointer-events: none;
 }
 
@@ -105,6 +109,8 @@
   display: flex;
   flex-direction: column;
   align-items: stretch;
+  /* Drawer lives outside .landing-nav; wrap uses pointer-events: none, so stack must opt in. */
+  pointer-events: auto;
 }
 
 .landing-nav-drawer-backdrop {
@@ -117,6 +123,7 @@
   background: rgba(12, 22, 18, 0.42);
   cursor: pointer;
   pointer-events: auto;
+  touch-action: none;
 }
 
 .landing-theme-toggle {
@@ -234,6 +241,12 @@
 
 .landing-nav-drawer:not([hidden]) {
   display: block;
+  position: relative;
+  z-index: 2;
+  max-height: min(70vh, 26rem);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 
 .landing-nav-drawer-heading {
@@ -338,8 +351,9 @@
   position: absolute;
   top: 50%;
   left: 50%;
-  width: max(100vw, calc(100svh * 16 / 9));
-  height: max(100svh, calc(100vw * 9 / 16));
+  /* 100% avoids iOS horizontal overflow from 100vw including scrollbar width */
+  width: max(100%, calc(100svh * 16 / 9));
+  height: max(100svh, calc(100% * 9 / 16));
   transform: translate3d(-50%, -50%, 0);
   backface-visibility: hidden;
 }
@@ -1398,8 +1412,59 @@
 }
 
 @media (max-width: 980px) {
+  .landing-nav-stack {
+    width: min(
+      1200px,
+      calc(100% - 1rem - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px))
+    );
+  }
+
   .landing-nav {
     border-radius: 1.2rem;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  /* Avoid global .landing-container horizontal inset shrinking the bar on small screens */
+  .landing-nav > .landing-container.nav-inner {
+    width: 100%;
+    max-width: 100%;
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  .nav-inner {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: 0.35rem;
+    row-gap: 0.35rem;
+    min-height: unset;
+    padding: 0.45rem 0.4rem;
+  }
+
+  .brand-lockup {
+    min-width: 0;
+  }
+
+  .brand-tagline {
+    display: none;
+  }
+
+  .nav-toolbar {
+    flex-wrap: nowrap;
+    gap: 0.35rem;
+    justify-self: end;
+  }
+
+  .landing-nav-waitlist {
+    padding: 0.45rem 0.65rem !important;
+    font-size: 0.76rem !important;
+    white-space: nowrap;
+  }
+
+  .landing-theme-toggle {
+    flex-shrink: 0;
   }
 
   .nav-links {

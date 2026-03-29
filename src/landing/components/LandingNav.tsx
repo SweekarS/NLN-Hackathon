@@ -63,7 +63,7 @@ export function LandingNav({
 
     const first = focusables[0]
     const last = focusables[focusables.length - 1]
-    first?.focus()
+    first?.focus({ preventScroll: true })
 
     const onKeyDown = (e: globalThis.KeyboardEvent) => {
       if (e.key === 'Escape') {
