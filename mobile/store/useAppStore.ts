@@ -14,6 +14,7 @@ import {
   countTasksDone,
   computeCurrentStreak,
   computeWeeklyActiveDays,
+  computeLongestStreakEndDate,
   resolveLogFlagKey,
 } from '../lib/dashboard-stats';
 import {
@@ -138,10 +139,41 @@ export function mapGeminiJsonToTasks(raw: unknown): Task[] | null {
 export const PERSIST_STORAGE_KEY = 'organic-sanctuary-storage';
 
 const defaultTasks: Task[] = [
-  { id: '1', icon: 'sunny-outline', title: 'Morning Breathwork', subtitle: 'Center yourself with 4-7-8 breathing', duration: '15M', timeOfDay: 'morning', enabled: true },
-  { id: '2', icon: 'water-outline', title: 'Hydration Ritual', subtitle: 'Nourish your body with mindful sips', timeOfDay: 'afternoon', enabled: true },
-  { id: '3', icon: 'book-outline', title: 'Gratitude Journal', subtitle: 'Write three blessings from today', duration: '10M', timeOfDay: 'evening', enabled: true },
-  { id: '4', icon: 'leaf-outline', title: 'Forest Bathing Walk', subtitle: 'Immerse yourself in nature\'s calm', duration: '30M', timeOfDay: 'morning', enabled: true },
+  {
+    id: '1',
+    icon: 'sunny-outline',
+    title: 'Morning Breathwork',
+    subtitle: 'Center yourself with 4-7-8 breathing',
+    duration: '15M',
+    timeOfDay: 'morning',
+    enabled: true,
+  },
+  {
+    id: '2',
+    icon: 'water-outline',
+    title: 'Hydration Ritual',
+    subtitle: 'Nourish your body with mindful sips',
+    timeOfDay: 'afternoon',
+    enabled: true,
+  },
+  {
+    id: '3',
+    icon: 'book-outline',
+    title: 'Gratitude Journal',
+    subtitle: 'Write three blessings from today',
+    duration: '10M',
+    timeOfDay: 'evening',
+    enabled: true,
+  },
+  {
+    id: '4',
+    icon: 'leaf-outline',
+    title: 'Forest Bathing Walk',
+    subtitle: "Immerse yourself in nature's calm",
+    duration: '30M',
+    timeOfDay: 'morning',
+    enabled: true,
+  },
 ];
 
 interface AppState {
@@ -152,6 +184,7 @@ interface AppState {
 
   currentStreak: number;
   longestStreak: number;
+  longestStreakEndDate: string | null;
   lastCompletedDate: string | null;
 
   tasks: Task[];
@@ -180,7 +213,6 @@ interface AppState {
 
   serverNotifications: RemoteNotification[];
   unreadCount: number;
-
 
   stressMode: 'low' | 'medium' | 'high';
   notificationsEnabled: boolean;
@@ -224,7 +256,6 @@ interface AppState {
   fetchNotifications: () => Promise<void>;
   markNotificationRead: (id: string) => Promise<void>;
 
-
   /** Pass `userId` right after sign-in so the session is not read before it is persisted (avoids skipping the sync). */
   refreshDashboardStatsFromRemote: (userId?: string) => Promise<void>;
   ensureLogicalDayAligned: () => void;
@@ -241,7 +272,7 @@ const PRUNE_LOG_DAYS = 21;
 
 function pruneDailyLogs(
   map: Record<string, Partial<DailyLogFlags>>,
-  anchor: string
+  anchor: string,
 ): Record<string, Partial<DailyLogFlags>> {
   const keep = new Set(getLogicalDateRange(anchor, PRUNE_LOG_DAYS));
   const out: Record<string, Partial<DailyLogFlags>> = {};
@@ -290,6 +321,7 @@ function getDefaultSessionState(): Omit<
 
     currentStreak: 0,
     longestStreak: 0,
+    longestStreakEndDate: null,
     lastCompletedDate: null,
 
     tasks: defaultTasks.map((t) => ({ ...t })),
@@ -320,7 +352,6 @@ function getDefaultSessionState(): Omit<
     serverNotifications: [],
     unreadCount: 0,
 
-
     _hasHydrated: true,
     _remoteProfileReady: true,
   };
@@ -336,6 +367,7 @@ export const useAppStore = create<AppState>()(
 
       currentStreak: 0,
       longestStreak: 0,
+      longestStreakEndDate: null,
       lastCompletedDate: null,
 
       tasks: defaultTasks,
@@ -366,13 +398,13 @@ export const useAppStore = create<AppState>()(
       serverNotifications: [],
       unreadCount: 0,
 
-
       onboardingDraft: emptyOnboardingDraft(),
       setOnboardingDraft: (partial) =>
         set((s) => ({
           onboardingDraft: { ...s.onboardingDraft, ...partial },
         })),
-      clearOnboardingDraft: () => set({ onboardingDraft: emptyOnboardingDraft() }),
+      clearOnboardingDraft: () =>
+        set({ onboardingDraft: emptyOnboardingDraft() }),
 
       _hasHydrated: false,
       setHasHydrated: (v) => set({ _hasHydrated: v }),
@@ -397,34 +429,46 @@ export const useAppStore = create<AppState>()(
 
       ensureLogicalDayAligned: () => {
         const anchor = getLogicalDateString();
-        let { lastLogicalDateKey, todayCompletions, dailyLogsByDate, tasks } = get();
+        let { lastLogicalDateKey, todayCompletions, dailyLogsByDate, tasks } =
+          get();
         if (lastLogicalDateKey && lastLogicalDateKey !== anchor) {
           const prevFlags = flagsFromTaskIds(todayCompletions, tasks);
           dailyLogsByDate = pruneDailyLogs(
             {
               ...dailyLogsByDate,
-              [lastLogicalDateKey]: { ...dailyLogsByDate[lastLogicalDateKey], ...prevFlags },
+              [lastLogicalDateKey]: {
+                ...dailyLogsByDate[lastLogicalDateKey],
+                ...prevFlags,
+              },
             },
-            anchor
+            anchor,
           );
           const emptyFlags = flagsFromTaskIds([], tasks);
           set({
             lastLogicalDateKey: anchor,
             todayCompletions: [],
             dailyLogsByDate,
-            weeklyActiveDaysCount: computeWeeklyActiveDays(dailyLogsByDate, anchor, emptyFlags),
-            currentStreak: computeCurrentStreak(dailyLogsByDate, anchor, emptyFlags),
+            weeklyActiveDaysCount: computeWeeklyActiveDays(
+              dailyLogsByDate,
+              anchor,
+              emptyFlags,
+            ),
+            currentStreak: computeCurrentStreak(
+              dailyLogsByDate,
+              anchor,
+              emptyFlags,
+            ),
           });
-          
+
           if (get().notificationsEnabled) {
             scheduleDailyReminders(
-              true, 
+              true,
               {
                 dailyRituals: get().notifDailyRituals,
                 encouragement: get().notifEncouragement,
-                progressNudges: get().notifProgressNudges
+                progressNudges: get().notifProgressNudges,
               },
-              get().todayCompletions.length < get().tasks.length
+              get().todayCompletions.length < get().tasks.length,
             ).catch(() => {});
           }
         } else if (!lastLogicalDateKey) {
@@ -450,7 +494,12 @@ export const useAppStore = create<AppState>()(
           return;
         }
 
-        const { profile, dailyLogsByDate: remoteLogs, dailyLogRowCount, error } = await fetchDashboardSnapshot(uid);
+        const {
+          profile,
+          dailyLogsByDate: remoteLogs,
+          dailyLogRowCount,
+          error,
+        } = await fetchDashboardSnapshot(uid);
         if (error) {
           set({ _remoteProfileReady: true });
           return;
@@ -460,18 +509,25 @@ export const useAppStore = create<AppState>()(
         const anchor = getLogicalDateString();
         const st = get();
 
-        const remoteDone = inferHasCompletedOnboarding(profile, dailyLogRowCount);
+        const remoteDone = inferHasCompletedOnboarding(
+          profile,
+          dailyLogRowCount,
+        );
         const parsedTasks = parseTasksFromProfileJson(profile?.tasks_json);
         let tasks = st.tasks;
         if (parsedTasks && parsedTasks.length > 0) {
           tasks = parsedTasks;
         }
 
-        const merged: Record<string, Partial<DailyLogFlags>> = { ...st.dailyLogsByDate, ...remoteLogs };
+        const merged: Record<string, Partial<DailyLogFlags>> = {
+          ...st.dailyLogsByDate,
+          ...remoteLogs,
+        };
         const dailyLogsByDate = pruneDailyLogs(merged, anchor);
 
         const todayRow = dailyLogsByDate[anchor];
-        const fromFlags = (f: DailyLogFlags) => completionIdsFromFlags(f, tasks);
+        const fromFlags = (f: DailyLogFlags) =>
+          completionIdsFromFlags(f, tasks);
         const serverToday = todayRow
           ? fromFlags({
               morning_done: Boolean(todayRow.morning_done),
@@ -481,21 +537,38 @@ export const useAppStore = create<AppState>()(
             })
           : [];
         const validIds = new Set(tasks.map((t) => t.id));
-        const todayCompletions = [...new Set([...st.todayCompletions.filter((id) => validIds.has(id)), ...serverToday])].filter(
-          (id) => validIds.has(id)
-        );
+        const todayCompletions = [
+          ...new Set([
+            ...st.todayCompletions.filter((id) => validIds.has(id)),
+            ...serverToday,
+          ]),
+        ].filter((id) => validIds.has(id));
 
         const flags = flagsFromTaskIds(todayCompletions, tasks);
-        const weeklyActiveDaysCount = computeWeeklyActiveDays(dailyLogsByDate, anchor, flags);
-        const computedStreak = computeCurrentStreak(dailyLogsByDate, anchor, flags);
+        const weeklyActiveDaysCount = computeWeeklyActiveDays(
+          dailyLogsByDate,
+          anchor,
+          flags,
+        );
+        const computedStreak = computeCurrentStreak(
+          dailyLogsByDate,
+          anchor,
+          flags,
+        );
         const profileStreak = profile?.current_streak ?? 0;
         const currentStreak = Math.max(computedStreak, profileStreak);
 
         const totalXP = profile?.total_xp ?? st.totalXP;
         const level = getLevelFromTotalXP(totalXP);
         const longestStreak = Math.max(st.longestStreak, currentStreak);
-        const userName = profile?.full_name ?? authMeta?.full_name ?? st.userName;
-        const avatarImage = profile?.avatar_url ?? authMeta?.avatar_url ?? st.avatarImage;
+        const longestStreakEndDate = computeLongestStreakEndDate(
+          dailyLogsByDate,
+          anchor,
+        );
+        const userName =
+          profile?.full_name ?? authMeta?.full_name ?? st.userName;
+        const avatarImage =
+          profile?.avatar_url ?? authMeta?.avatar_url ?? st.avatarImage;
 
         set({
           tasks,
@@ -506,6 +579,7 @@ export const useAppStore = create<AppState>()(
           weeklyActiveDaysCount,
           currentStreak,
           longestStreak,
+          longestStreakEndDate,
           totalXP,
           level,
           levelTitle: getGrowthTierTitle(level),
@@ -541,7 +615,11 @@ export const useAppStore = create<AppState>()(
             .maybeSingle();
 
           const now = new Date();
-          const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+          const firstDayOfMonth = new Date(
+            now.getFullYear(),
+            now.getMonth(),
+            1,
+          );
           const currentMonthStr = firstDayOfMonth.toISOString();
 
           const { data: activityData } = await supabase
@@ -557,7 +635,10 @@ export const useAppStore = create<AppState>()(
             activityData.forEach((row) => {
               if (row.updated_at) {
                 const date = new Date(row.updated_at);
-                if (date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear()) {
+                if (
+                  date.getMonth() === now.getMonth() &&
+                  date.getFullYear() === now.getFullYear()
+                ) {
                   const idx = date.getDate() - 1;
                   heatmapArray[idx] = Math.min(1, heatmapArray[idx] + 0.34);
                 }
@@ -565,7 +646,9 @@ export const useAppStore = create<AppState>()(
             });
           }
 
-          const past90DaysStr = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000).toISOString();
+          const past90DaysStr = new Date(
+            now.getTime() - 90 * 24 * 60 * 60 * 1000,
+          ).toISOString();
           const { data: activity90 } = await supabase
             .from('tasks')
             .select('updated_at')
@@ -575,14 +658,24 @@ export const useAppStore = create<AppState>()(
 
           let fetchedActiveDays90 = 0;
           if (activity90) {
-            const uniqueDays = new Set(activity90.map((r) => new Date(r.updated_at).toDateString()));
+            const uniqueDays = new Set(
+              activity90.map((r) => new Date(r.updated_at).toDateString()),
+            );
             fetchedActiveDays90 = uniqueDays.size;
           }
 
           set((state) => ({
-            totalSessionsCompleted: Math.max(state.totalSessionsCompleted, sessionsCount || 0),
-            weeklyAvg: reportData?.completion_rate != null ? Number(reportData.completion_rate) : state.weeklyAvg,
-            heatmapData: heatmapArray.some((v) => v > 0) ? heatmapArray : state.heatmapData,
+            totalSessionsCompleted: Math.max(
+              state.totalSessionsCompleted,
+              sessionsCount || 0,
+            ),
+            weeklyAvg:
+              reportData?.completion_rate != null
+                ? Number(reportData.completion_rate)
+                : state.weeklyAvg,
+            heatmapData: heatmapArray.some((v) => v > 0)
+              ? heatmapArray
+              : state.heatmapData,
             activeDays90: Math.max(state.activeDays90, fetchedActiveDays90),
           }));
         } catch (e) {
@@ -606,15 +699,15 @@ export const useAppStore = create<AppState>()(
       markNotificationRead: async (id: string) => {
         const { serverNotifications } = get();
         const notification = serverNotifications.find((n) => n.id === id);
-        
+
         if (notification && !notification.is_read) {
           // Optimistic local update
-          const updated = serverNotifications.map((n) => 
-            n.id === id ? { ...n, is_read: true } : n
+          const updated = serverNotifications.map((n) =>
+            n.id === id ? { ...n, is_read: true } : n,
           );
-          set({ 
-            serverNotifications: updated, 
-            unreadCount: Math.max(0, get().unreadCount - 1) 
+          set({
+            serverNotifications: updated,
+            unreadCount: Math.max(0, get().unreadCount - 1),
           });
 
           if (isSupabaseConfigured) {
@@ -637,7 +730,16 @@ export const useAppStore = create<AppState>()(
         get().ensureLogicalDayAligned();
         const st = get();
         const anchor = getLogicalDateString();
-        let { todayCompletions, dailyLogsByDate, tasks, totalXP, longestStreak, totalSessionsCompleted, heatmapData, activeDays90 } = st;
+        let {
+          todayCompletions,
+          dailyLogsByDate,
+          tasks,
+          totalXP,
+          longestStreak,
+          totalSessionsCompleted,
+          heatmapData,
+          activeDays90,
+        } = st;
 
         if (todayCompletions.includes(taskId)) return;
         const taskDef = tasks.find((t) => t.id === taskId);
@@ -648,7 +750,10 @@ export const useAppStore = create<AppState>()(
         const afterFlags = flagsFromTaskIds(newCompletions, tasks);
 
         let xpGain = XP_PER_TASK;
-        if (countTasksDone(beforeFlags) === 3 && countTasksDone(afterFlags) === 4) {
+        if (
+          countTasksDone(beforeFlags) === 3 &&
+          countTasksDone(afterFlags) === 4
+        ) {
           xpGain += XP_BONUS_ALL_FOUR;
         }
 
@@ -660,11 +765,19 @@ export const useAppStore = create<AppState>()(
             ...dailyLogsByDate,
             [anchor]: { ...dailyLogsByDate[anchor], ...afterFlags },
           },
-          anchor
+          anchor,
         );
 
-        const weeklyActiveDaysCount = computeWeeklyActiveDays(dailyLogsByDate, anchor, afterFlags);
-        const currentStreak = computeCurrentStreak(dailyLogsByDate, anchor, afterFlags);
+        const weeklyActiveDaysCount = computeWeeklyActiveDays(
+          dailyLogsByDate,
+          anchor,
+          afterFlags,
+        );
+        const currentStreak = computeCurrentStreak(
+          dailyLogsByDate,
+          anchor,
+          afterFlags,
+        );
         const longest = Math.max(longestStreak, currentStreak);
 
         const isNewActiveDay = todayCompletions.length === 0;
@@ -700,13 +813,13 @@ export const useAppStore = create<AppState>()(
         // Update notifications schedule immediately
         if (st.notificationsEnabled) {
           scheduleDailyReminders(
-            true, 
+            true,
             {
               dailyRituals: st.notifDailyRituals,
               encouragement: st.notifEncouragement,
-              progressNudges: st.notifProgressNudges
+              progressNudges: st.notifProgressNudges,
             },
-            newCompletions.length < st.tasks.length
+            newCompletions.length < st.tasks.length,
           ).catch(() => {});
         }
 
@@ -716,7 +829,10 @@ export const useAppStore = create<AppState>()(
           const uid = auth.user?.id;
           if (!uid) return;
           await upsertDailyLogRemote(uid, anchor, afterFlags);
-          await updateProfileStatsRemote(uid, { total_xp: newXP, current_streak: currentStreak });
+          await updateProfileStatsRemote(uid, {
+            total_xp: newXP,
+            current_streak: currentStreak,
+          });
 
           try {
             const nowISO = new Date().toISOString();
@@ -753,31 +869,55 @@ export const useAppStore = create<AppState>()(
       setNotificationsEnabled: (v) => {
         set({ notificationsEnabled: v });
         scheduleDailyReminders(
-          v, 
+          v,
           {
             dailyRituals: get().notifDailyRituals,
             encouragement: get().notifEncouragement,
-            progressNudges: get().notifProgressNudges
+            progressNudges: get().notifProgressNudges,
           },
-          get().todayCompletions.length < get().tasks.length
+          get().todayCompletions.length < get().tasks.length,
         ).catch(() => {});
       },
       setNotifDailyRituals: (v) => {
         set({ notifDailyRituals: v });
         if (get().notificationsEnabled) {
-          scheduleDailyReminders(true, { dailyRituals: v, encouragement: get().notifEncouragement, progressNudges: get().notifProgressNudges }, get().todayCompletions.length < get().tasks.length).catch(() => {});
+          scheduleDailyReminders(
+            true,
+            {
+              dailyRituals: v,
+              encouragement: get().notifEncouragement,
+              progressNudges: get().notifProgressNudges,
+            },
+            get().todayCompletions.length < get().tasks.length,
+          ).catch(() => {});
         }
       },
       setNotifEncouragement: (v) => {
         set({ notifEncouragement: v });
         if (get().notificationsEnabled) {
-          scheduleDailyReminders(true, { dailyRituals: get().notifDailyRituals, encouragement: v, progressNudges: get().notifProgressNudges }, get().todayCompletions.length < get().tasks.length).catch(() => {});
+          scheduleDailyReminders(
+            true,
+            {
+              dailyRituals: get().notifDailyRituals,
+              encouragement: v,
+              progressNudges: get().notifProgressNudges,
+            },
+            get().todayCompletions.length < get().tasks.length,
+          ).catch(() => {});
         }
       },
       setNotifProgressNudges: (v) => {
         set({ notifProgressNudges: v });
         if (get().notificationsEnabled) {
-          scheduleDailyReminders(true, { dailyRituals: get().notifDailyRituals, encouragement: get().notifEncouragement, progressNudges: v }, get().todayCompletions.length < get().tasks.length).catch(() => {});
+          scheduleDailyReminders(
+            true,
+            {
+              dailyRituals: get().notifDailyRituals,
+              encouragement: get().notifEncouragement,
+              progressNudges: v,
+            },
+            get().todayCompletions.length < get().tasks.length,
+          ).catch(() => {});
         }
       },
       setTheme: (t) => set({ theme: t }),
@@ -785,7 +925,9 @@ export const useAppStore = create<AppState>()(
       addTask: (task) => set((s) => ({ tasks: [...s.tasks, task] })),
       toggleTaskEnabled: (taskId) =>
         set((s) => ({
-          tasks: s.tasks.map((t) => (t.id === taskId ? { ...t, enabled: !t.enabled } : t)),
+          tasks: s.tasks.map((t) =>
+            t.id === taskId ? { ...t, enabled: !t.enabled } : t,
+          ),
         })),
     }),
     {
@@ -827,6 +969,6 @@ export const useAppStore = create<AppState>()(
           void useAppStore.getState().bootstrapSessionFromSupabase();
         });
       },
-    }
-  )
+    },
+  ),
 );

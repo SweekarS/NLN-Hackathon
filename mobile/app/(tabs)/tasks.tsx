@@ -1,5 +1,12 @@
 import React from 'react';
-import { View, Text, ScrollView, StyleSheet, Pressable, Image } from 'react-native';
+import {
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
+  Pressable,
+  Image,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -15,7 +22,8 @@ import { TaskCard } from '../../components/ui/TaskCard';
 import { IconCircle } from '../../components/ui/IconCircle';
 
 export default function TasksScreen() {
-  const { tasks, todayCompletions, completeTask, avatarImage, unreadCount } = useAppStore();
+  const { tasks, todayCompletions, completeTask, avatarImage, unreadCount } =
+    useAppStore();
 
   const completionPct =
     tasks.length > 0 ? (todayCompletions.length / tasks.length) * 100 : 0;
@@ -31,7 +39,10 @@ export default function TasksScreen() {
         <Animated.View entering={FadeIn.duration(400)} style={styles.topBar}>
           <View style={styles.topBarLeft}>
             {avatarImage ? (
-              <Image source={{ uri: avatarImage }} style={[styles.avatar, { resizeMode: 'cover' }]} />
+              <Image
+                source={{ uri: avatarImage }}
+                style={[styles.avatar, { resizeMode: 'cover' }]}
+              />
             ) : (
               <LinearGradient
                 colors={[...botanicalGradient.colors]}
@@ -46,10 +57,16 @@ export default function TasksScreen() {
           </View>
           <Pressable onPress={() => router.push('/notifications')} hitSlop={8}>
             <View style={{ position: 'relative' }}>
-              <Ionicons name="notifications-outline" size={24} color={colors.onSurface} />
+              <Ionicons
+                name="notifications-outline"
+                size={24}
+                color={colors.onSurface}
+              />
               {unreadCount > 0 && (
                 <View style={styles.badge}>
-                  <Text style={styles.badgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
+                  <Text style={styles.badgeText}>
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </Text>
                 </View>
               )}
             </View>
@@ -57,7 +74,10 @@ export default function TasksScreen() {
         </Animated.View>
 
         {/* Header */}
-        <Animated.View entering={FadeInUp.delay(100).duration(500)} style={styles.headerRow}>
+        <Animated.View
+          entering={FadeInUp.delay(100).duration(500)}
+          style={styles.headerRow}
+        >
           <Text style={styles.pageTitle}>Daily Rituals</Text>
           <Button
             title="Customize"
@@ -107,23 +127,6 @@ export default function TasksScreen() {
             </Animated.View>
           ))}
         </View>
-
-        {/* Rest Nudge */}
-        <Animated.View entering={FadeInUp.delay(600).duration(500)}>
-          <LightCard style={styles.restCard}>
-            <IconCircle name="moon-outline" size="lg" />
-            <Text style={styles.restTitle}>Approaching a Rest Cycle?</Text>
-            <Text style={styles.restSubtitle}>
-              Listen to your body — rest is part of growth.
-            </Text>
-            <Button
-              title="Enable Rest Mode"
-              onPress={() => {}}
-              variant="ghost"
-              style={styles.restBtn}
-            />
-          </LightCard>
-        </Animated.View>
 
         <View style={{ height: spacing['3xl'] }} />
       </ScrollView>
@@ -220,24 +223,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     marginBottom: spacing.lg,
   },
-  restCard: {
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  restTitle: {
-    fontSize: 16,
-    fontFamily: fonts.bodySemiBold,
-    color: colors.onSurface,
-  },
-  restSubtitle: {
-    fontSize: 13,
-    fontFamily: fonts.bodyRegular,
-    color: colors.onSurfaceVariant,
-    textAlign: 'center',
-  },
-  restBtn: {
-    marginTop: spacing.xs,
-  },
+
   badge: {
     position: 'absolute',
     top: -4,

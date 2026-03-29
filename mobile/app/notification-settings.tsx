@@ -22,26 +22,37 @@ export default function NotificationsScreen() {
     notifEncouragement,
     setNotifEncouragement,
     notifProgressNudges,
-    setNotifProgressNudges
+    setNotifProgressNudges,
   } = useAppStore();
 
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
+      >
         <Animated.View entering={FadeIn.duration(400)}>
-          <Pressable onPress={() => router.back()} style={styles.backRow} hitSlop={8}>
+          <Pressable
+            onPress={() => router.back()}
+            style={styles.backRow}
+            hitSlop={8}
+          >
             <Ionicons name="chevron-back" size={24} color={colors.onSurface} />
             <Text style={styles.backLabel}>Settings</Text>
           </Pressable>
 
           <Text style={styles.headline}>Notification Center</Text>
-          <Text style={styles.subtitle}>Tune your sanctuary's gentle reminders</Text>
+          <Text style={styles.subtitle}>
+            Tune your sanctuary's gentle reminders
+          </Text>
         </Animated.View>
 
         <Animated.View entering={FadeIn.duration(500).delay(100)}>
           <GreenCard style={styles.masterCard}>
             <View style={styles.masterRow}>
-              <Text style={styles.masterLabel}>Enable all organic reminders</Text>
+              <Text style={styles.masterLabel}>
+                Enable all organic reminders
+              </Text>
               <Toggle
                 value={notificationsEnabled}
                 onToggle={() => setNotificationsEnabled(!notificationsEnabled)}
@@ -50,64 +61,61 @@ export default function NotificationsScreen() {
           </GreenCard>
         </Animated.View>
 
-        <Animated.View entering={FadeIn.duration(500).delay(200)}>
-          <Card style={styles.sectionCard}>
-            <Text style={styles.cardTitle}>Live Preview</Text>
-            <View style={styles.previewMock}>
-              <View style={styles.previewIconWrap}>
-                <Ionicons name="notifications" size={18} color={colors.primary} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.previewText}>Time for your afternoon reflection</Text>
-                <Text style={styles.previewTime}>2 minutes ago</Text>
-              </View>
-            </View>
-          </Card>
-        </Animated.View>
-
         <SectionTitle title="Guidance Types" />
 
         <Animated.View entering={FadeIn.duration(500).delay(400)}>
           <Card>
             <View style={styles.toggleRow}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 10,
+                  flex: 1,
+                }}
+              >
                 <IconCircle name="calendar-outline" size="sm" />
                 <Text style={styles.toggleLabel}>Daily Rituals</Text>
               </View>
-              <Toggle value={notifDailyRituals} onToggle={() => setNotifDailyRituals(!notifDailyRituals)} />
+              <Toggle
+                value={notifDailyRituals}
+                onToggle={() => setNotifDailyRituals(!notifDailyRituals)}
+              />
             </View>
             <View style={[styles.toggleRow, styles.toggleRowBorder]}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 10,
+                  flex: 1,
+                }}
+              >
                 <IconCircle name="heart-outline" size="sm" />
                 <Text style={styles.toggleLabel}>Encouragement</Text>
               </View>
-              <Toggle value={notifEncouragement} onToggle={() => setNotifEncouragement(!notifEncouragement)} />
+              <Toggle
+                value={notifEncouragement}
+                onToggle={() => setNotifEncouragement(!notifEncouragement)}
+              />
             </View>
             <View style={styles.toggleRow}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 10,
+                  flex: 1,
+                }}
+              >
                 <IconCircle name="refresh-outline" size="sm" />
                 <Text style={styles.toggleLabel}>Progress Nudges</Text>
               </View>
-              <Toggle value={notifProgressNudges} onToggle={() => setNotifProgressNudges(!notifProgressNudges)} />
+              <Toggle
+                value={notifProgressNudges}
+                onToggle={() => setNotifProgressNudges(!notifProgressNudges)}
+              />
             </View>
-          </Card>
-        </Animated.View>
-
-        <Animated.View entering={FadeIn.duration(500).delay(500)}>
-          <Card style={[styles.sectionCard, { backgroundColor: colors.surfaceLow }]}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: spacing.md }}>
-              <IconCircle name="moon-outline" size="sm" />
-              <Text style={[styles.cardTitle, { marginBottom: 0 }]}>Snooze Settings</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Duration</Text>
-              <Text style={styles.infoValue}>15 min</Text>
-            </View>
-            <View style={[styles.infoRow, { borderBottomWidth: 0 }]}>
-              <Text style={styles.infoLabel}>Limit</Text>
-              <Text style={styles.infoValue}>3 times</Text>
-            </View>
-            <Button title="Quick Snooze Until 2PM" variant="ghost" onPress={() => {}} />
           </Card>
         </Animated.View>
       </ScrollView>
@@ -171,33 +179,7 @@ const styles = StyleSheet.create({
     color: colors.onSurface,
     marginBottom: spacing.md,
   },
-  previewMock: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.surfaceLow,
-    borderRadius: radii.sm,
-    padding: spacing.md,
-    gap: spacing.md,
-  },
-  previewIconWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.primaryLighter,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  previewText: {
-    fontSize: 14,
-    fontFamily: fonts.bodySemiBold,
-    color: colors.onSurface,
-    marginBottom: 2,
-  },
-  previewTime: {
-    fontSize: 12,
-    fontFamily: fonts.bodyRegular,
-    color: colors.outline,
-  },
+
   pillRow: {
     flexDirection: 'row',
     gap: spacing.sm,
@@ -214,24 +196,6 @@ const styles = StyleSheet.create({
     borderColor: colors.outlineVariant,
   },
   toggleLabel: {
-    fontSize: 15,
-    fontFamily: fonts.bodySemiBold,
-    color: colors.onSurface,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.outlineVariant,
-  },
-  infoLabel: {
-    fontSize: 15,
-    fontFamily: fonts.bodyMedium,
-    color: colors.onSurfaceVariant,
-  },
-  infoValue: {
     fontSize: 15,
     fontFamily: fonts.bodySemiBold,
     color: colors.onSurface,

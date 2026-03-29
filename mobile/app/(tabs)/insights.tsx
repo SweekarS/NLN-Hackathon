@@ -22,10 +22,34 @@ import { IconCircle } from '../../components/ui/IconCircle';
 
 type MetricsTab = 'overview' | 'details';
 
+function formatStreakDate(dateStr: string | null): string {
+  if (!dateStr) return 'Unknown date';
+  try {
+    const [year, month, day] = dateStr.split('-').map(Number);
+    const date = new Date(year, month - 1, day);
+    return date.toLocaleString('en-US', { month: 'long', day: 'numeric' });
+  } catch {
+    return 'Unknown date';
+  }
+}
+
+function calculateStreakProgress(
+  currentStreak: number,
+  longestStreak: number,
+): { progress: number; percentage: number } {
+  if (longestStreak === 0) {
+    return { progress: 0, percentage: 0 };
+  }
+  const progress = currentStreak / longestStreak;
+  const percentage = Math.round(progress * 100);
+  return { progress: Math.min(progress, 1), percentage };
+}
+
 export default function InsightsScreen() {
   const {
     currentStreak,
     longestStreak,
+    longestStreakEndDate,
     activeDays90,
     dailyLogsByDate,
     todayCompletions,
@@ -38,7 +62,12 @@ export default function InsightsScreen() {
   const todayFlags = flagsFromTaskIds(todayCompletions, tasks);
   const mindfulnessFlow30 = useMemo(
     () => buildMindfulnessFlow30Day(dailyLogsByDate, anchorDate, todayFlags),
-    [dailyLogsByDate, anchorDate, todayCompletions, tasks]
+    [dailyLogsByDate, anchorDate, todayCompletions, tasks],
+  );
+
+  const { progress: streakProgress, percentage: streakPercentage } = useMemo(
+    () => calculateStreakProgress(currentStreak, longestStreak),
+    [currentStreak, longestStreak],
   );
 
   return (
@@ -75,11 +104,19 @@ export default function InsightsScreen() {
               <IconCircle name="location-outline" size="lg" />
               <Text style={styles.bestNumber}>{longestStreak}</Text>
               <Text style={styles.bestLabel}>Personal Best</Text>
-              <Text style={styles.bestSub}>Achieved on June 12</Text>
+              <Text style={styles.bestSub}>
+                Achieved on {formatStreakDate(longestStreakEndDate)}
+              </Text>
               <View style={styles.xpBarWrap}>
-                <XPBar progress={0.33} height={6} color={colors.primaryLight} />
+                <XPBar
+                  progress={streakProgress}
+                  height={6}
+                  color={colors.primaryLight}
+                />
               </View>
-              <Text style={styles.bestProgress}>33% toward a new record</Text>
+              <Text style={styles.bestProgress}>
+                {streakPercentage}% toward a new record
+              </Text>
             </View>
           </Card>
         </Animated.View>
@@ -89,7 +126,8 @@ export default function InsightsScreen() {
           <LightCard style={styles.pauseCard}>
             <Text style={styles.pauseHeadline}>Embracing the Pause</Text>
             <Text style={styles.pauseQuote}>
-              "Rest is how nature renews itself. Your pause is part of your growth story."
+              "Rest is how nature renews itself. Your pause is part of your
+              growth story."
             </Text>
             <Text style={styles.pauseLink}>Gentle Reminders for Healing</Text>
           </LightCard>
@@ -103,7 +141,12 @@ export default function InsightsScreen() {
             style={[styles.tab, activeTab === 'overview' && styles.tabActive]}
             onPress={() => setActiveTab('overview')}
           >
-            <Text style={[styles.tabText, activeTab === 'overview' && styles.tabTextActive]}>
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === 'overview' && styles.tabTextActive,
+              ]}
+            >
               Overview
             </Text>
           </Pressable>
@@ -111,7 +154,12 @@ export default function InsightsScreen() {
             style={[styles.tab, activeTab === 'details' && styles.tabActive]}
             onPress={() => setActiveTab('details')}
           >
-            <Text style={[styles.tabText, activeTab === 'details' && styles.tabTextActive]}>
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === 'details' && styles.tabTextActive,
+              ]}
+            >
               Details
             </Text>
           </Pressable>
@@ -130,12 +178,22 @@ export default function InsightsScreen() {
 
           <Text style={styles.metricLabel}>Last 90 Days</Text>
           <View style={styles.ninetyRow}>
-            <ProgressRing progress={activeDays90 / 90} size={60} strokeWidth={7}>
-              <Text style={styles.ringPercent}>{Math.round((activeDays90 / 90) * 100)}%</Text>
+            <ProgressRing
+              progress={activeDays90 / 90}
+              size={60}
+              strokeWidth={7}
+            >
+              <Text style={styles.ringPercent}>
+                {Math.round((activeDays90 / 90) * 100)}%
+              </Text>
             </ProgressRing>
             <View style={styles.ninetyText}>
-              <Text style={styles.ninetyBig}>{Math.round((activeDays90 / 90) * 100)}%</Text>
-              <Text style={styles.ninetySub}>Active: {activeDays90} days · Rest: {90 - activeDays90} days</Text>
+              <Text style={styles.ninetyBig}>
+                {Math.round((activeDays90 / 90) * 100)}%
+              </Text>
+              <Text style={styles.ninetySub}>
+                Active: {activeDays90} days · Rest: {90 - activeDays90} days
+              </Text>
             </View>
           </View>
         </Card>
@@ -146,8 +204,8 @@ export default function InsightsScreen() {
             <View style={styles.insightRow}>
               <IconCircle name="leaf-outline" size="md" />
               <Text style={styles.insightText}>
-                Your evening wind-down consistency has improved 23% this month. Keep nurturing this
-                habit.
+                Your evening wind-down consistency has improved 23% this month.
+                Keep nurturing this habit.
               </Text>
             </View>
           </Card>
@@ -159,7 +217,8 @@ export default function InsightsScreen() {
           <GreenCard>
             <Text style={styles.monthlySalutation}>Hello, friend</Text>
             <Text style={styles.monthlyBody}>
-              Your March journey shows beautiful consistency. Keep nurturing your growth.
+              Your March journey shows beautiful consistency. Keep nurturing
+              your growth.
             </Text>
             <View style={styles.harmonyRow}>
               <ProgressRing progress={0.88} size={64} strokeWidth={7}>
@@ -167,7 +226,9 @@ export default function InsightsScreen() {
               </ProgressRing>
               <View style={{ flex: 1, marginLeft: spacing.base }}>
                 <Text style={styles.harmonyLabel}>Harmony Score</Text>
-                <Text style={styles.harmonySub}>Based on consistency, variety, and rest balance</Text>
+                <Text style={styles.harmonySub}>
+                  Based on consistency, variety, and rest balance
+                </Text>
               </View>
             </View>
           </GreenCard>
@@ -178,13 +239,15 @@ export default function InsightsScreen() {
         <Card style={styles.cardGap}>
           <Text style={styles.journalRange}>Mar 18 — Mar 24</Text>
           <Text style={styles.journalBody}>
-            A week of steady morning rituals and evening reflections. Your breathwork sessions deepened.
+            A week of steady morning rituals and evening reflections. Your
+            breathwork sessions deepened.
           </Text>
         </Card>
         <Card style={styles.cardGap}>
           <Text style={styles.journalRange}>Mar 11 — Mar 17</Text>
           <Text style={styles.journalBody}>
-            You explored forest bathing for the first time. Three days of unbroken streaks.
+            You explored forest bathing for the first time. Three days of
+            unbroken streaks.
           </Text>
         </Card>
 
@@ -192,12 +255,31 @@ export default function InsightsScreen() {
         <SectionTitle title="Biometric Trends" />
         <Card style={styles.cardGap}>
           {[
-            { icon: 'bed-outline' as const, label: 'Sleep Quality', value: '7.8 hrs avg' },
-            { icon: 'footsteps-outline' as const, label: 'Daily Steps', value: '6,420 avg' },
-            { icon: 'people-outline' as const, label: 'Social Battery', value: '72%' },
-            { icon: 'flower-outline' as const, label: 'Mindfulness', value: '18 min avg' },
+            {
+              icon: 'bed-outline' as const,
+              label: 'Sleep Quality',
+              value: '7.8 hrs avg',
+            },
+            {
+              icon: 'footsteps-outline' as const,
+              label: 'Daily Steps',
+              value: '6,420 avg',
+            },
+            {
+              icon: 'people-outline' as const,
+              label: 'Social Battery',
+              value: '72%',
+            },
+            {
+              icon: 'flower-outline' as const,
+              label: 'Mindfulness',
+              value: '18 min avg',
+            },
           ].map((item, i, arr) => (
-            <View key={item.label} style={[styles.bioRow, i < arr.length - 1 && styles.bioRowBorder]}>
+            <View
+              key={item.label}
+              style={[styles.bioRow, i < arr.length - 1 && styles.bioRowBorder]}
+            >
               <IconCircle name={item.icon} size="sm" />
               <Text style={styles.bioLabel}>{item.label}</Text>
               <Text style={styles.bioValue}>{item.value}</Text>
@@ -207,10 +289,20 @@ export default function InsightsScreen() {
 
         {/* Nurture Your Next Week */}
         <SectionTitle title="Nurture Your Next Week" />
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.nurtureScroll}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.nurtureScroll}
+        >
           {[
-            { title: 'Try a digital sunset', sub: 'No screens 1 hour before bed' },
-            { title: 'Morning gratitude', sub: 'Write 3 things you appreciate' },
+            {
+              title: 'Try a digital sunset',
+              sub: 'No screens 1 hour before bed',
+            },
+            {
+              title: 'Morning gratitude',
+              sub: 'Write 3 things you appreciate',
+            },
             { title: 'Walk in nature', sub: '20 minutes of forest bathing' },
           ].map((tip) => (
             <Card key={tip.title} style={styles.nurtureCard}>
