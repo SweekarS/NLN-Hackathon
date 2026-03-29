@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet, LayoutAnimation, Platform, UIManager } from 'react-native';
+import { View, Text, ScrollView, Pressable, StyleSheet, LayoutAnimation, Platform, UIManager, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Animated, { FadeIn, FadeInUp, FadeOut } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInUp, FadeOut, LinearTransition } from 'react-native-reanimated';
 import { router } from 'expo-router';
 import { Card } from '../components/ui/Card';
 import { GreenCard } from '../components/ui/GreenCard';
@@ -13,6 +13,7 @@ import { useAppStore } from '../store/useAppStore';
 import { Ionicons } from '@expo/vector-icons';
 import { IconCircle } from '../components/ui/IconCircle';
 import { colors, fonts, spacing, radii, shadow } from '../theme';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -34,9 +35,50 @@ export default function OnboardingScreen() {
   const journeyMode = useAppStore((s) => s.journeyMode);
   const setJourneyMode = useAppStore((s) => s.setJourneyMode);
   const [privacyExpanded, setPrivacyExpanded] = useState(false);
-  const [step, setStep] = useState<'intro' | 'journey' | 'login'>('intro');
+  const [step, setStep] = useState<'intro' | 'journey'>('intro');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [authLoading, setAuthLoading] = useState(false);
+  const [showLoginFields, setShowLoginFields] = useState(false);
+  const setOnboardingComplete = useAppStore((s) => s.setOnboardingComplete);
+  const setUserName = useAppStore((s) => s.setUserName);
+
+  const handleLogin = async () => {
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail || !password) {
+      Alert.alert('Missing fields', 'Please enter your email and password.');
+      return;
+    }
+    if (!isSupabaseConfigured) {
+      Alert.alert('Configuration Error', 'Supabase is not configured.');
+      return;
+    }
+
+    setAuthLoading(true);
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: trimmedEmail,
+        password,
+      });
+
+      if (error) {
+        Alert.alert('Sign in failed', error.message);
+        return;
+      }
+
+      if (data.user) {
+        const metaName = data.user.user_metadata?.name || data.user.user_metadata?.full_name;
+        const displayName = metaName || trimmedEmail.split('@')[0];
+        setUserName(displayName);
+        setOnboardingComplete();
+        router.replace('/(tabs)');
+      }
+    } catch (e: any) {
+      Alert.alert('Error', e.message || 'Something went wrong');
+    } finally {
+      setAuthLoading(false);
+    }
+  };
 
   const togglePrivacy = () => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -68,16 +110,48 @@ export default function OnboardingScreen() {
               </Animated.View>
             </View>
 
-            <View style={[styles.buttonWrap, { marginTop: 'auto', paddingTop: spacing.xl }]}>
-              <Button title="Sign Up" onPress={() => setStep('journey')} />
-              <Button title="Sign In" variant="ghost" onPress={() => setStep('login')} />
-            </View>
+            <Animated.View layout={LinearTransition.duration(600)} style={{ marginTop: 'auto', paddingTop: spacing.xl }}>
+              {!showLoginFields ? (
+                <Animated.View key="buttons" entering={FadeIn.duration(500).delay(200)} exiting={FadeOut.duration(300)} style={styles.buttonWrap}>
+                  <Button title="Sign Up" onPress={() => setStep('journey')} />
+                  <Button title="Sign In" variant="ghost" onPress={() => setShowLoginFields(true)} />
+                </Animated.View>
+              ) : (
+                <Animated.View key="fields" entering={FadeInUp.duration(600).delay(250)} exiting={FadeOut.duration(300)}>
+                  <View style={{ marginBottom: spacing.md }}>
+                    <FieldLabel label="Email" />
+                    <FieldInput
+                      value={email}
+                      onChangeText={setEmail}
+                      placeholder="Enter your email"
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                    />
+                  </View>
+
+                  <View style={{ marginBottom: spacing.xl }}>
+                    <FieldLabel label="Password" />
+                    <FieldInput
+                      value={password}
+                      onChangeText={setPassword}
+                      placeholder="Enter your password"
+                      secureTextEntry
+                    />
+                  </View>
+
+                  <View style={styles.buttonWrap}>
+                    <Button title={authLoading ? "Signing in..." : "Login"} onPress={handleLogin} disabled={authLoading} />
+                    <Button title="Back" variant="ghost" onPress={() => setShowLoginFields(false)} disabled={authLoading} />
+                  </View>
+                </Animated.View>
+              )}
+            </Animated.View>
           </Animated.View>
         )}
 
         {step === 'journey' && (
-          <Animated.View entering={FadeIn.duration(400)} exiting={FadeOut.duration(400)}>
-            <Animated.View entering={FadeInUp.duration(500).delay(100)}>
+          <Animated.View entering={FadeIn.duration(400)} exiting={FadeOut.duration(400)} style={{ flex: 1 }}>
+            <Animated.View entering={FadeInUp.duration(500).delay(100)} style={{ flex: 1, justifyContent: 'center' }}>
               <Text style={styles.stepLabel}>Step 1 of 2</Text>
               <Text style={styles.sectionTitle}>Choose Your Journey</Text>
 
@@ -106,48 +180,14 @@ export default function OnboardingScreen() {
               </View>
             </Animated.View>
 
-            <View style={styles.buttonWrap}>
+            <View style={[styles.buttonWrap, { marginTop: 'auto', paddingTop: spacing.xl }]}>
               <Button title="Start My Journey" onPress={() => router.push('/account-privacy')} />
               <Button title="Back" variant="ghost" onPress={() => setStep('intro')} />
             </View>
           </Animated.View>
         )}
 
-        {step === 'login' && (
-          <Animated.View entering={FadeIn.duration(400)} exiting={FadeOut.duration(400)}>
-            <Animated.View entering={FadeInUp.duration(500).delay(100)}>
-              <Text style={styles.sectionTitle}>Welcome Back</Text>
 
-              <View style={[styles.featuresWrap, { marginTop: spacing.xl }]}>
-                <View style={{ marginBottom: spacing.md }}>
-                  <FieldLabel label="Email" />
-                  <FieldInput
-                    value={email}
-                    onChangeText={setEmail}
-                    placeholder="Enter your email"
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                  />
-                </View>
-
-                <View style={{ marginBottom: spacing.md }}>
-                  <FieldLabel label="Password" />
-                  <FieldInput
-                    value={password}
-                    onChangeText={setPassword}
-                    placeholder="Enter your password"
-                    secureTextEntry
-                  />
-                </View>
-              </View>
-            </Animated.View>
-
-            <View style={styles.buttonWrap}>
-              <Button title="Login" onPress={() => router.replace('/(tabs)')} />
-              <Button title="Back" variant="ghost" onPress={() => setStep('intro')} />
-            </View>
-          </Animated.View>
-        )}
       </ScrollView>
     </SafeAreaView>
   );
