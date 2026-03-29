@@ -20,7 +20,6 @@ export function HeroSection() {
 
       <section className="landing-hero-overlay" aria-label="Introduction">
         <div className="landing-container landing-hero-overlay-inner">
-          <p className="eyebrow landing-hero-eyebrow">Private-first mental wellness</p>
           <h1 className="landing-hero-title">Build calm daily rituals before stress becomes a crisis.</h1>
           <p className="landing-hero-lede">
             StreakSync helps people in stigma-heavy communities start with small, practical steps. No
