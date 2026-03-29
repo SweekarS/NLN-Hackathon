@@ -8,6 +8,7 @@ import { Card } from '../components/ui/Card';
 import { SelectorPill } from '../components/ui/SelectorPill';
 import { SectionTitle } from '../components/ui/SectionTitle';
 import { useAppStore } from '../store/useAppStore';
+import { IconCircle } from '../components/ui/IconCircle';
 import { colors, fonts, spacing, radii } from '../theme';
 
 const stressOptions: { label: string; value: 'low' | 'medium' | 'high' }[] = [
@@ -16,10 +17,10 @@ const stressOptions: { label: string; value: 'low' | 'medium' | 'high' }[] = [
   { label: 'High', value: 'high' },
 ];
 
-const themeOptions: { emoji: string; label: string; value: 'light' | 'dark' | 'forest' }[] = [
-  { emoji: '☀️', label: 'Light', value: 'light' },
-  { emoji: '🌙', label: 'Dark', value: 'dark' },
-  { emoji: '🌲', label: 'Forest', value: 'forest' },
+const themeOptions: { iconName: keyof typeof Ionicons.glyphMap; label: string; value: 'light' | 'dark' | 'forest' }[] = [
+  { iconName: 'sunny-outline', label: 'Light', value: 'light' },
+  { iconName: 'moon-outline', label: 'Dark', value: 'dark' },
+  { iconName: 'color-palette-outline', label: 'Forest', value: 'forest' },
 ];
 
 export default function SettingsScreen() {
@@ -82,7 +83,10 @@ export default function SettingsScreen() {
 
         <Animated.View entering={FadeIn.duration(500).delay(200)}>
           <Card style={styles.sectionCard}>
-            <Text style={styles.cardTitle}>Daily Window</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: spacing.md }}>
+              <IconCircle name="time-outline" size="sm" />
+              <Text style={[styles.cardTitle, { marginBottom: 0 }]}>Daily Window</Text>
+            </View>
             <View style={styles.windowRow}>
               <Text style={styles.windowLabel}>Start Time</Text>
               <View style={styles.windowPill}>
@@ -96,14 +100,17 @@ export default function SettingsScreen() {
               </View>
             </View>
             <View style={styles.landscapePlaceholder}>
-              <Text style={styles.landscapeEmoji}>🌅</Text>
+              <Ionicons name="time-outline" size={40} color={colors.outline} />
             </View>
           </Card>
         </Animated.View>
 
         <Animated.View entering={FadeIn.duration(500).delay(300)}>
           <Card style={styles.sectionCard}>
-            <Text style={styles.cardTitle}>Language</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: spacing.md }}>
+              <IconCircle name="globe-outline" size="sm" />
+              <Text style={[styles.cardTitle, { marginBottom: 0 }]}>Language</Text>
+            </View>
             <Pressable style={styles.langRow}>
               <Text style={styles.flag}>🇬🇧</Text>
               <Text style={styles.langText}>English (UK)</Text>
@@ -139,7 +146,7 @@ export default function SettingsScreen() {
                       selected && styles.themeSelected,
                     ]}
                   >
-                    <Text style={styles.themeEmoji}>{opt.emoji}</Text>
+                    <Ionicons name={opt.iconName} size={24} color={textColor} style={{ marginBottom: spacing.xs }} />
                     <Text style={[styles.themeLabel, { color: textColor }]}>{opt.label}</Text>
                   </Pressable>
                 );
@@ -229,9 +236,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginTop: spacing.md,
   },
-  landscapeEmoji: {
-    fontSize: 40,
-  },
   langRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -274,10 +278,6 @@ const styles = StyleSheet.create({
   },
   themeSelected: {
     borderColor: colors.primary,
-  },
-  themeEmoji: {
-    fontSize: 24,
-    marginBottom: spacing.xs,
   },
   themeLabel: {
     fontSize: 12,

@@ -10,6 +10,7 @@ import { Toggle } from '../components/ui/Toggle';
 import { SelectorPill } from '../components/ui/SelectorPill';
 import { SectionTitle } from '../components/ui/SectionTitle';
 import { Button } from '../components/ui/Button';
+import { IconCircle } from '../components/ui/IconCircle';
 import { useAppStore } from '../store/useAppStore';
 import { colors, fonts, spacing, radii } from '../theme';
 
@@ -62,7 +63,7 @@ export default function NotificationsScreen() {
                 <Ionicons name="notifications" size={18} color={colors.primary} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.previewText}>Time for your evening reflection 🌿</Text>
+                <Text style={styles.previewText}>Time for your evening reflection</Text>
                 <Text style={styles.previewTime}>2 minutes ago</Text>
               </View>
             </View>
@@ -89,15 +90,24 @@ export default function NotificationsScreen() {
         <Animated.View entering={FadeIn.duration(500).delay(400)}>
           <Card>
             <View style={styles.toggleRow}>
-              <Text style={styles.toggleLabel}>Daily Rituals</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
+                <IconCircle name="calendar-outline" size="sm" />
+                <Text style={styles.toggleLabel}>Daily Rituals</Text>
+              </View>
               <Toggle value={dailyRituals} onToggle={() => setDailyRituals(!dailyRituals)} />
             </View>
             <View style={[styles.toggleRow, styles.toggleRowBorder]}>
-              <Text style={styles.toggleLabel}>Encouragement</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
+                <IconCircle name="heart-outline" size="sm" />
+                <Text style={styles.toggleLabel}>Encouragement</Text>
+              </View>
               <Toggle value={encouragement} onToggle={() => setEncouragement(!encouragement)} />
             </View>
             <View style={styles.toggleRow}>
-              <Text style={styles.toggleLabel}>Progress Nudges</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
+                <IconCircle name="refresh-outline" size="sm" />
+                <Text style={styles.toggleLabel}>Progress Nudges</Text>
+              </View>
               <Toggle value={progressNudges} onToggle={() => setProgressNudges(!progressNudges)} />
             </View>
           </Card>
@@ -105,7 +115,10 @@ export default function NotificationsScreen() {
 
         <Animated.View entering={FadeIn.duration(500).delay(500)}>
           <Card style={[styles.sectionCard, { backgroundColor: colors.surfaceLow }]}>
-            <Text style={styles.cardTitle}>Snooze Settings</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: spacing.md }}>
+              <IconCircle name="moon-outline" size="sm" />
+              <Text style={[styles.cardTitle, { marginBottom: 0 }]}>Snooze Settings</Text>
+            </View>
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>Duration</Text>
               <Text style={styles.infoValue}>15 min</Text>

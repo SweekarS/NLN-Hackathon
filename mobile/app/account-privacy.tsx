@@ -14,6 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
+import { IconCircle } from '../components/ui/IconCircle';
 import { router } from 'expo-router';
 import * as Location from 'expo-location';
 import { Pedometer } from 'expo-sensors';
@@ -29,7 +30,6 @@ import { signInWithGoogle } from '../lib/auth-google';
 import { isSupabaseConfigured, supabase, supabaseDashboardAuthUrl } from '../lib/supabase';
 import { colors, fonts, spacing, radii } from '../theme';
 
-/** Supabase enforces limits per IP and per project; a new email does not bypass them. */
 function isAuthRateLimitError(error: { message?: string; code?: string }): boolean {
   const code = error.code ?? '';
   const raw = (error.message ?? '').toLowerCase();
@@ -77,14 +77,14 @@ function alertAuthRateLimit() {
 }
 
 const privacyPresets = [
-  { key: 'only_me' as const, icon: '🔒', title: 'Only Me', desc: 'Maximum privacy — data stays on device.' },
-  { key: 'circles' as const, icon: '👥', title: 'Sanctuary Circles', desc: 'Share selectively with trusted circles.' },
-  { key: 'global' as const, icon: '🌐', title: 'Global Reach', desc: 'Contribute anonymously to community insights.' },
+  { key: 'only_me' as const, iconName: 'lock-closed-outline' as const, title: 'Only Me', desc: 'Maximum privacy — data stays on device.' },
+  { key: 'circles' as const, iconName: 'people-outline' as const, title: 'Sanctuary Circles', desc: 'Share selectively with trusted circles.' },
+  { key: 'global' as const, iconName: 'globe-outline' as const, title: 'Global Reach', desc: 'Contribute anonymously to community insights.' },
 ];
 
 const permissionRows = [
-  { key: 'vitals' as const, icon: '💓', title: 'Vital Metrics', desc: 'Heart rate, sleep, activity data' },
-  { key: 'location' as const, icon: '📍', title: 'Environment Awareness', desc: 'Location-based wellness cues' },
+  { key: 'vitals' as const, iconName: 'heart-outline' as const, title: 'Vital Metrics', desc: 'Heart rate, sleep, activity data' },
+  { key: 'location' as const, iconName: 'location-outline' as const, title: 'Environment Awareness', desc: 'Location-based wellness cues' },
 ];
 
 export default function AccountPrivacyScreen() {
@@ -206,9 +206,9 @@ export default function AccountPrivacyScreen() {
             msg.includes('Failed to fetch') ||
             msg.includes('network');
           Alert.alert(
-            looksLikeNetwork ? 'Can’t reach Supabase' : 'Could not sign in',
+            looksLikeNetwork ? 'Can\u2019t reach Supabase' : 'Could not sign in',
             looksLikeNetwork
-              ? 'Check Wi‑Fi or cellular and try without VPN. In mobile/.env set EXPO_PUBLIC_SUPABASE_URL to your project API URL (starts with https) and EXPO_PUBLIC_SUPABASE_ANON_KEY to the anon key—no spaces or quotes. Confirm the project is active in Supabase, save, then run npx expo start -c.'
+              ? 'Check Wi\u2011Fi or cellular and try without VPN. In mobile/.env set EXPO_PUBLIC_SUPABASE_URL to your project API URL (starts with https) and EXPO_PUBLIC_SUPABASE_ANON_KEY to the anon key\u2014no spaces or quotes. Confirm the project is active in Supabase, save, then run npx expo start -c.'
               : msg
           );
           return;
@@ -243,9 +243,9 @@ export default function AccountPrivacyScreen() {
           msg.includes('Failed to fetch') ||
           msg.includes('network');
         Alert.alert(
-          looksLikeNetwork ? 'Can’t reach Supabase' : 'Could not create account',
+          looksLikeNetwork ? 'Can\u2019t reach Supabase' : 'Could not create account',
           looksLikeNetwork
-            ? 'Check Wi‑Fi or cellular and try without VPN. In mobile/.env set EXPO_PUBLIC_SUPABASE_URL to your project API URL (starts with https) and EXPO_PUBLIC_SUPABASE_ANON_KEY to the anon key—no spaces or quotes. Confirm the project is active in Supabase, save, then run npx expo start -c.'
+            ? 'Check Wi\u2011Fi or cellular and try without VPN. In mobile/.env set EXPO_PUBLIC_SUPABASE_URL to your project API URL (starts with https) and EXPO_PUBLIC_SUPABASE_ANON_KEY to the anon key\u2014no spaces or quotes. Confirm the project is active in Supabase, save, then run npx expo start -c.'
             : msg
         );
         return;
@@ -267,7 +267,7 @@ export default function AccountPrivacyScreen() {
         msg.includes('Failed to fetch') ||
         msg.includes('network');
       Alert.alert(
-        looksLikeNetwork ? 'Can’t reach Supabase' : 'Error',
+        looksLikeNetwork ? 'Can\u2019t reach Supabase' : 'Error',
         looksLikeNetwork
           ? 'Network error reaching Supabase. Check connection, mobile/.env URL and anon key (no spaces), then npx expo start -c.'
           : msg
@@ -280,13 +280,11 @@ export default function AccountPrivacyScreen() {
   const handleTogglePermission = async (key: 'vitals' | 'mindfulness' | 'location') => {
     const isCurrentlyOn = permissions[key];
 
-    // If turning off, just turn it off immediately
     if (isCurrentlyOn) {
       togglePermission(key);
       return;
     }
 
-    // If turning on, we request the native device permission first
     try {
       if (key === 'location') {
         const { status } = await Location.requestForegroundPermissionsAsync();
@@ -311,7 +309,6 @@ export default function AccountPrivacyScreen() {
           Alert.alert('Permission Denied', 'Motion data permission is required for Vital Metrics.');
         }
       } else {
-        // Mindfulness or any other permission that doesn't need system APIs
         togglePermission(key);
       }
     } catch (error) {
@@ -367,7 +364,34 @@ export default function AccountPrivacyScreen() {
             />
           </Animated.View>
 
-
+          <Animated.View entering={FadeInUp.duration(500).delay(400)}>
+            <Card>
+              <Text style={styles.cardTitle}>Privacy Presets</Text>
+              <View style={styles.presetsWrap}>
+                {privacyPresets.map((p) => {
+                  const selected = privacyPreset === p.key;
+                  return (
+                    <Pressable
+                      key={p.key}
+                      onPress={() => setPrivacyPreset(p.key)}
+                      style={[styles.presetOption, selected && styles.presetSelected]}
+                    >
+                      <IconCircle name={p.iconName} size="md" />
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.presetTitle}>{p.title}</Text>
+                        <Text style={styles.presetDesc}>{p.desc}</Text>
+                      </View>
+                      {selected && (
+                        <View style={styles.checkBadge}>
+                          <Ionicons name="checkmark" size={14} color={colors.white} />
+                        </View>
+                      )}
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </Card>
+          </Animated.View>
 
           <Animated.View entering={FadeInUp.duration(500).delay(500)}>
             <Card style={styles.permissionsCard}>
@@ -377,7 +401,7 @@ export default function AccountPrivacyScreen() {
                   key={row.key}
                   style={[styles.permRow, i < permissionRows.length - 1 && styles.permRowBorder]}
                 >
-                  <Text style={styles.permIcon}>{row.icon}</Text>
+                  <IconCircle name={row.iconName} size="md" />
                   <View style={styles.permText}>
                     <Text style={styles.permTitle}>{row.title}</Text>
                     <Text style={styles.permDesc}>{row.desc}</Text>
@@ -402,8 +426,8 @@ export default function AccountPrivacyScreen() {
             title={
               authLoading
                 ? authMode === 'signin'
-                  ? 'Signing in…'
-                  : 'Creating account…'
+                  ? 'Signing in\u2026'
+                  : 'Creating account\u2026'
                 : authMode === 'signin'
                   ? 'Sign in and enter sanctuary'
                   : 'Create account and enter sanctuary'
@@ -468,51 +492,6 @@ const styles = StyleSheet.create({
   formCard: {
     marginBottom: spacing.base,
   },
-  authModeRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    marginBottom: spacing.md,
-  },
-  authModeChip: {
-    flex: 1,
-    paddingVertical: spacing.sm,
-    borderRadius: radii.input,
-    borderWidth: 1.5,
-    borderColor: colors.outlineVariant,
-    alignItems: 'center',
-    backgroundColor: colors.surfaceLow,
-  },
-  authModeChipActive: {
-    borderColor: colors.primary,
-    backgroundColor: colors.primaryLighter,
-  },
-  authModeText: {
-    fontFamily: fonts.bodySemiBold,
-    fontSize: 15,
-    color: colors.onSurfaceVariant,
-  },
-  authModeTextActive: {
-    color: colors.primary,
-  },
-  googleButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: spacing.md,
-    paddingVertical: spacing.md,
-    borderRadius: radii.button,
-    borderWidth: 1.5,
-    borderColor: colors.outlineVariant,
-    backgroundColor: colors.surface,
-  },
-  googleIcon: {
-    marginRight: spacing.sm,
-  },
-  googleButtonText: {
-    fontFamily: fonts.bodySemiBold,
-    fontSize: 16,
-    color: colors.onSurface,
-  },
   cardTitle: {
     fontSize: 18,
     fontFamily: fonts.headlineBold,
@@ -521,24 +500,6 @@ const styles = StyleSheet.create({
   },
   initButton: {
     marginBottom: spacing.xl,
-  },
-  dataRow: {
-    flexDirection: 'row',
-    gap: spacing.md,
-    marginBottom: spacing.base,
-  },
-  dataCard: {
-    flex: 1,
-    backgroundColor: colors.surfaceLow,
-  },
-  dataCardInner: {
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  dataCardLabel: {
-    fontSize: 13,
-    fontFamily: fonts.bodySemiBold,
-    color: colors.onSurfaceVariant,
   },
   presetsWrap: {
     gap: spacing.md,
@@ -552,14 +513,11 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     borderWidth: 2,
     borderColor: 'transparent',
+    gap: spacing.md,
   },
   presetSelected: {
     borderColor: colors.primary,
     backgroundColor: colors.primaryLighter,
-  },
-  presetIcon: {
-    fontSize: 24,
-    marginRight: spacing.md,
   },
   presetTitle: {
     fontSize: 15,
@@ -581,11 +539,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginLeft: spacing.sm,
   },
-  checkMark: {
-    color: colors.white,
-    fontSize: 14,
-    fontFamily: fonts.bodySemiBold,
-  },
   permissionsCard: {
     marginTop: spacing.base,
   },
@@ -593,14 +546,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: spacing.md,
+    gap: spacing.md,
   },
   permRowBorder: {
     borderBottomWidth: 1,
     borderBottomColor: colors.outlineVariant,
-  },
-  permIcon: {
-    fontSize: 24,
-    marginRight: spacing.md,
   },
   permText: {
     flex: 1,

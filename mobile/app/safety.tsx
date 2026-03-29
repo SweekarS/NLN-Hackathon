@@ -9,6 +9,7 @@ import { GreenCard } from '../components/ui/GreenCard';
 import { LightCard } from '../components/ui/LightCard';
 import { Button } from '../components/ui/Button';
 import { SectionTitle } from '../components/ui/SectionTitle';
+import { IconCircle } from '../components/ui/IconCircle';
 import { colors, fonts, spacing, radii } from '../theme';
 
 const regionalSupport = [
@@ -78,8 +79,8 @@ export default function SafetyScreen() {
             <Text style={styles.calmTitle}>Peace in 60 Seconds</Text>
             <Text style={styles.calmSubtitle}>Find calm in one minute</Text>
             <View style={styles.calmButtons}>
-              <Button title="🫁 Breathe" variant="light" onPress={() => {}} style={styles.calmBtn} />
-              <Button title="🌍 Ground" variant="light" onPress={() => {}} style={styles.calmBtn} />
+              <Button title="Breathe" variant="light" onPress={() => {}} style={styles.calmBtn} />
+              <Button title="Ground" variant="light" onPress={() => {}} style={styles.calmBtn} />
             </View>
           </LightCard>
         </Animated.View>
@@ -101,7 +102,7 @@ export default function SafetyScreen() {
 
         <Animated.View entering={FadeIn.duration(500).delay(800)}>
           <Card style={[styles.sectionCard, styles.reflectionCard]}>
-            <Text style={styles.journalIcon}>📓</Text>
+            <IconCircle name="book-outline" size="lg" />
             <Text style={styles.reflectionTitle}>Write what you feel</Text>
             <Text style={styles.reflectionSubtitle}>Your thoughts are safe here.</Text>
             <Button title="Open Journal" onPress={() => {}} style={styles.journalBtn} />
@@ -251,10 +252,6 @@ const styles = StyleSheet.create({
   },
   reflectionCard: {
     alignItems: 'center',
-  },
-  journalIcon: {
-    fontSize: 36,
-    marginBottom: spacing.sm,
   },
   reflectionTitle: {
     fontSize: 20,

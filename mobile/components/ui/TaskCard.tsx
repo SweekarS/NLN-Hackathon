@@ -3,10 +3,11 @@ import { View, Text, StyleSheet, Pressable } from 'react-native';
 import Animated, { useAnimatedStyle, withTiming } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
+import { IconCircle } from './IconCircle';
 import { colors, fonts, radii, shadow, spacing } from '../../theme';
 
 interface TaskCardProps {
-  icon: string;
+  iconName: keyof typeof Ionicons.glyphMap;
   title: string;
   subtitle: string;
   duration?: string;
@@ -14,7 +15,7 @@ interface TaskCardProps {
   onComplete: () => void;
 }
 
-export function TaskCard({ icon, title, subtitle, duration, isDone, onComplete }: TaskCardProps) {
+export function TaskCard({ iconName, title, subtitle, duration, isDone, onComplete }: TaskCardProps) {
   const animStyle = useAnimatedStyle(() => ({
     opacity: withTiming(isDone ? 0.65 : 1, { duration: 300 }),
     transform: [{ scale: withTiming(isDone ? 0.98 : 1, { duration: 300 }) }],
@@ -30,14 +31,19 @@ export function TaskCard({ icon, title, subtitle, duration, isDone, onComplete }
   return (
     <Animated.View style={[styles.card, animStyle]}>
       <View style={styles.left}>
-        <Text style={styles.icon}>{icon}</Text>
+        <IconCircle name={iconName} size="md" />
         <View style={styles.textBlock}>
           <Text style={styles.title}>{title}</Text>
           <Text style={styles.subtitle}>{subtitle}</Text>
         </View>
       </View>
       <View style={styles.right}>
-        {duration && <Text style={styles.duration}>{duration}</Text>}
+        {duration && (
+          <View style={styles.durationBadge}>
+            <Ionicons name="time-outline" size={12} color={colors.outline} />
+            <Text style={styles.duration}>{duration}</Text>
+          </View>
+        )}
         <Pressable
           onPress={handlePress}
           style={[styles.btn, isDone && styles.btnDone]}
@@ -71,9 +77,6 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: spacing.sm,
   },
-  icon: {
-    fontSize: 28,
-  },
   textBlock: {
     flex: 1,
   },
@@ -91,6 +94,15 @@ const styles = StyleSheet.create({
   right: {
     alignItems: 'center',
     gap: 4,
+  },
+  durationBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: colors.surfaceLow,
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
   },
   duration: {
     fontSize: 11,

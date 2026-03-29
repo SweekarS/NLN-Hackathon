@@ -13,6 +13,7 @@ import { GreenCard } from '../../components/ui/GreenCard';
 import { LightCard } from '../../components/ui/LightCard';
 import { Button } from '../../components/ui/Button';
 import { StatCard } from '../../components/ui/StatCard';
+import { IconCircle } from '../../components/ui/IconCircle';
 import { SectionTitle } from '../../components/ui/SectionTitle';
 import { ProgressRing } from '../../components/ui/ProgressRing';
 import { Heatmap } from '../../components/ui/Heatmap';
@@ -65,7 +66,7 @@ export default function HomeScreen() {
                 end={botanicalGradient.end}
                 style={styles.heroCircle}
               >
-                <Text style={styles.heroEmoji}>🌱</Text>
+                <Ionicons name="leaf" size={40} color={colors.white} />
               </LinearGradient>
             </View>
           </LightCard>
@@ -74,12 +75,12 @@ export default function HomeScreen() {
         {/* Stats Grid */}
         <View style={styles.statsGrid}>
           <View style={styles.statsRow}>
-            <StatCard icon="🔥" value={String(currentStreak)} label="CURRENT STREAK" delay={0} />
-            <StatCard icon="✅" value="85%" label="WEEKLY AVG" delay={100} />
+            <StatCard iconName="flame-outline" value={String(currentStreak)} label="CURRENT STREAK" delay={0} />
+            <StatCard iconName="checkmark-circle-outline" value="85%" label="WEEKLY AVG" delay={100} />
           </View>
           <View style={styles.statsRow}>
-            <StatCard icon="✨" value={`Lvl ${level}`} label="GROWTH TIER" delay={200} />
-            <StatCard icon="📈" value={`${(totalXP / 1000).toFixed(1)}k`} label="TOTAL XP" delay={300} />
+            <StatCard iconName="sparkles-outline" value={`Lvl ${level}`} label="GROWTH TIER" delay={200} />
+            <StatCard iconName="trending-up-outline" value={`${(totalXP / 1000).toFixed(1)}k`} label="TOTAL XP" delay={300} />
           </View>
         </View>
 
@@ -89,7 +90,7 @@ export default function HomeScreen() {
           <Card>
             <Heatmap />
             <Text style={styles.heatmapQuote}>
-              Every cell represents a moment of growth.
+              Your consistency is the foundation of your inner peace.
             </Text>
           </Card>
         </Animated.View>
@@ -126,7 +127,7 @@ export default function HomeScreen() {
           <Pressable onPress={() => setAchievementVisible(true)}>
             <Card style={styles.milestoneCard}>
               <View style={styles.milestoneRow}>
-                <Text style={styles.milestoneIcon}>🏆</Text>
+                <IconCircle name="trophy-outline" size="md" />
                 <View style={styles.milestoneText}>
                   <Text style={styles.milestoneTitle}>7-Day Streak</Text>
                   <Text style={styles.milestoneLabel}>Consistency badge</Text>
@@ -153,7 +154,7 @@ export default function HomeScreen() {
             end={botanicalGradient.end}
             style={styles.sheetBadge}
           >
-            <Text style={styles.sheetBadgeEmoji}>🍃</Text>
+            <Ionicons name="leaf-outline" size={36} color={colors.white} />
           </LinearGradient>
           <Text style={styles.sheetName}>Mist Wanderer</Text>
           <Text style={styles.sheetDesc}>
@@ -239,9 +240,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  heroEmoji: {
-    fontSize: 40,
-  },
   statsGrid: {
     gap: spacing.sm,
     marginBottom: spacing.sm,
@@ -293,9 +291,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.md,
   },
-  milestoneIcon: {
-    fontSize: 28,
-  },
   milestoneText: {
     flex: 1,
   },
@@ -321,9 +316,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.base,
-  },
-  sheetBadgeEmoji: {
-    fontSize: 36,
   },
   sheetName: {
     fontSize: 22,

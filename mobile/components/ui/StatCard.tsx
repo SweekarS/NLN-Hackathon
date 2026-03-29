@@ -1,19 +1,21 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
+import { Ionicons } from '@expo/vector-icons';
+import { IconCircle } from './IconCircle';
 import { colors, fonts, radii, shadow, spacing } from '../../theme';
 
 interface StatCardProps {
-  icon: string;
+  iconName: keyof typeof Ionicons.glyphMap;
   value: string;
   label: string;
   delay?: number;
 }
 
-export function StatCard({ icon, value, label, delay = 0 }: StatCardProps) {
+export function StatCard({ iconName, value, label, delay = 0 }: StatCardProps) {
   return (
     <Animated.View entering={FadeInUp.delay(delay).duration(500).springify()} style={styles.card}>
-      <Text style={styles.icon}>{icon}</Text>
+      <IconCircle name={iconName} size="sm" />
       <Text style={styles.value}>{value}</Text>
       <Text style={styles.label}>{label}</Text>
     </Animated.View>
@@ -29,9 +31,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
     ...shadow.card,
-  },
-  icon: {
-    fontSize: 22,
   },
   value: {
     fontSize: 22,

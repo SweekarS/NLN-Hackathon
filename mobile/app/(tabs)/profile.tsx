@@ -12,6 +12,7 @@ import { GreenCard } from '../../components/ui/GreenCard';
 import { XPBar } from '../../components/ui/XPBar';
 import { Toggle } from '../../components/ui/Toggle';
 import { SectionTitle } from '../../components/ui/SectionTitle';
+import { IconCircle } from '../../components/ui/IconCircle';
 
 const NEXT_LEVEL_XP_STEP = 200;
 
@@ -45,9 +46,9 @@ export default function ProfileScreen() {
   ];
 
   const recentGrowth = [
-    { emoji: '🧘', title: 'Morning Meditation', xp: 150 },
-    { emoji: '🔥', title: 'Weekly Streak Bonus', xp: 500 },
-    { emoji: '🌬️', title: 'Deep Breathing', xp: 50 },
+    { iconName: 'body-outline' as const, title: 'Morning Meditation', xp: 150 },
+    { iconName: 'flame-outline' as const, title: 'Weekly Streak Bonus', xp: 500 },
+    { iconName: 'leaf-outline' as const, title: 'Deep Breathing', xp: 50 },
   ];
 
   const accountRows: AccountRow[] = [
@@ -183,18 +184,22 @@ export default function ProfileScreen() {
         <Animated.View entering={FadeInUp.delay(200).duration(500)}>
           <GreenCard style={styles.cardGap}>
             <View style={styles.milestoneRow}>
-              <Text style={styles.milestoneStar}>⭐</Text>
+              <IconCircle name="star-outline" size="sm" color={colors.white} bg="rgba(255,255,255,0.25)" />
               <Text style={styles.milestoneText}>Next Milestone: Nature Sage</Text>
             </View>
             <View style={styles.milestoneBadge}>
-              <Text style={styles.milestoneBadgeText}>🔒 Level 15</Text>
+              <Ionicons name="lock-closed-outline" size={14} color={colors.white} style={{ marginRight: 4 }} />
+              <Text style={styles.milestoneBadgeText}>Level 15</Text>
             </View>
           </GreenCard>
         </Animated.View>
 
         {/* Daily Streak Mini */}
         <Card style={styles.cardGap}>
-          <Text style={styles.streakTitle}>🔥 {currentStreak} Days</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: spacing.sm }}>
+            <IconCircle name="flame-outline" size="sm" />
+            <Text style={[styles.streakTitle, { marginBottom: 0 }]}>{currentStreak} Days</Text>
+          </View>
           <XPBar progress={0.7} height={8} />
           <Text style={styles.streakSub}>+50 XP bonus in 3 days</Text>
         </Card>
@@ -247,7 +252,7 @@ export default function ProfileScreen() {
         {recentGrowth.map((item) => (
           <Card key={item.title} style={styles.growthCard}>
             <View style={styles.growthRow}>
-              <Text style={styles.growthEmoji}>{item.emoji}</Text>
+              <IconCircle name={item.iconName} size="sm" />
               <Text style={styles.growthTitle}>{item.title}</Text>
               <Text style={styles.growthXP}>+{item.xp} XP</Text>
             </View>
@@ -258,11 +263,17 @@ export default function ProfileScreen() {
         <SectionTitle title="Visibility & Social" />
         <Card style={styles.cardGap}>
           <View style={styles.toggleRow}>
-            <Text style={styles.toggleLabel}>Show profile to others</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
+              <Ionicons name="eye-outline" size={20} color={colors.onSurfaceVariant} />
+              <Text style={styles.toggleLabel}>Show profile to others</Text>
+            </View>
             <Toggle value={showProfile} onToggle={() => setShowProfile((v) => !v)} />
           </View>
           <View style={styles.toggleRow}>
-            <Text style={styles.toggleLabel}>Share achievements</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
+              <Ionicons name="people-outline" size={20} color={colors.onSurfaceVariant} />
+              <Text style={styles.toggleLabel}>Share achievements</Text>
+            </View>
             <Toggle value={shareAchievements} onToggle={() => setShareAchievements((v) => !v)} />
           </View>
         </Card>
@@ -271,15 +282,24 @@ export default function ProfileScreen() {
         <SectionTitle title="Accessibility" />
         <Card style={styles.cardGap}>
           <Pressable style={styles.toggleRow}>
-            <Text style={styles.toggleLabel}>Large Text</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
+              <Ionicons name="text-outline" size={20} color={colors.onSurfaceVariant} />
+              <Text style={styles.toggleLabel}>Large Text</Text>
+            </View>
             <Ionicons name="chevron-forward" size={20} color={colors.outline} />
           </Pressable>
           <View style={styles.toggleRow}>
-            <Text style={styles.toggleLabel}>High Contrast</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
+              <Ionicons name="contrast-outline" size={20} color={colors.onSurfaceVariant} />
+              <Text style={styles.toggleLabel}>High Contrast</Text>
+            </View>
             <Toggle value={highContrast} onToggle={() => setHighContrast((v) => !v)} />
           </View>
           <View style={styles.toggleRow}>
-            <Text style={styles.toggleLabel}>Screen Reader</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
+              <Ionicons name="accessibility-outline" size={20} color={colors.onSurfaceVariant} />
+              <Text style={styles.toggleLabel}>Screen Reader</Text>
+            </View>
             <Toggle value={screenReader} onToggle={() => setScreenReader((v) => !v)} />
           </View>
         </Card>
@@ -287,20 +307,32 @@ export default function ProfileScreen() {
         {/* Account */}
         <SectionTitle title="Account" />
         <Card style={styles.cardGap}>
-          {accountRows.map((row, i) => (
-            <Pressable
-              key={row.label}
-              style={[styles.accountRow, i < accountRows.length - 1 && styles.accountRowBorder]}
-              onPress={() => {
-                if (row.kind === 'link') router.push(row.route);
-                else if (row.kind === 'signOut') handleSignOut();
-                else handleDeleteAccount();
-              }}
-            >
-              <Text style={[styles.accountLabel, { color: row.color }]}>{row.label}</Text>
-              {row.kind === 'link' && <Ionicons name="chevron-forward" size={20} color={colors.outline} />}
-            </Pressable>
-          ))}
+          {accountRows.map((row, i) => {
+            const iconMap: Record<string, keyof typeof Ionicons.glyphMap> = {
+              Settings: 'settings-outline',
+              Notifications: 'notifications-outline',
+              'Safety Resources': 'shield-outline',
+              'Sign Out': 'log-out-outline',
+              'Delete Account': 'close-circle-outline',
+            };
+            return (
+              <Pressable
+                key={row.label}
+                style={[styles.accountRow, i < accountRows.length - 1 && styles.accountRowBorder]}
+                onPress={() => {
+                  if (row.kind === 'link') router.push(row.route);
+                  else if (row.kind === 'signOut') handleSignOut();
+                  else handleDeleteAccount();
+                }}
+              >
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
+                  <Ionicons name={iconMap[row.label] ?? 'ellipse-outline'} size={20} color={row.color} />
+                  <Text style={[styles.accountLabel, { color: row.color }]}>{row.label}</Text>
+                </View>
+                {row.kind === 'link' && <Ionicons name="chevron-forward" size={20} color={colors.outline} />}
+              </Pressable>
+            );
+          })}
         </Card>
 
         {/* Footer */}
@@ -465,15 +497,14 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     marginBottom: spacing.md,
   },
-  milestoneStar: {
-    fontSize: 20,
-  },
   milestoneText: {
     fontSize: 16,
     fontFamily: fonts.headlineBold,
     color: colors.white,
   },
   milestoneBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
     alignSelf: 'flex-start',
     backgroundColor: 'rgba(255,255,255,0.3)',
     paddingHorizontal: spacing.md,
@@ -559,9 +590,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-  },
-  growthEmoji: {
-    fontSize: 24,
   },
   growthTitle: {
     flex: 1,

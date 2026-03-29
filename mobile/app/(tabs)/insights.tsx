@@ -13,6 +13,7 @@ import { ProgressRing } from '../../components/ui/ProgressRing';
 import { BarChart } from '../../components/ui/BarChart';
 import { Heatmap } from '../../components/ui/Heatmap';
 import { SectionTitle } from '../../components/ui/SectionTitle';
+import { IconCircle } from '../../components/ui/IconCircle';
 
 type MetricsTab = 'overview' | 'details';
 
@@ -51,9 +52,7 @@ export default function InsightsScreen() {
         <Animated.View entering={FadeInUp.delay(100).duration(500)}>
           <Card style={styles.cardGap}>
             <View style={styles.centered}>
-              <View style={styles.trophyCircle}>
-                <Text style={styles.trophyEmoji}>🏆</Text>
-              </View>
+              <IconCircle name="location-outline" size="lg" />
               <Text style={styles.bestNumber}>{longestStreak}</Text>
               <Text style={styles.bestLabel}>Personal Best</Text>
               <Text style={styles.bestSub}>Achieved on June 12</Text>
@@ -72,7 +71,7 @@ export default function InsightsScreen() {
             <Text style={styles.pauseQuote}>
               "Rest is how nature renews itself. Your pause is part of your growth story."
             </Text>
-            <Text style={styles.pauseLink}>✨ Gentle Reminders for Healing</Text>
+            <Text style={styles.pauseLink}>Gentle Reminders for Healing</Text>
           </LightCard>
         </Animated.View>
 
@@ -125,7 +124,7 @@ export default function InsightsScreen() {
         <Animated.View entering={FadeIn.delay(300).duration(500)}>
           <Card style={styles.cardGap}>
             <View style={styles.insightRow}>
-              <Text style={styles.insightLeaf}>🍃</Text>
+              <IconCircle name="leaf-outline" size="md" />
               <Text style={styles.insightText}>
                 Your evening wind-down consistency has improved 23% this month. Keep nurturing this
                 habit.
@@ -133,6 +132,73 @@ export default function InsightsScreen() {
             </View>
           </Card>
         </Animated.View>
+
+        {/* Monthly Summary */}
+        <SectionTitle title="Monthly Summary" />
+        <Animated.View entering={FadeIn.delay(400).duration(500)}>
+          <GreenCard>
+            <Text style={styles.monthlySalutation}>Hello, friend</Text>
+            <Text style={styles.monthlyBody}>
+              Your March journey shows beautiful consistency. Keep nurturing your growth.
+            </Text>
+            <View style={styles.harmonyRow}>
+              <ProgressRing progress={0.88} size={64} strokeWidth={7}>
+                <Text style={styles.harmonyPercent}>88%</Text>
+              </ProgressRing>
+              <View style={{ flex: 1, marginLeft: spacing.base }}>
+                <Text style={styles.harmonyLabel}>Harmony Score</Text>
+                <Text style={styles.harmonySub}>Based on consistency, variety, and rest balance</Text>
+              </View>
+            </View>
+          </GreenCard>
+        </Animated.View>
+
+        {/* Weekly Journals */}
+        <SectionTitle title="Weekly Journals" />
+        <Card style={styles.cardGap}>
+          <Text style={styles.journalRange}>Mar 18 — Mar 24</Text>
+          <Text style={styles.journalBody}>
+            A week of steady morning rituals and evening reflections. Your breathwork sessions deepened.
+          </Text>
+        </Card>
+        <Card style={styles.cardGap}>
+          <Text style={styles.journalRange}>Mar 11 — Mar 17</Text>
+          <Text style={styles.journalBody}>
+            You explored forest bathing for the first time. Three days of unbroken streaks.
+          </Text>
+        </Card>
+
+        {/* Biometric Trends */}
+        <SectionTitle title="Biometric Trends" />
+        <Card style={styles.cardGap}>
+          {[
+            { icon: 'bed-outline' as const, label: 'Sleep Quality', value: '7.8 hrs avg' },
+            { icon: 'footsteps-outline' as const, label: 'Daily Steps', value: '6,420 avg' },
+            { icon: 'people-outline' as const, label: 'Social Battery', value: '72%' },
+            { icon: 'flower-outline' as const, label: 'Mindfulness', value: '18 min avg' },
+          ].map((item, i, arr) => (
+            <View key={item.label} style={[styles.bioRow, i < arr.length - 1 && styles.bioRowBorder]}>
+              <IconCircle name={item.icon} size="sm" />
+              <Text style={styles.bioLabel}>{item.label}</Text>
+              <Text style={styles.bioValue}>{item.value}</Text>
+            </View>
+          ))}
+        </Card>
+
+        {/* Nurture Your Next Week */}
+        <SectionTitle title="Nurture Your Next Week" />
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.nurtureScroll}>
+          {[
+            { title: 'Try a digital sunset', sub: 'No screens 1 hour before bed' },
+            { title: 'Morning gratitude', sub: 'Write 3 things you appreciate' },
+            { title: 'Walk in nature', sub: '20 minutes of forest bathing' },
+          ].map((tip) => (
+            <Card key={tip.title} style={styles.nurtureCard}>
+              <Text style={styles.nurtureTitle}>{tip.title}</Text>
+              <Text style={styles.nurtureSub}>{tip.sub}</Text>
+            </Card>
+          ))}
+        </ScrollView>
 
         <View style={{ height: spacing['2xl'] }} />
       </ScrollView>
@@ -187,18 +253,6 @@ const styles = StyleSheet.create({
   },
   centered: {
     alignItems: 'center',
-  },
-  trophyCircle: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: colors.primaryLighter,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.md,
-  },
-  trophyEmoji: {
-    fontSize: 28,
   },
   bestNumber: {
     fontSize: 36,
@@ -313,14 +367,97 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     alignItems: 'flex-start',
   },
-  insightLeaf: {
-    fontSize: 24,
-  },
   insightText: {
     flex: 1,
     fontSize: 14,
     fontFamily: fonts.bodyRegular,
     color: colors.onSurface,
     lineHeight: 22,
+  },
+  monthlySalutation: {
+    fontSize: 20,
+    fontFamily: fonts.headlineBold,
+    color: colors.white,
+    marginBottom: spacing.xs,
+  },
+  monthlyBody: {
+    fontSize: 14,
+    fontFamily: fonts.bodyRegular,
+    color: 'rgba(255,255,255,0.85)',
+    lineHeight: 22,
+    marginBottom: spacing.base,
+  },
+  harmonyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  harmonyPercent: {
+    fontSize: 14,
+    fontFamily: fonts.headlineBold,
+    color: colors.white,
+  },
+  harmonyLabel: {
+    fontSize: 16,
+    fontFamily: fonts.bodySemiBold,
+    color: colors.white,
+  },
+  harmonySub: {
+    fontSize: 12,
+    fontFamily: fonts.bodyRegular,
+    color: 'rgba(255,255,255,0.75)',
+    marginTop: 2,
+  },
+  journalRange: {
+    fontSize: 13,
+    fontFamily: fonts.bodySemiBold,
+    color: colors.primary,
+    marginBottom: spacing.xs,
+  },
+  journalBody: {
+    fontSize: 14,
+    fontFamily: fonts.bodyRegular,
+    color: colors.onSurfaceVariant,
+    lineHeight: 22,
+  },
+  bioRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+    gap: spacing.md,
+  },
+  bioRowBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: colors.outlineVariant,
+  },
+  bioLabel: {
+    flex: 1,
+    fontSize: 15,
+    fontFamily: fonts.bodyMedium,
+    color: colors.onSurface,
+  },
+  bioValue: {
+    fontSize: 15,
+    fontFamily: fonts.bodySemiBold,
+    color: colors.primary,
+  },
+  nurtureScroll: {
+    marginLeft: -spacing.lg,
+    paddingLeft: spacing.lg,
+    marginBottom: spacing.base,
+  },
+  nurtureCard: {
+    width: 200,
+    marginRight: spacing.md,
+  },
+  nurtureTitle: {
+    fontSize: 15,
+    fontFamily: fonts.bodySemiBold,
+    color: colors.onSurface,
+    marginBottom: spacing.xs,
+  },
+  nurtureSub: {
+    fontSize: 13,
+    fontFamily: fonts.bodyRegular,
+    color: colors.onSurfaceVariant,
   },
 });

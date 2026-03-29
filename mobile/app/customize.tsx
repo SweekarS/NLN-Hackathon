@@ -14,13 +14,14 @@ import { SectionTitle } from '../components/ui/SectionTitle';
 import { SelectorPill } from '../components/ui/SelectorPill';
 import { FieldInput } from '../components/ui/FieldInput';
 import { FieldLabel } from '../components/ui/FieldLabel';
+import { IconCircle } from '../components/ui/IconCircle';
 
 type TimeOfDay = 'morning' | 'afternoon' | 'evening';
 
-const ACTIVE_TASKS: { id: string; icon: string; title: string; timeOfDay: TimeOfDay }[] = [
-  { id: '1', icon: '🌬️', title: 'Deep Breathing Ritual', timeOfDay: 'morning' },
-  { id: '2', icon: '💧', title: 'Hydration Target', timeOfDay: 'afternoon' },
-  { id: '3', icon: '📝', title: 'Gratitude Log', timeOfDay: 'evening' },
+const ACTIVE_TASKS: { id: string; iconName: string; title: string; timeOfDay: TimeOfDay }[] = [
+  { id: '1', iconName: 'fitness-outline', title: 'Deep Breathing Ritual', timeOfDay: 'morning' },
+  { id: '2', iconName: 'water-outline', title: 'Hydration Target', timeOfDay: 'afternoon' },
+  { id: '3', iconName: 'create-outline', title: 'Gratitude Log', timeOfDay: 'evening' },
 ];
 
 const TIME_BADGE_COLORS: Record<TimeOfDay, string> = {
@@ -41,7 +42,7 @@ export default function CustomizeScreen() {
     if (!taskName.trim()) return;
     addTask({
       id: Date.now().toString(),
-      icon: '🌿',
+      icon: 'leaf-outline',
       title: taskName.trim(),
       subtitle: 'Custom ritual',
       timeOfDay: selectedTime,
@@ -118,16 +119,19 @@ export default function CustomizeScreen() {
             <View style={styles.pillRow}>
               <SelectorPill
                 label="Morning"
+                iconName="sunny-outline"
                 selected={selectedTime === 'morning'}
                 onPress={() => setSelectedTime('morning')}
               />
               <SelectorPill
                 label="Afternoon"
+                iconName="partly-sunny-outline"
                 selected={selectedTime === 'afternoon'}
                 onPress={() => setSelectedTime('afternoon')}
               />
               <SelectorPill
                 label="Evening"
+                iconName="moon-outline"
                 selected={selectedTime === 'evening'}
                 onPress={() => setSelectedTime('evening')}
               />
@@ -156,7 +160,7 @@ export default function CustomizeScreen() {
             >
               <Card style={styles.taskRow}>
                 <View style={styles.taskRowLeft}>
-                  <Text style={styles.taskIcon}>{item.icon}</Text>
+                  <IconCircle name={item.iconName as any} size="md" />
                   <View style={styles.taskRowText}>
                     <Text style={styles.taskRowTitle}>{item.title}</Text>
                     <View
@@ -305,9 +309,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
     gap: spacing.sm,
-  },
-  taskIcon: {
-    fontSize: 24,
   },
   taskRowText: {
     flex: 1,

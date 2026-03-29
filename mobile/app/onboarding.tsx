@@ -10,6 +10,8 @@ import { FieldInput } from '../components/ui/FieldInput';
 import { FieldLabel } from '../components/ui/FieldLabel';
 import { Logo } from '../components/ui/Logo';
 import { useAppStore } from '../store/useAppStore';
+import { Ionicons } from '@expo/vector-icons';
+import { IconCircle } from '../components/ui/IconCircle';
 import { colors, fonts, spacing, radii, shadow } from '../theme';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -17,15 +19,15 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 }
 
 const journeyOptions = [
-  { key: 'solo' as const, icon: '🧘', title: 'Solo Journey', desc: 'Private self-tracking with no social requirement.' },
-  { key: 'friend' as const, icon: '👥', title: 'Friend Mode', desc: 'Optional sharing with trusted people only.' },
-  { key: 'anonymous' as const, icon: '🌐', title: 'Anonymous Community', desc: 'Minimal identity and community support.' },
+  { key: 'solo' as const, iconName: 'body-outline' as const, title: 'Solo Journey', desc: 'Private self-tracking with no social requirement.' },
+  { key: 'friend' as const, iconName: 'people-outline' as const, title: 'Friend Mode', desc: 'Optional sharing with trusted people only.' },
+  { key: 'anonymous' as const, iconName: 'globe-outline' as const, title: 'Anonymous Community', desc: 'Minimal identity and community support.' },
 ];
 
 const features = [
-  { icon: '🔒', title: 'Private by Design', desc: 'Your data stays yours. Always.' },
-  { icon: '🌿', title: 'Gentle Guidance', desc: 'Small steps, meaningful progress.' },
-  { icon: '💚', title: 'Zero Judgment', desc: 'Every pace is the right pace.' },
+  { iconName: 'lock-closed-outline' as const, title: 'Private by Design', desc: 'Your data stays yours. Always.' },
+  { iconName: 'leaf-outline' as const, title: 'Gentle Guidance', desc: 'Small steps, meaningful progress.' },
+  { iconName: 'heart-outline' as const, title: 'Zero Judgment', desc: 'Every pace is the right pace.' },
 ];
 
 export default function OnboardingScreen() {
@@ -88,14 +90,14 @@ export default function OnboardingScreen() {
                       onPress={() => setJourneyMode(opt.key)}
                       style={[styles.journeyCard, selected && styles.journeyCardSelected]}
                     >
-                      <Text style={styles.journeyIcon}>{opt.icon}</Text>
+                      <IconCircle name={opt.iconName} size="md" />
                       <View style={{ flex: 1 }}>
                         <Text style={styles.journeyTitle}>{opt.title}</Text>
                         <Text style={styles.journeyDesc}>{opt.desc}</Text>
                       </View>
                       {selected && (
                         <View style={styles.checkBadge}>
-                          <Text style={styles.checkMark}>✓</Text>
+                          <Ionicons name="checkmark" size={14} color={colors.white} />
                         </View>
                       )}
                     </Pressable>
@@ -165,10 +167,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: spacing.xl,
-  },
-  headerLeaf: {
-    fontSize: 28,
-    marginRight: spacing.sm,
+    gap: spacing.sm,
   },
   headerTitle: {
     fontSize: 22,
@@ -205,10 +204,7 @@ const styles = StyleSheet.create({
   featureCard: {
     flexDirection: 'row',
     alignItems: 'center',
-  },
-  featureIcon: {
-    fontSize: 28,
-    marginRight: spacing.base,
+    gap: spacing.base,
   },
   featureText: {
     flex: 1,
@@ -251,13 +247,10 @@ const styles = StyleSheet.create({
     ...shadow.card,
     borderWidth: 2,
     borderColor: 'transparent',
+    gap: spacing.md,
   },
   journeyCardSelected: {
     borderColor: colors.primary,
-  },
-  journeyIcon: {
-    fontSize: 28,
-    marginRight: spacing.md,
   },
   journeyTitle: {
     fontSize: 16,
@@ -278,42 +271,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: spacing.sm,
-  },
-  checkMark: {
-    color: colors.white,
-    fontSize: 14,
-    fontFamily: fonts.bodySemiBold,
-  },
-  accordionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: colors.white,
-    borderRadius: radii.card,
-    padding: spacing.base,
-    ...shadow.card,
-    marginBottom: spacing.sm,
-  },
-  accordionTitle: {
-    fontSize: 16,
-    fontFamily: fonts.bodySemiBold,
-    color: colors.onSurface,
-  },
-  accordionChevron: {
-    fontSize: 12,
-    color: colors.outline,
-  },
-  accordionBody: {
-    backgroundColor: colors.white,
-    borderRadius: radii.card,
-    padding: spacing.base,
-    marginBottom: spacing.xl,
-  },
-  accordionText: {
-    fontSize: 14,
-    fontFamily: fonts.bodyRegular,
-    color: colors.onSurfaceVariant,
-    lineHeight: 21,
   },
   buttonWrap: {
     gap: spacing.md,

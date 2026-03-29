@@ -12,6 +12,7 @@ import { GreenCard } from '../../components/ui/GreenCard';
 import { LightCard } from '../../components/ui/LightCard';
 import { Button } from '../../components/ui/Button';
 import { TaskCard } from '../../components/ui/TaskCard';
+import { IconCircle } from '../../components/ui/IconCircle';
 
 export default function TasksScreen() {
   const { tasks, todayCompletions, completeTask } = useAppStore();
@@ -91,7 +92,7 @@ export default function TasksScreen() {
               entering={FadeInUp.delay(300 + idx * 80).duration(500)}
             >
               <TaskCard
-                icon={task.icon}
+                iconName={task.icon as any}
                 title={task.title}
                 subtitle={task.subtitle}
                 duration={task.duration}
@@ -105,7 +106,7 @@ export default function TasksScreen() {
         {/* Rest Nudge */}
         <Animated.View entering={FadeInUp.delay(600).duration(500)}>
           <LightCard style={styles.restCard}>
-            <Text style={styles.restEmoji}>🌙</Text>
+            <IconCircle name="moon-outline" size="lg" />
             <Text style={styles.restTitle}>Approaching a Rest Cycle?</Text>
             <Text style={styles.restSubtitle}>
               Listen to your body — rest is part of growth.
@@ -217,9 +218,6 @@ const styles = StyleSheet.create({
   restCard: {
     alignItems: 'center',
     gap: spacing.sm,
-  },
-  restEmoji: {
-    fontSize: 32,
   },
   restTitle: {
     fontSize: 16,
