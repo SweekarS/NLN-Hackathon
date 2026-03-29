@@ -24,6 +24,7 @@ const defaultTasks: Task[] = [
 
 interface AppState {
   userName: string;
+  avatarImage: string | null;
   hasCompletedOnboarding: boolean;
   journeyMode: 'solo' | 'friend' | 'anonymous';
 
@@ -67,6 +68,7 @@ interface AppState {
   toggleTaskEnabled: (taskId: string) => void;
 
   setUserName: (name: string) => void;
+  setAvatarImage: (uri: string | null) => void;
 
   /** Clears persisted data and resets to defaults; signs out of Supabase when configured. */
   resetLocalSession: () => void;
@@ -101,10 +103,12 @@ function getDefaultSessionState(): Omit<
   | 'addTask'
   | 'toggleTaskEnabled'
   | 'setUserName'
+  | 'setAvatarImage'
   | 'resetLocalSession'
 > {
   return {
     userName: 'Guest',
+    avatarImage: null,
     hasCompletedOnboarding: false,
     journeyMode: 'solo',
 
@@ -135,6 +139,7 @@ export const useAppStore = create<AppState>()(
   persist(
     (set, get) => ({
       userName: 'Elena Mistwood',
+      avatarImage: null,
       hasCompletedOnboarding: false,
       journeyMode: 'solo' as const,
 
@@ -161,6 +166,7 @@ export const useAppStore = create<AppState>()(
       setHasHydrated: (v) => set({ _hasHydrated: v }),
 
       setUserName: (userName) => set({ userName }),
+      setAvatarImage: (uri) => set({ avatarImage: uri }),
 
       resetLocalSession: () => {
         if (isSupabaseConfigured) {
@@ -215,6 +221,7 @@ export const useAppStore = create<AppState>()(
       partialize: (state) => ({
         hasCompletedOnboarding: state.hasCompletedOnboarding,
         userName: state.userName,
+        avatarImage: state.avatarImage,
         journeyMode: state.journeyMode,
         currentStreak: state.currentStreak,
         longestStreak: state.longestStreak,

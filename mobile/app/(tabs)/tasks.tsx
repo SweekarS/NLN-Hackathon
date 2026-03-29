@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, ScrollView, StyleSheet, Pressable } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Pressable, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -15,7 +15,7 @@ import { TaskCard } from '../../components/ui/TaskCard';
 import { IconCircle } from '../../components/ui/IconCircle';
 
 export default function TasksScreen() {
-  const { tasks, todayCompletions, completeTask } = useAppStore();
+  const { tasks, todayCompletions, completeTask, avatarImage } = useAppStore();
 
   const completionPct =
     tasks.length > 0 ? (todayCompletions.length / tasks.length) * 100 : 0;
@@ -30,14 +30,18 @@ export default function TasksScreen() {
         {/* TopBar */}
         <Animated.View entering={FadeIn.duration(400)} style={styles.topBar}>
           <View style={styles.topBarLeft}>
-            <LinearGradient
-              colors={[...botanicalGradient.colors]}
-              start={botanicalGradient.start}
-              end={botanicalGradient.end}
-              style={styles.avatar}
-            >
-              <Ionicons name="person" size={20} color={colors.white} />
-            </LinearGradient>
+            {avatarImage ? (
+              <Image source={{ uri: avatarImage }} style={[styles.avatar, { resizeMode: 'cover' }]} />
+            ) : (
+              <LinearGradient
+                colors={[...botanicalGradient.colors]}
+                start={botanicalGradient.start}
+                end={botanicalGradient.end}
+                style={styles.avatar}
+              >
+                <Ionicons name="person" size={20} color={colors.white} />
+              </LinearGradient>
+            )}
             <Text style={styles.appTitle}>The Organic Sanctuary</Text>
           </View>
           <Pressable onPress={() => router.push('/notifications')} hitSlop={8}>

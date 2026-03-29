@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, Pressable, Alert } from 'react-native';
+import React from 'react';
+import { View, Text, ScrollView, StyleSheet, Pressable, Alert, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -10,7 +10,6 @@ import { useAppStore } from '../../store/useAppStore';
 import { Card } from '../../components/ui/Card';
 import { GreenCard } from '../../components/ui/GreenCard';
 import { XPBar } from '../../components/ui/XPBar';
-import { Toggle } from '../../components/ui/Toggle';
 import { SectionTitle } from '../../components/ui/SectionTitle';
 import { IconCircle } from '../../components/ui/IconCircle';
 
@@ -28,15 +27,10 @@ type AccountRow =
   | { kind: 'delete'; label: string; color: string };
 
 export default function ProfileScreen() {
-  const { userName, level, levelTitle, totalXP, currentStreak, resetLocalSession } = useAppStore();
+  const { userName, avatarImage, level, levelTitle, totalXP, currentStreak, resetLocalSession } = useAppStore();
 
   const nextLevelXP = level * NEXT_LEVEL_XP_STEP;
   const xpProgress = Math.min(totalXP / nextLevelXP, 1);
-
-  const [showProfile, setShowProfile] = useState(false);
-  const [shareAchievements, setShareAchievements] = useState(false);
-  const [highContrast, setHighContrast] = useState(false);
-  const [screenReader, setScreenReader] = useState(false);
 
   const pathSteps: PathStep[] = [
     { label: 'Rookie', completed: true, current: false },
@@ -104,14 +98,18 @@ export default function ProfileScreen() {
         {/* Top Bar */}
         <View style={styles.topBar}>
           <View style={styles.topBarLeft}>
-            <LinearGradient
-              colors={[...botanicalGradient.colors]}
-              start={botanicalGradient.start}
-              end={botanicalGradient.end}
-              style={styles.topAvatar}
-            >
-              <Ionicons name="person" size={20} color={colors.white} />
-            </LinearGradient>
+            {avatarImage ? (
+              <Image source={{ uri: avatarImage }} style={[styles.topAvatar, { resizeMode: 'cover' }]} />
+            ) : (
+              <LinearGradient
+                colors={[...botanicalGradient.colors]}
+                start={botanicalGradient.start}
+                end={botanicalGradient.end}
+                style={styles.topAvatar}
+              >
+                <Ionicons name="person" size={20} color={colors.white} />
+              </LinearGradient>
+            )}
             <Text style={styles.topTitle}>Profile</Text>
           </View>
           <Pressable onPress={() => router.push('/settings')} hitSlop={8}>
@@ -123,19 +121,27 @@ export default function ProfileScreen() {
         <Animated.View entering={FadeInUp.duration(500)}>
           <Card>
             <View style={styles.centered}>
-              <View style={styles.avatarWrap}>
-                <LinearGradient
-                  colors={[...botanicalGradient.colors]}
-                  start={botanicalGradient.start}
-                  end={botanicalGradient.end}
-                  style={styles.avatarBig}
-                >
-                  <Ionicons name="person" size={40} color={colors.white} />
-                </LinearGradient>
+              <Pressable
+                style={styles.avatarWrap}
+                onPress={() => router.push('/edit-profile')}
+                hitSlop={10}
+              >
+                {avatarImage ? (
+                  <Image source={{ uri: avatarImage }} style={[styles.avatarBig, { resizeMode: 'cover' }]} />
+                ) : (
+                  <LinearGradient
+                    colors={[...botanicalGradient.colors]}
+                    start={botanicalGradient.start}
+                    end={botanicalGradient.end}
+                    style={styles.avatarBig}
+                  >
+                    <Ionicons name="person" size={40} color={colors.white} />
+                  </LinearGradient>
+                )}
                 <View style={styles.editBadge}>
                   <Ionicons name="pencil" size={12} color={colors.onSurface} />
                 </View>
-              </View>
+              </Pressable>
               <Text style={styles.userName}>{userName}</Text>
               <Text style={styles.userRole}>Mindfulness Practitioner</Text>
               <View style={styles.statsRow}>
@@ -259,50 +265,6 @@ export default function ProfileScreen() {
           </Card>
         ))}
 
-        {/* Visibility & Social */}
-        <SectionTitle title="Visibility & Social" />
-        <Card style={styles.cardGap}>
-          <View style={styles.toggleRow}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
-              <Ionicons name="eye-outline" size={20} color={colors.onSurfaceVariant} />
-              <Text style={styles.toggleLabel}>Show profile to others</Text>
-            </View>
-            <Toggle value={showProfile} onToggle={() => setShowProfile((v) => !v)} />
-          </View>
-          <View style={styles.toggleRow}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
-              <Ionicons name="people-outline" size={20} color={colors.onSurfaceVariant} />
-              <Text style={styles.toggleLabel}>Share achievements</Text>
-            </View>
-            <Toggle value={shareAchievements} onToggle={() => setShareAchievements((v) => !v)} />
-          </View>
-        </Card>
-
-        {/* Accessibility */}
-        <SectionTitle title="Accessibility" />
-        <Card style={styles.cardGap}>
-          <Pressable style={styles.toggleRow}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
-              <Ionicons name="text-outline" size={20} color={colors.onSurfaceVariant} />
-              <Text style={styles.toggleLabel}>Large Text</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={colors.outline} />
-          </Pressable>
-          <View style={styles.toggleRow}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
-              <Ionicons name="contrast-outline" size={20} color={colors.onSurfaceVariant} />
-              <Text style={styles.toggleLabel}>High Contrast</Text>
-            </View>
-            <Toggle value={highContrast} onToggle={() => setHighContrast((v) => !v)} />
-          </View>
-          <View style={styles.toggleRow}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
-              <Ionicons name="accessibility-outline" size={20} color={colors.onSurfaceVariant} />
-              <Text style={styles.toggleLabel}>Screen Reader</Text>
-            </View>
-            <Toggle value={screenReader} onToggle={() => setScreenReader((v) => !v)} />
-          </View>
-        </Card>
 
         {/* Account */}
         <SectionTitle title="Account" />
@@ -602,17 +564,7 @@ const styles = StyleSheet.create({
     fontFamily: fonts.headlineBold,
     color: colors.primary,
   },
-  toggleRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: spacing.sm,
-  },
-  toggleLabel: {
-    fontSize: 15,
-    fontFamily: fonts.bodyMedium,
-    color: colors.onSurface,
-  },
+
   accountRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
