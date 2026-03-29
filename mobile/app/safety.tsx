@@ -1,40 +1,61 @@
 import React from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet, Linking } from 'react-native';
+import {
+  View,
+  Text,
+  ScrollView,
+  Pressable,
+  StyleSheet,
+  Linking,
+  ActivityIndicator,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Card } from '../components/ui/Card';
 import { GreenCard } from '../components/ui/GreenCard';
-import { LightCard } from '../components/ui/LightCard';
-import { Button } from '../components/ui/Button';
 import { SectionTitle } from '../components/ui/SectionTitle';
-import { IconCircle } from '../components/ui/IconCircle';
-import { colors, fonts, spacing, radii } from '../theme';
+import { colors, fonts, spacing } from '../theme';
+import { useForestSoundscape } from '../hooks/useForestSoundscape';
 
 const regionalSupport = [
-  { flag: '🇺🇸', region: 'US & Canada', name: '988 Suicide & Crisis Lifeline', action: 'Call or text 988' },
+  {
+    flag: '🇺🇸',
+    region: 'US & Canada',
+    name: '988 Suicide & Crisis Lifeline',
+    action: 'Call or text 988',
+  },
   { flag: '🇬🇧', region: 'UK & EU', name: 'Samaritans', action: 'Call 116 123' },
-  { flag: '🇦🇺', region: 'Australia & NZ', name: 'Lifeline', action: 'Call 13 11 14' },
-];
-
-const professionalResources = [
-  'Find a Therapist',
-  'Create a Safety Plan',
-  'Support Groups',
+  {
+    flag: '🇦🇺',
+    region: 'Australia & NZ',
+    name: 'Lifeline',
+    action: 'Call 13 11 14',
+  },
 ];
 
 export default function SafetyScreen() {
+  const { playing, ready, toggle } = useForestSoundscape();
+
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
+      >
         <Animated.View entering={FadeIn.duration(400)}>
-          <Pressable onPress={() => router.back()} style={styles.backRow} hitSlop={8}>
+          <Pressable
+            onPress={() => router.back()}
+            style={styles.backRow}
+            hitSlop={8}
+          >
             <Ionicons name="chevron-back" size={24} color={colors.onSurface} />
           </Pressable>
 
           <Text style={styles.headline}>You are not alone.</Text>
-          <Text style={styles.subtitle}>Confidential support is always within reach.</Text>
+          <Text style={styles.subtitle}>
+            Confidential support is always within reach.
+          </Text>
         </Animated.View>
 
         <Animated.View entering={FadeIn.duration(500).delay(100)}>
@@ -42,7 +63,9 @@ export default function SafetyScreen() {
             <GreenCard>
               <View style={styles.emergencyRow}>
                 <Ionicons name="call" size={22} color={colors.white} />
-                <Text style={styles.emergencyLabel}>Talk to someone — 988 Lifeline</Text>
+                <Text style={styles.emergencyLabel}>
+                  Talk to someone — 988 Lifeline
+                </Text>
                 <Ionicons name="arrow-forward" size={20} color={colors.white} />
               </View>
             </GreenCard>
@@ -57,9 +80,17 @@ export default function SafetyScreen() {
               accessibilityRole="button"
               accessibilityLabel="Chat to AI Counselor"
             >
-              <Ionicons name="chatbubble-ellipses" size={22} color={colors.primary} />
+              <Ionicons
+                name="chatbubble-ellipses"
+                size={22}
+                color={colors.primary}
+              />
               <Text style={styles.contactLabel}>Chat to AI Counselor</Text>
-              <Ionicons name="arrow-forward" size={20} color={colors.onSurfaceVariant} />
+              <Ionicons
+                name="arrow-forward"
+                size={20}
+                color={colors.onSurfaceVariant}
+              />
             </Pressable>
           </Card>
         </Animated.View>
@@ -67,7 +98,10 @@ export default function SafetyScreen() {
         <SectionTitle title="Regional Support" />
 
         {regionalSupport.map((item, i) => (
-          <Animated.View key={item.region} entering={FadeIn.duration(500).delay(300 + i * 80)}>
+          <Animated.View
+            key={item.region}
+            entering={FadeIn.duration(500).delay(300 + i * 80)}
+          >
             <Card style={styles.regionalCard}>
               <View style={styles.regionalHeader}>
                 <Text style={styles.flag}>{item.flag}</Text>
@@ -80,54 +114,39 @@ export default function SafetyScreen() {
         ))}
 
         <Animated.View entering={FadeIn.duration(500).delay(600)}>
-          <LightCard style={styles.sectionCard}>
-            <Text style={styles.calmTitle}>Peace in 60 Seconds</Text>
-            <Text style={styles.calmSubtitle}>Find calm in one minute</Text>
-            <View style={styles.calmButtons}>
-              <Button title="Breathe" variant="light" onPress={() => {}} style={styles.calmBtn} />
-              <Button title="Ground" variant="light" onPress={() => {}} style={styles.calmBtn} />
-            </View>
-          </LightCard>
-        </Animated.View>
-
-        <Animated.View entering={FadeIn.duration(500).delay(700)}>
           <GreenCard style={styles.sectionCard}>
             <View style={styles.soundRow}>
               <Ionicons name="musical-notes" size={22} color={colors.white} />
               <View style={{ flex: 1, marginLeft: spacing.md }}>
                 <Text style={styles.soundTitle}>Forest Mist Soundscape</Text>
-                <Text style={styles.soundSubtitle}>Immersive nature sounds for calm</Text>
+                <Text style={styles.soundSubtitle}>
+                  Rain & nature ambience — loops until you pause
+                </Text>
               </View>
-              <View style={styles.playCircle}>
-                <Ionicons name="play" size={18} color={colors.primary} />
-              </View>
+              <Pressable
+                onPress={toggle}
+                disabled={!ready}
+                style={({ pressed }) => [
+                  styles.playCircle,
+                  !ready && styles.playCircleDisabled,
+                  pressed && ready && styles.playCirclePressed,
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel={playing ? 'Pause soundscape' : 'Play soundscape'}
+                hitSlop={8}
+              >
+                {!ready ? (
+                  <ActivityIndicator size="small" color={colors.primary} />
+                ) : (
+                  <Ionicons
+                    name={playing ? 'pause' : 'play'}
+                    size={18}
+                    color={colors.primary}
+                  />
+                )}
+              </Pressable>
             </View>
           </GreenCard>
-        </Animated.View>
-
-        <Animated.View entering={FadeIn.duration(500).delay(800)}>
-          <Card style={[styles.sectionCard, styles.reflectionCard]}>
-            <IconCircle name="book-outline" size="lg" />
-            <Text style={styles.reflectionTitle}>Write what you feel</Text>
-            <Text style={styles.reflectionSubtitle}>Your thoughts are safe here.</Text>
-            <Button title="Open Journal" onPress={() => {}} style={styles.journalBtn} />
-          </Card>
-        </Animated.View>
-
-        <SectionTitle title="Professional Resources" />
-
-        <Animated.View entering={FadeIn.duration(500).delay(900)}>
-          <Card>
-            {professionalResources.map((label, i) => (
-              <Pressable
-                key={label}
-                style={[styles.navRow, i < professionalResources.length - 1 && styles.navRowBorder]}
-              >
-                <Text style={styles.navLabel}>{label}</Text>
-                <Ionicons name="chevron-forward" size={20} color={colors.onSurfaceVariant} />
-              </Pressable>
-            ))}
-          </Card>
         </Animated.View>
       </ScrollView>
     </SafeAreaView>
@@ -213,25 +232,6 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bodyRegular,
     color: colors.primary,
   },
-  calmTitle: {
-    fontSize: 18,
-    fontFamily: fonts.headlineBold,
-    color: colors.onSurface,
-    marginBottom: spacing.xs,
-  },
-  calmSubtitle: {
-    fontSize: 14,
-    fontFamily: fonts.bodyRegular,
-    color: colors.onSurfaceVariant,
-    marginBottom: spacing.md,
-  },
-  calmButtons: {
-    flexDirection: 'row',
-    gap: spacing.md,
-  },
-  calmBtn: {
-    flex: 1,
-  },
   soundRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -255,37 +255,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  reflectionCard: {
-    alignItems: 'center',
+  playCircleDisabled: {
+    opacity: 0.55,
   },
-  reflectionTitle: {
-    fontSize: 20,
-    fontFamily: fonts.headlineBold,
-    color: colors.onSurface,
-    marginBottom: spacing.xs,
-  },
-  reflectionSubtitle: {
-    fontSize: 14,
-    fontFamily: fonts.bodyRegular,
-    color: colors.onSurfaceVariant,
-    marginBottom: spacing.base,
-  },
-  journalBtn: {
-    width: '100%',
-  },
-  navRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: spacing.md,
-  },
-  navRowBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: colors.outlineVariant,
-  },
-  navLabel: {
-    fontSize: 15,
-    fontFamily: fonts.bodySemiBold,
-    color: colors.onSurface,
+  playCirclePressed: {
+    opacity: 0.88,
   },
 });
